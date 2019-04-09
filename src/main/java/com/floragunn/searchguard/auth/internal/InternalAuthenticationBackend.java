@@ -22,7 +22,9 @@ import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.bouncycastle.crypto.generators.OpenBSDBCrypt;
 import org.elasticsearch.ElasticsearchSecurityException;
@@ -74,6 +76,19 @@ public class InternalAuthenticationBackend implements AuthenticationBackend, Aut
         if(roles != null) {
             user.addRoles(roles);
         }
+        
+        //FIX https://github.com/opendistro-for-elasticsearch/security/pull/23
+        //Credits to @turettn
+        final Settings customAttributes = cfg.getAsSettings(user.getName() + ".attributes");
+        Map<String, String> attributeMap = new HashMap<>();
+
+        if(customAttributes != null) {
+            for(String attributeName: customAttributes.names()) {
+                attributeMap.put("attr.internal."+attributeName, customAttributes.get(attributeName));
+            }
+        }
+
+        user.addAttributes(attributeMap);
         
         return true;
     }
