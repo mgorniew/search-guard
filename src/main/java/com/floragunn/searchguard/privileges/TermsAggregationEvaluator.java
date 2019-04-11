@@ -30,6 +30,7 @@ import org.elasticsearch.index.query.TermsQueryBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 
+import com.floragunn.searchguard.resolver.IndexResolverReplacer.Resolved;
 import com.floragunn.searchguard.sgconf.ConfigModel.SgRoles;
 import com.floragunn.searchguard.user.User;
 
@@ -51,8 +52,9 @@ public class TermsAggregationEvaluator {
     public TermsAggregationEvaluator() {
     }
     
-    public PrivilegesEvaluatorResponse evaluate(final ActionRequest request, ClusterService clusterService, User user, SgRoles sgRoles,  IndexNameExpressionResolver resolver, PrivilegesEvaluatorResponse presponse) {
+    public PrivilegesEvaluatorResponse evaluate(final Resolved resolved, final ActionRequest request, ClusterService clusterService, User user, SgRoles sgRoles,  IndexNameExpressionResolver resolver, PrivilegesEvaluatorResponse presponse) {
         try {
+            
             if(request instanceof SearchRequest) {
                 SearchRequest sr = (SearchRequest) request;
 
@@ -70,13 +72,12 @@ public class TermsAggregationEvaluator {
                                && ab.getPipelineAggregations().isEmpty()
                                && ab.getSubAggregations().isEmpty()) {
 
-                           
-                           final Set<String> allPermittedIndices = sgRoles.getAllPermittedIndices(user, READ_ACTIONS, resolver, clusterService);
+                           final Set<String> allPermittedIndices = sgRoles.getAllPermittedIndicesForKibana(resolved, user, READ_ACTIONS, resolver, clusterService);
                            if(allPermittedIndices == null || allPermittedIndices.isEmpty()) {
                                sr.source().query(NONE_QUERY);
                            } else {
                                sr.source().query(new TermsQueryBuilder("_index", allPermittedIndices));
-                           }                 
+                           }
                            
                            presponse.allowed = true;
                            return presponse.markComplete();

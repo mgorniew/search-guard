@@ -509,7 +509,7 @@ public class PrivilegesEvaluator implements ConfigurationChangeListener {
         }
 
         // term aggregations
-        if (termsAggregationEvaluator.evaluate(request, clusterService, user, sgRoles, resolver, presponse).isComplete()) {
+        if (termsAggregationEvaluator.evaluate(requestedResolved, request, clusterService, user, sgRoles, resolver, presponse).isComplete()) {
             return presponse;
         }
 
