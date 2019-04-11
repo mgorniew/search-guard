@@ -364,6 +364,9 @@ sg_twitter:
     'twitter':
       '*':
         - '*'
+    'analytics':
+      '*':
+        - '*'
         
 sg_aliasmngt:
   indices:
