@@ -468,15 +468,6 @@ public class SearchGuardAdmin {
         try (@SuppressWarnings("resource")
         TransportClient tc = new TransportClientImpl(settings, asCollection(Netty4Plugin.class, SearchGuardPlugin.class))
                 .addTransportAddress(new TransportAddress(new InetSocketAddress(hostname, port)))) {
-
-            try {
-                if(issueWarnings(tc) != 0) {
-                    return (-1);
-                }
-            } catch (Exception e1) {
-                System.out.println("Unable to check whether cluster is sane: "+e1.getMessage());
-                return (-1);
-            }
             
             final WhoAmIResponse whoAmIRes = tc.execute(WhoAmIAction.INSTANCE, new WhoAmIRequest()).actionGet();
             System.out.println("Connected as "+whoAmIRes.getDn());
@@ -504,6 +495,15 @@ public class SearchGuardAdmin {
                     return (-1);
                 }
 
+            }
+            
+            try {
+                if(issueWarnings(tc) != 0) {
+                    return (-1);
+                }
+            } catch (Exception e1) {
+                System.out.println("Unable to check whether cluster is sane");
+                throw e1;
             }
 
             if(updateSettings != null) { 
