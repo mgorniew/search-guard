@@ -42,21 +42,21 @@ public class ConfigHelper {
     
     private static final Logger LOGGER = LogManager.getLogger(ConfigHelper.class);
     
-    public static void uploadFileV7(Client tc, String filepath, String index, String id) throws Exception {
-        LOGGER.info("Will update '" + id + "' with " + filepath);
+    public static void uploadFile(Client tc, String filepath, String index, CType cType, int configVersion) throws Exception {
+        LOGGER.info("Will update '" + cType + "' with " + filepath);
         
 
-        ConfigHelper.fromYamlFile(filepath, CType.fromString(id), 2, 0, 0);
+        ConfigHelper.fromYamlFile(filepath, cType, configVersion, 0, 0);
         
         
         try (Reader reader = new FileReader(filepath)) {
 
             final String res = tc
-                    .index(new IndexRequest(index).id(id).setRefreshPolicy(RefreshPolicy.IMMEDIATE)
-                            .source(id, readXContent(reader, XContentType.YAML))).actionGet().getId();
+                    .index(new IndexRequest(index).type(configVersion==1?"sg":"_doc").id(cType.toLCString()).setRefreshPolicy(RefreshPolicy.IMMEDIATE)
+                            .source(cType.toLCString(), readXContent(reader, XContentType.YAML))).actionGet().getId();
 
-            if (!id.equals(res)) {
-                throw new Exception("   FAIL: Configuration for '" + id
+            if (!cType.toLCString().equals(res)) {
+                throw new Exception("   FAIL: Configuration for '" + cType.toLCString()
                         + "' failed for unknown reasons. Pls. consult logfile of elasticsearch");
             }
         } catch (Exception e) {

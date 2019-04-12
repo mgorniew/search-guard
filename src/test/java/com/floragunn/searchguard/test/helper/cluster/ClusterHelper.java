@@ -51,6 +51,7 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.PluginAwareNode;
 
+import com.floragunn.searchguard.SearchGuardPlugin;
 import com.floragunn.searchguard.test.NodeSettingsSupplier;
 import com.floragunn.searchguard.test.helper.cluster.ClusterConfiguration.NodeSettings;
 import com.floragunn.searchguard.test.helper.network.SocketUtils;
@@ -59,7 +60,12 @@ public final class ClusterHelper {
 
     static {
         System.setProperty("es.enforce.bootstrap.checks", "true");
-        System.setProperty("sg.default_init.dir", new File("./sgconfig/v7").getAbsolutePath());
+        
+        if(SearchGuardPlugin.FORCE_CONFIG_V6) {
+            System.setProperty("sg.default_init.dir", new File("./sgconfig").getAbsolutePath());
+        } else {
+            System.setProperty("sg.default_init.dir", new File("./sgconfig/v7").getAbsolutePath());
+        }
     }
     
 	protected final Logger log = LogManager.getLogger(ClusterHelper.class);

@@ -34,19 +34,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ExceptionsHelper;
-import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
-import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
-import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.cluster.ClusterChangedEvent;
-import org.elasticsearch.cluster.ClusterStateListener;
-import org.elasticsearch.cluster.LocalNodeMasterListener;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
@@ -54,7 +48,6 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.component.LifecycleListener;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.common.util.concurrent.ThreadContext.StoredContext;
 import org.elasticsearch.common.xcontent.XContentHelper;
@@ -63,6 +56,7 @@ import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.engine.VersionConflictEngineException;
 import org.elasticsearch.threadpool.ThreadPool;
 
+import com.floragunn.searchguard.SearchGuardPlugin;
 import com.floragunn.searchguard.auditlog.AuditLog;
 import com.floragunn.searchguard.compliance.ComplianceConfig;
 import com.floragunn.searchguard.sgconf.DynamicConfigFactory;
@@ -92,6 +86,7 @@ public class ConfigurationRepository {
     private final ThreadPool threadPool;
     private volatile SearchGuardLicense effectiveLicense;
     private DynamicConfigFactory dynamicConfigFactory;
+    private final int configVersion = SearchGuardPlugin.FORCE_CONFIG_V6?1:2;
 
     private ConfigurationRepository(Settings settings, final Path configPath, ThreadPool threadPool, 
             Client client, ClusterService clusterService, AuditLog auditLog, ComplianceConfig complianceConfig) {
@@ -134,7 +129,8 @@ public class ConfigurationRepository {
                                 
                                 try {
                                     String lookupDir = System.getProperty("sg.default_init.dir");
-                                    final String cd = lookupDir != null? (lookupDir+"/") : new Environment(settings, configPath).pluginsFile().toAbsolutePath().toString()+"/search-guard-7/sgconfig/v7/";
+                                    //for conf v7 its maybe /search-guard-7/sgconfig/v7/
+                                    final String cd = lookupDir != null? (lookupDir+"/") : new Environment(settings, configPath).pluginsFile().toAbsolutePath().toString()+"/search-guard-7/sgconfig/";
                                     File confFile = new File(cd+"sg_config.yml");
                                     if(confFile.exists()) {
                                         final ThreadContext threadContext = threadPool.getThreadContext();
@@ -151,11 +147,14 @@ public class ConfigurationRepository {
                                             .actionGet().isAcknowledged();
                                             LOGGER.info("Index {} created?: {}", searchguardIndex, ok);
                                             if(ok) {
-                                                ConfigHelper.uploadFileV7(client, cd+"sg_config.yml", searchguardIndex, "config");
-                                                ConfigHelper.uploadFileV7(client, cd+"sg_roles.yml", searchguardIndex, "roles");
-                                                ConfigHelper.uploadFileV7(client, cd+"sg_internal_users.yml", searchguardIndex, "internalusers");
-                                                ConfigHelper.uploadFileV7(client, cd+"sg_action_groups.yml", searchguardIndex, "actiongroups");
-                                                ConfigHelper.uploadFileV7(client, cd+"sg_tenants.yml", searchguardIndex, "tenants");
+                                                ConfigHelper.uploadFile(client, cd+"sg_config.yml", searchguardIndex, CType.CONFIG, configVersion);
+                                                ConfigHelper.uploadFile(client, cd+"sg_roles.yml", searchguardIndex, CType.ROLES, configVersion);
+                                                ConfigHelper.uploadFile(client, cd+"sg_roles_mapping.yml", searchguardIndex, CType.ROLESMAPPING, configVersion);
+                                                ConfigHelper.uploadFile(client, cd+"sg_internal_users.yml", searchguardIndex, CType.INTERNALUSERS, configVersion);
+                                                ConfigHelper.uploadFile(client, cd+"sg_action_groups.yml", searchguardIndex, CType.ACTIONGROUPS, configVersion);
+                                                if(configVersion == 2) {
+                                                    ConfigHelper.uploadFile(client, cd+"sg_tenants.yml", searchguardIndex, CType.TENANTS, configVersion);
+                                                }
                                                 LOGGER.info("Default config applied");
                                             } else {
                                                 LOGGER.error("Can not create {} index", searchguardIndex);

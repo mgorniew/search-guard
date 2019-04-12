@@ -165,7 +165,8 @@ import com.google.common.collect.Lists;
 
 public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements ClusterPlugin, MapperPlugin {
 
-    public static final boolean AUTO_MIGRATE_FROMV6 = Boolean.parseBoolean(System.getenv("TESTARG_migration_auto_migrate_fromv6"));
+    public static final boolean FORCE_CONFIG_V6 = !Boolean.parseBoolean(System.getenv("TESTARG_do_not_force_config_v6"));
+    public static final boolean AUTO_MIGRATE_FROMV6 = !FORCE_CONFIG_V6 && Boolean.parseBoolean(System.getenv("TESTARG_migration_auto_migrate_fromv6"));
     private static final String KEYWORD = ".keyword";
     private final boolean tribeNodeClient;
     private final boolean dlsFlsAvailable;
@@ -277,6 +278,10 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
 
         ReflectionHelper.registerMngtRestApiHandler(settings);
 
+        if(FORCE_CONFIG_V6) {
+            log.warn("This build of Search Guard operates in config V6 version");
+        }
+        
         if(AUTO_MIGRATE_FROMV6) {
             log.warn("In memory auto migrate from V6 (for testing only) enabled");
         }

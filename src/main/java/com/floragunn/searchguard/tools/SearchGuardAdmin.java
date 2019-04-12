@@ -20,12 +20,10 @@ package com.floragunn.searchguard.tools;
 import java.io.ByteArrayInputStream;
 import java.io.Console;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
-import java.io.StringReader;
 import java.io.Writer;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -38,7 +36,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -94,8 +91,6 @@ import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.PluginInfo;
 import org.elasticsearch.transport.Netty4Plugin;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.floragunn.searchguard.DefaultObjectMapper;
 import com.floragunn.searchguard.SearchGuardPlugin;
 import com.floragunn.searchguard.action.configupdate.ConfigUpdateAction;
@@ -125,7 +120,7 @@ import com.google.common.io.Files;
 
 public class SearchGuardAdmin {
 
-    private static final boolean CREATE_AS_LEGACY = Boolean.parseBoolean(System.getenv("TESTARG_migration_sgadmin_create_as_legacy"));
+    private static final boolean CREATE_AS_LEGACY = SearchGuardPlugin.FORCE_CONFIG_V6 || Boolean.parseBoolean(System.getenv("TESTARG_migration_sgadmin_create_as_legacy"));
     private static final boolean ALLOW_MIXED = Boolean.parseBoolean(System.getenv("SG_ADMIN_ALLOW_MIXED_CLUSTER"));
     private static final String SG_TS_PASS = "SG_TS_PASS";
     private static final String SG_KS_PASS = "SG_KS_PASS";
@@ -232,7 +227,9 @@ public class SearchGuardAdmin {
 
         options.addOption(Option.builder("backup").hasArg().argName("folder").desc("Backup configuration to folder").build());
 
-        options.addOption(Option.builder("migrate").hasArg().argName("folder").desc("Migrate and use folder to store migrated files").build());
+        if(!SearchGuardPlugin.FORCE_CONFIG_V6) {
+            options.addOption(Option.builder("migrate").hasArg().argName("folder").desc("Migrate and use folder to store migrated files").build());
+        }
         
         //when adding new options also adjust validate(CommandLine line)
         

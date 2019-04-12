@@ -85,7 +85,7 @@ public class DynamicConfigFactory implements Initializable, ConfigurationChangeL
         
         
         
-        if(config.getImplementingClass() == ConfigV7.class) {
+        if(config.getImplementingClass() == ConfigV7.class && !SearchGuardPlugin.FORCE_CONFIG_V6) {
 
             //rebuild v7 Models
             DynamicConfigModel dcf = new DynamicConfigModelV7(getConfigV7(config), esSettings, configPath, iab);
@@ -120,7 +120,6 @@ public class DynamicConfigFactory implements Initializable, ConfigurationChangeL
                     listener.onChanged(cf, dcf, cfff);
                 }
                 
-                //scheduleMig(configV7, actionGroupsV7, internalUsersV7, roleTenants7.v1(), roleTenants7.v2());
                 initialized.set(true);
                 return;
                 
@@ -285,66 +284,5 @@ public class DynamicConfigFactory implements Initializable, ConfigurationChangeL
         }
         
     }
-
-    
-    /*private void scheduleMig(SgDynamicConfiguration<ConfigV7> configV7, SgDynamicConfiguration<ActionGroupsV7> actionGroupsV7, SgDynamicConfiguration<InternalUserV7> internalUsersV7, SgDynamicConfiguration<RoleV7> rolesV7, SgDynamicConfiguration<TenantV7> tenantsV7) {
-
-        new Thread() {
-
-            @Override
-            public void run() {
-                
-                if(cih.isLocalNodeElectedMaster()) {
-                
-                System.out.println("Start mig");
-                
-                try (StoredContext ctx = threadPool.getThreadContext().stashContext()) {
-
-                    try {
-                        threadPool.getThreadContext().putHeader(ConfigConstants.SG_CONF_REQUEST_HEADER, "true");
-                        
-                        client.admin().indices().delete(new DeleteIndexRequest(searchguardIndex)).actionGet();
-                        
-                        System.out.println("deleted");
-                        
-                        client.admin().indices().create(new CreateIndexRequest(searchguardIndex).waitForActiveShards(1)).actionGet();
-                        
-                        System.out.println("created");
-                        
-                        client.index(new IndexRequest(searchguardIndex).id(configV7.getCType().toLCString())
-                                .source(configV7.getCType().toLCString(), configV7.toBytesReference())
-                                .setRefreshPolicy(RefreshPolicy.IMMEDIATE)).actionGet();
-                        client.index(new IndexRequest(searchguardIndex).id(actionGroupsV7.getCType().toLCString())
-                                .source(actionGroupsV7.getCType().toLCString(), actionGroupsV7.toBytesReference())
-                                .setRefreshPolicy(RefreshPolicy.IMMEDIATE)).actionGet();
-                        client.index(new IndexRequest(searchguardIndex).id(internalUsersV7.getCType().toLCString())
-                                .source(internalUsersV7.getCType().toLCString(), internalUsersV7.toBytesReference())
-                                .setRefreshPolicy(RefreshPolicy.IMMEDIATE)).actionGet();
-                        client.index(new IndexRequest(searchguardIndex).id(rolesV7.getCType().toLCString())
-                                .source(rolesV7.getCType().toLCString(), rolesV7.toBytesReference())
-                                .setRefreshPolicy(RefreshPolicy.IMMEDIATE)).actionGet();
-                        client.index(new IndexRequest(searchguardIndex).id(tenantsV7.getCType().toLCString())
-                                .source(tenantsV7.getCType().toLCString(), tenantsV7.toBytesReference())
-                                .setRefreshPolicy(RefreshPolicy.IMMEDIATE)).actionGet();
-
-                        System.out.println("indexed");
-                        
-                        ConfigUpdateResponse cur = client.execute(ConfigUpdateAction.INSTANCE,
-                                new ConfigUpdateRequest(CType.lcStringValues().toArray(new String[0]))).actionGet();
-                        System.out.println("updated");
-                    } catch (IOException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-
-                }
-            }}
-            
-        }.start();
-        
-        
-
-    }*/
-    
    
 }

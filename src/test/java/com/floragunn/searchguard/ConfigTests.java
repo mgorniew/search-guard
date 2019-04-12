@@ -23,6 +23,7 @@ import org.apache.commons.io.FileUtils;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.collect.Tuple;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -42,6 +43,7 @@ import com.floragunn.searchguard.sgconf.impl.v7.InternalUserV7;
 import com.floragunn.searchguard.sgconf.impl.v7.RoleV7;
 import com.floragunn.searchguard.sgconf.impl.v7.TenantV7;
 
+@Ignore
 public class ConfigTests {
     
     private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory());
