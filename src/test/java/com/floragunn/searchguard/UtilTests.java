@@ -106,15 +106,23 @@ public class UtilTests {
         Map<String, String> env = System.getenv();
         Assert.assertTrue(env.size() > 0);
         
+        boolean checked = false;
+
         for(String k: env.keySet()) {
             String val=System.getenv().get(k);
+            if(val == null || val.isEmpty()) {
+                continue;
+            }
             Assert.assertEquals("abv"+val+"xyz", SgUtils.replaceEnvVars("abv${env."+k+"}xyz",settings));
             Assert.assertEquals("abv${"+k+"}xyz", SgUtils.replaceEnvVars("abv${"+k+"}xyz",settings));
             Assert.assertEquals("abv"+val+"xyz", SgUtils.replaceEnvVars("abv${env."+k+":-k182765ggh}xyz",settings));
             Assert.assertEquals("abv"+val+"xyzabv"+val+"xyz", SgUtils.replaceEnvVars("abv${env."+k+"}xyzabv${env."+k+"}xyz",settings));
             Assert.assertEquals("abv"+val+"xyz", SgUtils.replaceEnvVars("abv${env."+k+":-k182765ggh}xyz",settings));
             Assert.assertTrue(OpenBSDBCrypt.checkPassword(SgUtils.replaceEnvVars("${envbc."+k+"}",settings), val.toCharArray()));
+            checked = true;
         }
+        
+        Assert.assertTrue(checked);
     }
     
     @Test
