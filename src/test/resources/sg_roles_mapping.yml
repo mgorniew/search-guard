@@ -168,3 +168,7 @@ sg_kibana_server:
 sg_env_test:
   users:
     - env.replace@example.comp.com
+
+sg_remote_ccs:
+  users:
+    - crusherw

@@ -38,6 +38,12 @@ public class ConfigConstants {
     public static final String SG_FLS_FIELDS_HEADER = SG_CONFIG_PREFIX+"fls_fields";
     
     public static final String SG_MASKED_FIELD_HEADER = SG_CONFIG_PREFIX+"masked_fields";
+    
+    public static final String SG_DLS_QUERY_CCS = SG_CONFIG_PREFIX+"dls_query_ccs";
+
+    public static final String SG_FLS_FIELDS_CCS = SG_CONFIG_PREFIX+"fls_fields_ccs";
+    
+    public static final String SG_MASKED_FIELD_CCS = SG_CONFIG_PREFIX+"masked_fields_ccs";
 
     public static final String SG_CONF_REQUEST_HEADER = SG_CONFIG_PREFIX+"conf_request";
 
@@ -229,4 +235,5 @@ public class ConfigConstants {
     public static final String SEARCHGUARD_UNSUPPORTED_RESTORE_SGINDEX_ENABLED = "searchguard.unsupported.restore.sgindex.enabled";
     public static final String SEARCHGUARD_UNSUPPORTED_INJECT_USER_ENABLED = "searchguard.unsupported.inject_user.enabled";
     public static final String SEARCHGUARD_UNSUPPORTED_INJECT_ADMIN_USER_ENABLED = "searchguard.unsupported.inject_user.admin.enabled";
+    public static final String SEARCHGUARD_UNSUPPORTED_ALLOW_NOW_IN_DLS = "searchguard.unsupported.allow_now_in_dls";
 }

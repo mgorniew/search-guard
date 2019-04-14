@@ -56,6 +56,9 @@ sg_zdummy_all:
 
 sg_role_klingons1:
   indices:
+    '*':
+      '*':
+        - indices:admin/shards/search_shards
     klingonempire:
       ships:  
         - READ
@@ -378,6 +381,9 @@ sg_twitter:
     'twitter':
       '*':
         - '*'
+    'analytics':
+      '*':
+        - '*'
         
 sg_aliasmngt:
   indices:
@@ -531,3 +537,9 @@ sg_kibana_server:
     '*':
       '*':
         - "indices:admin/aliases*"
+
+sg_remote_ccs:
+  indices:
+    '*':
+      '*':
+        - indices:admin/shards/search_shards
