@@ -119,7 +119,8 @@ public class SearchGuardAdmin {
     
     public static void main(final String[] args) {
         try {
-            main0(args);
+            final int returnCode = execute(args);
+            System.exit(returnCode);
         } catch (NoNodeAvailableException e) {
             System.out.println("ERR: Cannot connect to Elasticsearch. Please refer to elasticsearch logfile for more information");
             System.out.println("Trace:");
@@ -128,9 +129,9 @@ public class SearchGuardAdmin {
             System.exit(-1);
         } 
         catch (IndexNotFoundException e) {
-            System.out.println("ERR: No Search Guard configuartion index found. Please execute sgadmin with different command line parameters");
+            System.out.println("ERR: No Search Guard configuration index found. Please execute sgadmin with different command line parameters");
             System.out.println("When you run it for the first time do not specify -us, -era, -dra or -rl");
-            System.out.println("For more information please look here: http://docs.search-guard.com/v6/troubleshooting-sgadmin");
+            System.out.println("For more information please look here: https://docs.search-guard.com/latest/troubleshooting-sgadmin");
             System.out.println();
             System.exit(-1);
         }
@@ -141,7 +142,7 @@ public class SearchGuardAdmin {
                     && e.getMessage().contains("no permissions")) {
 
                 System.out.println("ERR: You try to connect with a TLS node certificate instead of an admin client certificate");
-                System.out.println("For more information please look here: http://docs.search-guard.com/v6/troubleshooting-sgadmin");
+                System.out.println("For more information please look here: https://docs.search-guard.com/latest/troubleshooting-sgadmin");
                 System.out.println();
                 System.exit(-1);
             }
@@ -154,7 +155,7 @@ public class SearchGuardAdmin {
         }
     }
 
-    private static void main0(final String[] args) throws Exception {
+    public static int execute(final String[] args) throws Exception {
         
         System.out.println("Search Guard Admin v6");
         System.setProperty("sg.nowarn.client","true");
@@ -347,7 +348,7 @@ public class SearchGuardAdmin {
         catch( ParseException exp ) {
             System.out.println("ERR: Parsing failed.  Reason: " + exp.getMessage());
             formatter.printHelp("sgadmin.sh", options, true);
-            return;
+            return 0;
         }
         
         if(port < 9300) {
@@ -365,7 +366,7 @@ public class SearchGuardAdmin {
           } catch (java.net.ConnectException ex) {
             System.out.println();
             System.out.println("ERR: Seems there is no Elasticsearch running on "+hostname+":"+port+" - Will exit");
-            System.exit(-1);
+            return (-1);
           } finally {
               try {
                 socket.close();
@@ -470,15 +471,15 @@ public class SearchGuardAdmin {
                 } else {
                 	System.out.println("Seems you use a node certificate. This is not permitted, you have to use a client certificate and register it as admin_dn in elasticsearch.yml");
                 }
-                System.exit(-1);
+                return (-1);
             } else if(whoAmIRes.isNodeCertificateRequest()) {
                 System.out.println("ERR: Seems you use a node certificate which is also an admin certificate");
                 System.out.println("     That may have worked with older Search Guard versions but it indicates");
                 System.out.println("     a configuration error and is therefore forbidden now.");
-                System.out.println("     Pls refer to http://docs.search-guard.com/latest/tls-in-production");
+                System.out.println("     Pls refer to https://docs.search-guard.com/latest/tls-in-production");
                 
                 if(failFast) {
-                    System.exit(-1);
+                    return (-1);
                 }
 
             }
@@ -489,24 +490,32 @@ public class SearchGuardAdmin {
                 final AcknowledgedResponse response = tc.admin().indices().updateSettings((new UpdateSettingsRequest(index).settings(indexSettings))).actionGet();
                 System.out.println("Reload config on all nodes");
                 System.out.println("Update number of replicas to "+(updateSettings) +" with result: "+response.isAcknowledged());
-                System.exit(response.isAcknowledged()?0:-1);
+                return (response.isAcknowledged()?0:-1);
             }
             
             if(reload) { 
-                tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{"config","roles","rolesmapping","internalusers","actiongroups"})).actionGet();                
+                ConfigUpdateResponse res = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{"config","roles","rolesmapping","internalusers","actiongroups"})).actionGet();                
+                if(res.hasFailures()) {
+                    System.out.println("ERR: Unabe to reload config due to "+res.failures());
+                    return -1;
+                }
                 System.out.println("Reload config on all nodes");
-                System.exit(0);
+                return 0;
             }
             
             if(si) { 
-                LicenseInfoResponse res = tc.execute(LicenseInfoAction.INSTANCE, new LicenseInfoRequest()).actionGet();                
+                LicenseInfoResponse res = tc.execute(LicenseInfoAction.INSTANCE, new LicenseInfoRequest()).actionGet();
+                if(res.hasFailures()) {
+                    System.out.println("ERR: Unabe to load license due to "+res.failures());
+                    return -1;
+                }
                 System.out.println(res.toString());
-                System.exit(0);
+                return (0);
             }
             
-            if(whoami) { 
+            if(whoami) {
                 System.out.println(whoAmIRes.toString());
-                System.exit(0);
+                return (0);
             }
             
             
@@ -518,7 +527,7 @@ public class SearchGuardAdmin {
                 final AcknowledgedResponse response = tc.admin().indices().updateSettings((new UpdateSettingsRequest(index).settings(indexSettings))).actionGet();
                 System.out.println("Reload config on all nodes");
                 System.out.println("Auto-expand replicas "+(replicaAutoExpand?"enabled":"disabled"));
-                System.exit(response.isAcknowledged()?0:-1);
+                return (response.isAcknowledged()?0:-1);
             }   
             
             if(enableShardAllocation) { 
@@ -535,7 +544,7 @@ public class SearchGuardAdmin {
                     System.out.println("ERR: Unable to enable shard allocation");
                 }
                 
-                System.exit(successful?0:-1);
+                return (successful?0:-1);
             }   
             
             if(failFast) {
@@ -577,7 +586,7 @@ public class SearchGuardAdmin {
                         System.out.println("   * If this is not working, try running sgadmin.sh with --diagnose and see diagnose trace log file)"); 
                         System.out.println("   * Add --accept-red-cluster to allow sgadmin to operate on a red cluster.");
 
-                        System.exit(-1);
+                        return (-1);
                     }
                     
                     Thread.sleep(3000);
@@ -593,7 +602,7 @@ public class SearchGuardAdmin {
                 System.out.println("   * Make also sure that your keystore or PEM certificate is a client certificate (not a node certificate) and configured properly in elasticsearch.yml"); 
                 System.out.println("   * If this is not working, try running sgadmin.sh with --diagnose and see diagnose trace log file)"); 
                 System.out.println("   * Add --accept-red-cluster to allow sgadmin to operate on a red cluster.");
-                System.exit(-1);
+                return (-1);
             }
             
             System.out.println("Clustername: "+chr.getClusterName());
@@ -622,7 +631,7 @@ public class SearchGuardAdmin {
                     System.out.print("No index '"+index+"' exists, so no need to delete it");
                 }
                 
-                System.exit(success?0:-1);
+                return (success?0:-1);
             }
                
             if (!indexExists) {
@@ -650,7 +659,7 @@ public class SearchGuardAdmin {
                 } else {
                     System.out.println("failed!");
                     System.out.println("FAIL: Unable to create the "+index+" index. See elasticsearch logs for more details");
-                    System.exit(-1);
+                    return (-1);
                 }
 
             } else {
@@ -676,7 +685,7 @@ public class SearchGuardAdmin {
                         System.out.println("Cannot retrieve "+index+" index state state due to "+e.getMessage()+". This is not an error, will keep on trying ...");
                     } else {
                         System.out.println("ERR: Cannot retrieve "+index+" index state state due to "+e.getMessage()+".");
-                        System.exit(-1);
+                        return (-1);
                     }
                 }
             }
@@ -688,7 +697,7 @@ public class SearchGuardAdmin {
             
             if(legacy) {
                 System.out.println("Legacy index '"+index+"' detected.");
-                System.out.println("See http://docs.search-guard.com/v6/upgrading-5-6 for more details.");
+                System.out.println("See https://docs.search-guard.com/latest/upgrading-5-6 for more details.");
             }
             
             if(retrieve) {
@@ -699,7 +708,7 @@ public class SearchGuardAdmin {
                 success = retrieveFile(tc, cd+"sg_roles_mapping_"+date+".yml", index, "rolesmapping", legacy) && success;
                 success = retrieveFile(tc, cd+"sg_internal_users_"+date+".yml", index, "internalusers", legacy) && success;
                 success = retrieveFile(tc, cd+"sg_action_groups_"+date+".yml", index, "actiongroups", legacy) && success;
-                System.exit(success?0:-1);
+                return (success?0:-1);
             }
             
             boolean isCdAbs = new File(cd).isAbsolute();
@@ -709,12 +718,12 @@ public class SearchGuardAdmin {
             if(file != null) {
                 if(type == null) {
                     System.out.println("ERR: type missing");
-                    System.exit(-1);
+                    return (-1);
                 }
                 
                 if(!Arrays.asList(new String[]{"config", "roles", "rolesmapping", "internalusers","actiongroups" }).contains(type)) {
                     System.out.println("ERR: Invalid type '"+type+"'");
-                    System.exit(-1);
+                    return (-1);
                 }
                 
                 boolean success = uploadFile(tc, file, index, type, legacy, resolveEnvVars);
@@ -723,7 +732,7 @@ public class SearchGuardAdmin {
                 success = checkConfigUpdateResponse(cur, nodesInfo, 1) && success;
                 
                 System.out.println("Done with "+(success?"success":"failures"));
-                System.exit(success?0:-1);
+                return (success?0:-1);
             }
 
             boolean success = uploadFile(tc, cd+"sg_config.yml", index, "config", legacy, resolveEnvVars);
@@ -734,7 +743,7 @@ public class SearchGuardAdmin {
             
             if(failFast && !success) {
                 System.out.println("ERR: cannot upload configuration, see errors above");
-                System.exit(-1);
+                return -1;
             }
             
             ConfigUpdateResponse cur = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{"config","roles","rolesmapping","internalusers","actiongroups"})).actionGet();
@@ -742,7 +751,7 @@ public class SearchGuardAdmin {
             success = checkConfigUpdateResponse(cur, nodesInfo, 5) && success;
             
             System.out.println("Done with "+(success?"success":"failures"));
-            System.exit(success?0:-1);
+            return (success?0:-1);
         }
         // TODO audit changes to searchguard index
     }
@@ -770,7 +779,7 @@ public class SearchGuardAdmin {
             boolean successNode = (node.getUpdatedConfigTypes() != null && node.getUpdatedConfigTypes().length == expectedConfigCount);
             
             if(!successNode) {
-                System.out.println("FAIL: Expected "+expectedConfigCount+" config types for node "+nodeId+" but got only "+Arrays.toString(node.getUpdatedConfigTypes()) + " due to: "+node.getMessage()==null?"unknown reason":node.getMessage());
+                System.out.println("FAIL: Expected "+expectedConfigCount+" config types for node "+nodeId+" but got only "+Arrays.toString(node.getUpdatedConfigTypes()) + " due to: "+(node.getMessage()==null?"unknown reason":node.getMessage()));
             }
             
             success = success && successNode;

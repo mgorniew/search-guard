@@ -28,7 +28,6 @@ import java.util.concurrent.TimeoutException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.get.MultiGetItemResponse;
@@ -133,11 +132,15 @@ class ConfigurationLoader {
                         GetResponse singleGetResponse = singleResponse.getResponse();
                         if(singleGetResponse.isExists() && !singleGetResponse.isSourceEmpty()) {
                             //success
-                            final Tuple<Long, Settings> _settings = toSettings(singleGetResponse);
-                            if(_settings.v2() != null) {
-                                callback.success(singleGetResponse.getId(), _settings);
-                            } else {
-                                log.error("Cannot parse settings for "+singleGetResponse.getId());
+                            try {
+                                final Tuple<Long, Settings> _settings = toSettings(singleGetResponse);
+                                if(_settings.v2() != null) {
+                                    callback.success(singleGetResponse.getId(), _settings);
+                                } else {
+                                    callback.failure(new Exception("Cannot parse settings for "+singleGetResponse.getId()));
+                                }
+                            } catch (Exception e) {
+                                callback.failure(e);
                             }
                         } else {
                             //does not exist or empty source
@@ -158,7 +161,7 @@ class ConfigurationLoader {
         
     }
 
-    private Tuple<Long, Settings> toSettings(GetResponse singleGetResponse) {
+    private Tuple<Long, Settings> toSettings(GetResponse singleGetResponse) throws Exception {
         final BytesReference ref = singleGetResponse.getSourceAsBytesRef();
         final String id = singleGetResponse.getId();
         final long version = singleGetResponse.getVersion();
@@ -187,8 +190,6 @@ class ConfigurationLoader {
             final byte[] content = parser.binaryValue();
 
             return new Tuple<Long, Settings>(version, Settings.builder().loadFromSource(SgUtils.replaceEnvVars(new String(content, StandardCharsets.UTF_8), settings), XContentType.JSON).build());
-        } catch (final IOException e) {
-            throw ExceptionsHelper.convertToElastic(e);
         } finally {
             if(parser != null) {
                 try {
