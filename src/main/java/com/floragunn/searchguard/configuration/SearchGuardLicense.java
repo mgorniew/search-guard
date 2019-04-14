@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -61,7 +62,7 @@ public final class SearchGuardLicense implements Writeable {
     private final ClusterService clusterService;
     
     public static SearchGuardLicense createTrialLicense(String issueDate, ClusterService clusterService, String msg) {
-        final SearchGuardLicense trialLicense =  new SearchGuardLicense("00000000-0000-0000-0000-000000000000", Type.TRIAL, Feature.values(), issueDate, addDays(issueDate, 60), "The world", "floragunn GmbH", issueDate, 6, "*", Integer.MAX_VALUE, clusterService);
+        final SearchGuardLicense trialLicense =  new SearchGuardLicense("00000000-0000-0000-0000-000000000000", Type.TRIAL, Feature.values(), issueDate, addDays(issueDate, 60), "The world", "floragunn GmbH", issueDate, 7, "*", Integer.MAX_VALUE, clusterService);
         if(msg != null) {
             trialLicense.msgs.add(msg);
         }
@@ -255,6 +256,11 @@ public final class SearchGuardLicense implements Writeable {
         }
         
         final String nodes = allowedNodeCount > 1500 ?"unlimited":String.valueOf(allowedNodeCount);
+        
+        //if(majorVersion == null || majorVersion.intValue() < (Version.CURRENT.major & 0xFF)) {
+        //    valid = false;
+        //    msgs.add("The license is only valid for major version "+majorVersion+", but current major version is "+Version.CURRENT.major);
+        //}
 
         if(!valid) {
             prodUsage = "No, because the license is not valid.";
