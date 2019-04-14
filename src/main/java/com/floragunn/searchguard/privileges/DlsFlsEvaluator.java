@@ -18,6 +18,8 @@
 package com.floragunn.searchguard.privileges;
 
 import java.io.Serializable;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -36,7 +38,6 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.threadpool.ThreadPool;
 
-import com.floragunn.searchguard.SearchGuardPlugin;
 import com.floragunn.searchguard.resolver.IndexResolverReplacer.Resolved;
 import com.floragunn.searchguard.sgconf.ConfigModel.SgRoles;
 import com.floragunn.searchguard.support.Base64Helper;
@@ -50,9 +51,16 @@ public class DlsFlsEvaluator {
     protected final Logger log = LogManager.getLogger(this.getClass());
 
     private final ThreadPool threadPool;
+    private final boolean localHashingEnabled;
+    private ThreadLocal<SecureRandom> secureRandomThreadLocal = null;
 
     public DlsFlsEvaluator(Settings settings, ThreadPool threadPool) {
         this.threadPool = threadPool;
+        this.localHashingEnabled = settings.getAsBoolean(ConfigConstants.SEARCHGUARD_COMPLIANCE_LOCAL_HASHING_ENABLED, false);
+        
+        if(this.localHashingEnabled) {
+            this.secureRandomThreadLocal = ThreadLocal.withInitial(() -> new SecureRandom());
+        }
     }
 
     public PrivilegesEvaluatorResponse evaluate(final ActionRequest request, final ClusterService clusterService, final IndexNameExpressionResolver resolver, final Resolved requestedResolved, final User user,
@@ -72,6 +80,14 @@ public class DlsFlsEvaluator {
                     log.debug("added response header for masked fields info: {}", maskedFieldsMap);
                 }
             } else {
+                
+                if (localHashingEnabled &&  secureRandomThreadLocal != null && HeaderHelper.getSafeFromHeader(threadContext, ConfigConstants.SG_LOCAL_HASH_SALT_HEADER) == null) {
+                    final byte[] saltBytes = new byte[16];
+                    secureRandomThreadLocal.get().nextBytes(saltBytes);
+                    final String salt = Base64.getEncoder().encodeToString(saltBytes);
+                    threadContext.putHeader(ConfigConstants.SG_LOCAL_HASH_SALT_HEADER, salt);
+                }
+                
                 if (threadContext.getHeader(ConfigConstants.SG_MASKED_FIELD_HEADER) != null) {
                     if (!maskedFieldsMap.equals(Base64Helper.deserializeObject(threadContext.getHeader(ConfigConstants.SG_MASKED_FIELD_HEADER)))) {
                         throw new ElasticsearchSecurityException(ConfigConstants.SG_MASKED_FIELD_HEADER + " does not match (SG 901D)");

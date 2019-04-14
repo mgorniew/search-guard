@@ -39,6 +39,8 @@ public class ConfigConstants {
     
     public static final String SG_MASKED_FIELD_HEADER = SG_CONFIG_PREFIX+"masked_fields";
     
+    public static final String SG_LOCAL_HASH_SALT_HEADER = SG_CONFIG_PREFIX+"local_hash_salt";
+    
     public static final String SG_DLS_QUERY_CCS = SG_CONFIG_PREFIX+"dls_query_ccs";
 
     public static final String SG_FLS_FIELDS_CCS = SG_CONFIG_PREFIX+"fls_fields_ccs";
@@ -206,7 +208,8 @@ public class ConfigConstants {
     public static final String SEARCHGUARD_COMPLIANCE_SALT = "searchguard.compliance.salt";
     public static final String SEARCHGUARD_COMPLIANCE_SALT_DEFAULT = "e1ukloTsQlOgPquJ";//16 chars
     public static final String SEARCHGUARD_COMPLIANCE_HISTORY_INTERNAL_CONFIG_ENABLED  = "searchguard.compliance.history.internal_config_enabled";
-
+    public static final String SEARCHGUARD_COMPLIANCE_LOCAL_HASHING_ENABLED = "searchguard.compliance.local_hashing_enabled";
+    
     public static final String SEARCHGUARD_SSL_ONLY = "searchguard.ssl_only";
     
     public enum RolesMappingResolution {

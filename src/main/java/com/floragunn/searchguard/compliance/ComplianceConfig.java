@@ -73,6 +73,7 @@ public class ComplianceConfig implements LicenseChangeListener {
     private final AuditLog auditLog;
     private volatile boolean enabled = true;
     private volatile boolean externalConfigLogged = false;
+    private final boolean localHashingEnabled;
 
     public ComplianceConfig(final Environment environment, final IndexResolverReplacer irr, final AuditLog auditLog) {
         super();
@@ -80,6 +81,7 @@ public class ComplianceConfig implements LicenseChangeListener {
         this.environment = environment;
         this.irr = irr;
         this.auditLog = auditLog;
+        this.localHashingEnabled = this.settings.getAsBoolean(ConfigConstants.SEARCHGUARD_COMPLIANCE_LOCAL_HASHING_ENABLED, false);
         final List<String> watchedReadFields = this.settings.getAsList(ConfigConstants.SEARCHGUARD_COMPLIANCE_HISTORY_READ_WATCHED_FIELDS,
                 Collections.emptyList(), false);
 
@@ -314,4 +316,10 @@ public class ComplianceConfig implements LicenseChangeListener {
     public byte[] getSalt16() {
         return salt16.clone();
     }
+
+    public boolean isLocalHashingEnabled() {
+        return localHashingEnabled;
+    }
+    
+    
 }
