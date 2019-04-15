@@ -1066,7 +1066,9 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
     @Override
     public void onNodeStarted() {
         log.info("Node started");
-        cr.initOnNodeStart();
+        if(!sslOnly && !client && !disabled && !tribeNodeClient) {
+            cr.initOnNodeStart();
+        }
         final Set<ModuleInfo> sgModules = ReflectionHelper.getModulesLoaded();
         log.info("{} Search Guard modules loaded so far: {}", sgModules.size(), sgModules);
     }
