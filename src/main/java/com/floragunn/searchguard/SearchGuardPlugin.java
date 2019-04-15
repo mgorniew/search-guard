@@ -121,14 +121,13 @@ import com.floragunn.searchguard.auditlog.AuditLog.Origin;
 import com.floragunn.searchguard.auditlog.AuditLogSslExceptionHandler;
 import com.floragunn.searchguard.auditlog.NullAuditLog;
 import com.floragunn.searchguard.auth.BackendRegistry;
-import com.floragunn.searchguard.auth.internal.InternalAuthenticationBackend;
 import com.floragunn.searchguard.compliance.ComplianceConfig;
 import com.floragunn.searchguard.compliance.ComplianceIndexingOperationListener;
 import com.floragunn.searchguard.configuration.AdminDNs;
 import com.floragunn.searchguard.configuration.ClusterInfoHolder;
 import com.floragunn.searchguard.configuration.CompatConfig;
-import com.floragunn.searchguard.configuration.DlsFlsRequestValve;
 import com.floragunn.searchguard.configuration.ConfigurationRepository;
+import com.floragunn.searchguard.configuration.DlsFlsRequestValve;
 import com.floragunn.searchguard.configuration.SearchGuardIndexSearcherWrapper;
 import com.floragunn.searchguard.filter.SearchGuardFilter;
 import com.floragunn.searchguard.filter.SearchGuardRestFilter;
@@ -144,8 +143,6 @@ import com.floragunn.searchguard.rest.SearchGuardInfoAction;
 import com.floragunn.searchguard.rest.SearchGuardLicenseAction;
 import com.floragunn.searchguard.rest.TenantInfoAction;
 import com.floragunn.searchguard.sgconf.DynamicConfigFactory;
-import com.floragunn.searchguard.sgconf.InternalUsersModel;
-import com.floragunn.searchguard.sgconf.impl.CType;
 import com.floragunn.searchguard.ssl.SearchGuardSSLPlugin;
 import com.floragunn.searchguard.ssl.SslExceptionHandler;
 import com.floragunn.searchguard.ssl.http.netty.ValidatingDispatcher;
@@ -1068,6 +1065,8 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
 
     @Override
     public void onNodeStarted() {
+        log.info("Node started");
+        cr.initOnNodeStart();
         final Set<ModuleInfo> sgModules = ReflectionHelper.getModulesLoaded();
         log.info("{} Search Guard modules loaded so far: {}", sgModules.size(), sgModules);
     }

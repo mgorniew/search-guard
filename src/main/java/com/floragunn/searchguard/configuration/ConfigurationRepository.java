@@ -46,7 +46,6 @@ import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.component.LifecycleListener;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.common.util.concurrent.ThreadContext.StoredContext;
@@ -87,6 +86,8 @@ public class ConfigurationRepository {
     private volatile SearchGuardLicense effectiveLicense;
     private DynamicConfigFactory dynamicConfigFactory;
     private final int configVersion = SearchGuardPlugin.FORCE_CONFIG_V6?1:2;
+    private final Thread bgThread;
+    private final AtomicBoolean installDefaultConfig = new AtomicBoolean();
 
     private ConfigurationRepository(Settings settings, final Path configPath, ThreadPool threadPool, 
             Client client, ClusterService clusterService, AuditLog auditLog, ComplianceConfig complianceConfig) {
@@ -111,172 +112,131 @@ public class ConfigurationRepository {
                         }
                           
                       }*/);
-
-        final AtomicBoolean installDefaultConfig = new AtomicBoolean();
-
-        clusterService.addLifecycleListener(new LifecycleListener() {
+        
+        bgThread = new Thread(new Runnable() {
 
             @Override
-            public void afterStart() {
-
-                final Thread bgThread = new Thread(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        try {
-
-                            if(installDefaultConfig.get()) {
-                                
-                                try {
-                                    String lookupDir = System.getProperty("sg.default_init.dir");
-                                    //for conf v7 its maybe /search-guard-7/sgconfig/v7/
-                                    final String cd = lookupDir != null? (lookupDir+"/") : new Environment(settings, configPath).pluginsFile().toAbsolutePath().toString()+"/search-guard-7/sgconfig/";
-                                    File confFile = new File(cd+"sg_config.yml");
-                                    if(confFile.exists()) {
-                                        final ThreadContext threadContext = threadPool.getThreadContext();
-                                        try(StoredContext ctx = threadContext.stashContext()) {
-                                            threadContext.putHeader(ConfigConstants.SG_CONF_REQUEST_HEADER, "true");
-                                            LOGGER.info("Will create {} index so we can apply default config", searchguardIndex);
-
-                                            Map<String, Object> indexSettings = new HashMap<>();
-                                            indexSettings.put("index.number_of_shards", 1);
-                                            indexSettings.put("index.auto_expand_replicas", "0-all");
-
-                                            boolean ok = client.admin().indices().create(new CreateIndexRequest(searchguardIndex)
-                                            .settings(indexSettings))
-                                            .actionGet().isAcknowledged();
-                                            LOGGER.info("Index {} created?: {}", searchguardIndex, ok);
-                                            if(ok) {
-                                                ConfigHelper.uploadFile(client, cd+"sg_config.yml", searchguardIndex, CType.CONFIG, configVersion);
-                                                ConfigHelper.uploadFile(client, cd+"sg_roles.yml", searchguardIndex, CType.ROLES, configVersion);
-                                                ConfigHelper.uploadFile(client, cd+"sg_roles_mapping.yml", searchguardIndex, CType.ROLESMAPPING, configVersion);
-                                                ConfigHelper.uploadFile(client, cd+"sg_internal_users.yml", searchguardIndex, CType.INTERNALUSERS, configVersion);
-                                                ConfigHelper.uploadFile(client, cd+"sg_action_groups.yml", searchguardIndex, CType.ACTIONGROUPS, configVersion);
-                                                if(configVersion == 2) {
-                                                    ConfigHelper.uploadFile(client, cd+"sg_tenants.yml", searchguardIndex, CType.TENANTS, configVersion);
-                                                }
-                                                LOGGER.info("Default config applied");
-                                            } else {
-                                                LOGGER.error("Can not create {} index", searchguardIndex);
-                                            }
-                                        }
-                                    } else {
-                                        LOGGER.error("{} does not exist", confFile.getAbsolutePath());
-                                    }
-                                } catch (Exception e) {
-                                    LOGGER.debug("Cannot apply default config (this is maybe not an error!) due to {}", e.getMessage());
-                                }
-                            }
-
-                            LOGGER.debug("Node started, try to initialize it. Wait for at least yellow cluster state....");
-                            ClusterHealthResponse response = null;
-                            try {
-                                response = client.admin().cluster().health(new ClusterHealthRequest(searchguardIndex).waitForYellowStatus()).actionGet();
-                            } catch (Exception e1) {
-                                LOGGER.debug("Catched a {} but we just try again ...", e1.toString());
-                            }
-
-                            while(response == null || response.isTimedOut() || response.getStatus() == ClusterHealthStatus.RED) {
-                                LOGGER.debug("index '{}' not healthy yet, we try again ... (Reason: {})", searchguardIndex, response==null?"no response":(response.isTimedOut()?"timeout":"other, maybe red cluster"));
-                                try {
-                                    Thread.sleep(500);
-                                } catch (InterruptedException e1) {
-                                    //ignore
-                                    Thread.currentThread().interrupt();
-                                }
-                                try {
-                                    response = client.admin().cluster().health(new ClusterHealthRequest(searchguardIndex).waitForYellowStatus()).actionGet();
-                                } catch (Exception e1) {
-                                    LOGGER.debug("Catched again a {} but we just try again ...", e1.toString());
-                                }
-                                continue;
-                            }
-
-                            while(true) {
-                                try {
-                                    LOGGER.debug("Try to load config ...");
-                                    reloadConfiguration(Arrays.asList(CType.values()));
-                                    break;
-                                } catch (Exception e) {
-                                    LOGGER.debug("Unable to load configuration due to {}", String.valueOf(ExceptionUtils.getRootCause(e)));
-                                    try {
-                                        Thread.sleep(3000);
-                                    } catch (InterruptedException e1) {
-                                        Thread.currentThread().interrupt();
-                                        LOGGER.debug("Thread was interrupted so we cancel initialization");
-                                        break;
-                                    }
-                                }
-                            }
-
-                            LOGGER.info("Node '{}' initialized", clusterService.localNode().getName());
-
-                        } catch (Exception e) {
-                            LOGGER.error("Unexpected exception while initializing node "+e, e);
-                        }
-                    }
-                });
-
-                LOGGER.info("Check if "+searchguardIndex+" index exists ...");
-
+            public void run() {
                 try {
 
-                    if(clusterService.state().metaData().hasConcreteIndex(searchguardIndex)) {
-                        LOGGER.info("{} index does already exist, so we try to load the config from it", searchguardIndex);
-                        bgThread.start();
-                    } else {
-                        if(settings.getAsBoolean(ConfigConstants.SEARCHGUARD_ALLOW_DEFAULT_INIT_SGINDEX, false)){
-                            LOGGER.info("{} index does not exist yet, so we create a default config", searchguardIndex);
-                            installDefaultConfig.set(true);
-                            bgThread.start();
-                        } else {
-                            LOGGER.info("{} index does not exist yet, so no need to load config on node startup. Use sgadmin to initialize cluster", searchguardIndex);
-                        }
-                    }
-                    /*IndicesExistsRequest ier = new IndicesExistsRequest(searchguardIndex)
-                    .masterNodeTimeout(TimeValue.timeValueMinutes(1));
+                    if(installDefaultConfig.get()) {
+                        
+                        try {
+                            String lookupDir = System.getProperty("sg.default_init.dir");
+                            //for conf v7 its maybe /search-guard-7/sgconfig/v7/
+                            final String cd = lookupDir != null? (lookupDir+"/") : new Environment(settings, configPath).pluginsFile().toAbsolutePath().toString()+"/search-guard-7/sgconfig/";
+                            File confFile = new File(cd+"sg_config.yml");
+                            if(confFile.exists()) {
+                                final ThreadContext threadContext = threadPool.getThreadContext();
+                                try(StoredContext ctx = threadContext.stashContext()) {
+                                    threadContext.putHeader(ConfigConstants.SG_CONF_REQUEST_HEADER, "true");
+                                    LOGGER.info("Will create {} index so we can apply default config", searchguardIndex);
 
-                    final ThreadContext threadContext = threadPool.getThreadContext();
+                                    Map<String, Object> indexSettings = new HashMap<>();
+                                    indexSettings.put("index.number_of_shards", 1);
+                                    indexSettings.put("index.auto_expand_replicas", "0-all");
 
-                    try(StoredContext ctx = threadContext.stashContext()) {
-                        threadContext.putHeader(ConfigConstants.SG_CONF_REQUEST_HEADER, "true");
-
-                        client.admin().indices().exists(ier, new ActionListener<IndicesExistsResponse>() {
-
-                            @Override
-                            public void onResponse(IndicesExistsResponse response) {
-                                if(response != null && response.isExists()) {
-                                   bgThread.start();
-                                } else {
-                                    if(settings.get("tribe.name", null) == null && settings.getByPrefix("tribe").size() > 0) {
-                                        LOGGER.info("{} index does not exist yet, but we are a tribe node. So we will load the config anyhow until we got it ...", searchguardIndex);
-                                        bgThread.start();
-                                    } else {
-
-                                        if(settings.getAsBoolean(ConfigConstants.SEARCHGUARD_ALLOW_DEFAULT_INIT_SGINDEX, false)){
-                                            LOGGER.info("{} index does not exist yet, so we create a default config", searchguardIndex);
-                                            installDefaultConfig.set(true);
-                                            bgThread.start();
-                                        } else {
-                                            LOGGER.info("{} index does not exist yet, so no need to load config on node startup. Use sgadmin to initialize cluster", searchguardIndex);
+                                    boolean ok = client.admin().indices().create(new CreateIndexRequest(searchguardIndex)
+                                    .settings(indexSettings))
+                                    .actionGet().isAcknowledged();
+                                    LOGGER.info("Index {} created?: {}", searchguardIndex, ok);
+                                    if(ok) {
+                                        ConfigHelper.uploadFile(client, cd+"sg_config.yml", searchguardIndex, CType.CONFIG, configVersion);
+                                        ConfigHelper.uploadFile(client, cd+"sg_roles.yml", searchguardIndex, CType.ROLES, configVersion);
+                                        ConfigHelper.uploadFile(client, cd+"sg_roles_mapping.yml", searchguardIndex, CType.ROLESMAPPING, configVersion);
+                                        ConfigHelper.uploadFile(client, cd+"sg_internal_users.yml", searchguardIndex, CType.INTERNALUSERS, configVersion);
+                                        ConfigHelper.uploadFile(client, cd+"sg_action_groups.yml", searchguardIndex, CType.ACTIONGROUPS, configVersion);
+                                        if(configVersion == 2) {
+                                            ConfigHelper.uploadFile(client, cd+"sg_tenants.yml", searchguardIndex, CType.TENANTS, configVersion);
                                         }
+                                        LOGGER.info("Default config applied");
+                                    } else {
+                                        LOGGER.error("Can not create {} index", searchguardIndex);
                                     }
                                 }
+                            } else {
+                                LOGGER.error("{} does not exist", confFile.getAbsolutePath());
                             }
+                        } catch (Exception e) {
+                            LOGGER.debug("Cannot apply default config (this is maybe not an error!) due to {}", e.getMessage());
+                        }
+                    }
 
-                            @Override
-                            public void onFailure(Exception e) {
-                                LOGGER.error("Failure while checking {} index {}",e, searchguardIndex, e);
-                                bgThread.start();
+                    LOGGER.debug("Node started, try to initialize it. Wait for at least yellow cluster state....");
+                    ClusterHealthResponse response = null;
+                    try {
+                        response = client.admin().cluster().health(new ClusterHealthRequest(searchguardIndex).waitForYellowStatus()).actionGet();
+                    } catch (Exception e1) {
+                        LOGGER.debug("Catched a {} but we just try again ...", e1.toString());
+                    }
+
+                    while(response == null || response.isTimedOut() || response.getStatus() == ClusterHealthStatus.RED) {
+                        LOGGER.debug("index '{}' not healthy yet, we try again ... (Reason: {})", searchguardIndex, response==null?"no response":(response.isTimedOut()?"timeout":"other, maybe red cluster"));
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e1) {
+                            //ignore
+                            Thread.currentThread().interrupt();
+                        }
+                        try {
+                            response = client.admin().cluster().health(new ClusterHealthRequest(searchguardIndex).waitForYellowStatus()).actionGet();
+                        } catch (Exception e1) {
+                            LOGGER.debug("Catched again a {} but we just try again ...", e1.toString());
+                        }
+                        continue;
+                    }
+
+                    while(true) {
+                        try {
+                            LOGGER.debug("Try to load config ...");
+                            reloadConfiguration(Arrays.asList(CType.values()));
+                            break;
+                        } catch (Exception e) {
+                            LOGGER.debug("Unable to load configuration due to {}", String.valueOf(ExceptionUtils.getRootCause(e)));
+                            try {
+                                Thread.sleep(3000);
+                            } catch (InterruptedException e1) {
+                                Thread.currentThread().interrupt();
+                                LOGGER.debug("Thread was interrupted so we cancel initialization");
+                                break;
                             }
-                        });
-                    }*/
-                } catch (Throwable e2) {
-                    LOGGER.error("Failure while executing IndicesExistsRequest {}",e2, e2);
-                    bgThread.start();
+                        }
+                    }
+
+                    LOGGER.info("Node '{}' initialized", clusterService.localNode().getName());
+
+                } catch (Exception e) {
+                    LOGGER.error("Unexpected exception while initializing node "+e, e);
                 }
             }
         });
+        
+    }
+
+    public void initOnNodeStart() {
+
+        LOGGER.info("Check if " + searchguardIndex + " index exists ...");
+
+        try {
+
+            if (clusterService.state().metaData().hasConcreteIndex(searchguardIndex)) {
+                LOGGER.info("{} index does already exist, so we try to load the config from it", searchguardIndex);
+                bgThread.start();
+            } else {
+                if (settings.getAsBoolean(ConfigConstants.SEARCHGUARD_ALLOW_DEFAULT_INIT_SGINDEX, false)) {
+                    LOGGER.info("{} index does not exist yet, so we create a default config", searchguardIndex);
+                    installDefaultConfig.set(true);
+                    bgThread.start();
+                } else {
+                    LOGGER.info("{} index does not exist yet, so no need to load config on node startup. Use sgadmin to initialize cluster",
+                            searchguardIndex);
+                }
+            }
+
+        } catch (Throwable e2) {
+            LOGGER.error("Error during node initialization: {}", e2, e2);
+            bgThread.start();
+        }
     }
 
     public static ConfigurationRepository create(Settings settings, final Path configPath, final ThreadPool threadPool, 
