@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -713,15 +714,20 @@ public final class IndexResolverReplacer implements ConfigurationChangeListener 
     }
 
     private List<String> renamedIndices(final RestoreSnapshotRequest request, final List<String> filteredIndices) {
-        final List<String> renamedIndices = new ArrayList<>();
-        for (final String index : filteredIndices) {
-            String renamedIndex = index;
-            if (request.renameReplacement() != null && request.renamePattern() != null) {
-                renamedIndex = index.replaceAll(request.renamePattern(), request.renameReplacement());
+        try {
+            final List<String> renamedIndices = new ArrayList<>();
+            for (final String index : filteredIndices) {
+                String renamedIndex = index;
+                if (request.renameReplacement() != null && request.renamePattern() != null) {
+                    renamedIndex = index.replaceAll(request.renamePattern(), request.renameReplacement());
+                }
+                renamedIndices.add(renamedIndex);
             }
-            renamedIndices.add(renamedIndex);
+            return renamedIndices;
+        } catch (PatternSyntaxException e) {
+            log.error("Unable to parse the regular expression denoted in 'rename_pattern'. Please correct the pattern an try again.");
+            throw e;
         }
-        return renamedIndices;
     }
 
 
