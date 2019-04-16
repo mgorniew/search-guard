@@ -569,29 +569,31 @@ public class PrivilegesEvaluator implements ConfigurationChangeListener {
 
             if (reduced.isEmpty()) {
                 
-                //ITT-1886
-                if(request instanceof SearchRequest) {
-                    ((SearchRequest) request).indices(new String[0]);
-                    ((SearchRequest) request).indicesOptions(IndicesOptions.fromOptions(true, true, false, false));
-                    presponse.missingPrivileges.clear();
-                    presponse.allowed = true;
-                    return presponse;
-                }
-
-                if(request instanceof ClusterSearchShardsRequest) {
-                    ((ClusterSearchShardsRequest) request).indices(new String[0]);
-                    ((ClusterSearchShardsRequest) request).indicesOptions(IndicesOptions.fromOptions(true, true, false, false));
-                    presponse.missingPrivileges.clear();
-                    presponse.allowed = true;
-                    return presponse;
-                }
-                
-                if(request instanceof GetFieldMappingsRequest) {
-                    ((GetFieldMappingsRequest) request).indices(new String[0]);
-                    ((GetFieldMappingsRequest) request).indicesOptions(IndicesOptions.fromOptions(true, true, false, false));
-                    presponse.missingPrivileges.clear();
-                    presponse.allowed = true;
-                    return presponse;
+                if(getConfigSettings().getAsBoolean("searchguard.dynamic.do_not_fail_on_forbidden_empty", false)) {
+                    //ITT-1886
+                    if(request instanceof SearchRequest) {
+                        ((SearchRequest) request).indices(new String[0]);
+                        ((SearchRequest) request).indicesOptions(IndicesOptions.fromOptions(true, true, false, false));
+                        presponse.missingPrivileges.clear();
+                        presponse.allowed = true;
+                        return presponse;
+                    }
+    
+                    if(request instanceof ClusterSearchShardsRequest) {
+                        ((ClusterSearchShardsRequest) request).indices(new String[0]);
+                        ((ClusterSearchShardsRequest) request).indicesOptions(IndicesOptions.fromOptions(true, true, false, false));
+                        presponse.missingPrivileges.clear();
+                        presponse.allowed = true;
+                        return presponse;
+                    }
+                    
+                    if(request instanceof GetFieldMappingsRequest) {
+                        ((GetFieldMappingsRequest) request).indices(new String[0]);
+                        ((GetFieldMappingsRequest) request).indicesOptions(IndicesOptions.fromOptions(true, true, false, false));
+                        presponse.missingPrivileges.clear();
+                        presponse.allowed = true;
+                        return presponse;
+                    }
                 }
 
                 presponse.allowed = false;
