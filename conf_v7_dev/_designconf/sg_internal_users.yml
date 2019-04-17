@@ -4,7 +4,7 @@ _sg_meta:
     config_version: 2
 
 admin:
-  readonly: true
+  reserved: true
   hidden: true
   description: "..."
   hash: $2a$12$VcCDgh2NDk07JGN0rjGbM.Ad41qVR/YFJcgHp0UGns5JDymv..TOG
@@ -15,12 +15,12 @@ admin:
     attribute2: true
     attribute3: 123456
 kibanaserver:
-  readonly: true
+  reserved: true
   hidden: false
   description: "..."
   hash: $2a$12$4AcgAt3xwOWadA5s5blL6ev39OXDNhmOesEoo33eZtrq2N0YrU3H.
 .dot.user:
-  readonly: true
+  reserved: true
   hidden: false
   description: "..."
   hash: $2a$12$4AcgAt3xwOWadA5s5blL6ev39OXDNhmOesEoo33eZtrq2N0YrU3H.

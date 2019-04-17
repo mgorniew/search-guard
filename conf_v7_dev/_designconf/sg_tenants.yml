@@ -4,14 +4,14 @@ _sg_meta:
     config_version: 2
 
 admin_tenant: 
-  readonly: true
+  reserved: true
   hidden: false
   description: "The admin tenant"
   applications: 
     - kibana:saved_objects/visualizations/read
     - kibana:saved_objects/dashboards/delete
 .other.tenant: 
-  readonly: false
+  reserved: false
   hidden: false
   description: "An othertenant"
   applications: 

@@ -4,7 +4,7 @@ _sg_meta:
     config_version: 2
 
 UNLIMITED:
-  readonly: true
+  reserved: true
   hidden: false # does make hidden sense for action groups?
   description: "..."
   type: "all"
@@ -15,7 +15,7 @@ UNLIMITED:
     - "*"
 
 KIBANA_SAVED_OBJECTS_ALL:
-  readonly: true
+  reserved: true
   description: "..."
   type: "kibana"
   permissions:
@@ -24,7 +24,7 @@ KIBANA_SAVED_OBJECTS_ALL:
 ###### INDEX LEVEL ######
 
 INDICES_ALL:
-  readonly: true
+  reserved: true
   description: "..."
   type: "index"
   permissions:
@@ -32,83 +32,83 @@ INDICES_ALL:
 
 # for backward compatibility
 ALL:
-  readonly: true
+  reserved: true
   description: "..."
   permissions:
     - INDICES_ALL
 
 MANAGE:
-  readonly: true
+  reserved: true
   description: "..."
   permissions:
     - "indices:monitor/*"
     - "indices:admin/*"
 
 CREATE_INDEX:
-  readonly: true
+  reserved: true
   permissions:
     - "indices:admin/create"
     - "indices:admin/mapping/put"
 
 MANAGE_ALIASES:
-  readonly: true
+  reserved: true
   permissions:
     - "indices:admin/aliases*"
 
 # for backward compatibility
 MONITOR:
-  readonly: true
+  reserved: true
   permissions:
     - INDICES_MONITOR
 
 INDICES_MONITOR:
-  readonly: true
+  reserved: true
   permissions:
     - "indices:monitor/*"
 
 DATA_ACCESS:
-  readonly: true
+  reserved: true
   permissions:
     - "indices:data/*"
     - CRUD
 
 WRITE:
-  readonly: true
+  reserved: true
   permissions:
     - "indices:data/write*"
     - "indices:admin/mapping/put"
 
 READ:
-  readonly: true
+  reserved: true
   permissions:
     - "indices:data/read*"
     - "indices:admin/mappings/fields/get*"
 
 DELETE:
-  readonly: true
+  reserved: true
   permissions:
     - "indices:data/write/delete*"
 
 CRUD:
-  readonly: true
+  reserved: true
   permissions:
     - READ
     - WRITE
 
 SEARCH:
-  readonly: true
+  reserved: true
   permissions:
     - "indices:data/read/search*"
     - "indices:data/read/msearch*"
     - SUGGEST
 
 SUGGEST:
-  readonly: true
+  reserved: true
   permissions:
     - "indices:data/read/suggest*"
 
 INDEX:
-  readonly: true
+  reserved: true
   permissions:
     - "indices:data/write/index*"
     - "indices:data/write/update*"
@@ -116,7 +116,7 @@ INDEX:
     - "indices:data/write/bulk*"
 
 GET:
-  readonly: true
+  reserved: true
   permissions:
     - "indices:data/read/get*"
     - "indices:data/read/mget*"
@@ -124,17 +124,17 @@ GET:
 ###### CLUSTER LEVEL ######
 
 CLUSTER_ALL:
-  readonly: true
+  reserved: true
   permissions:
     - "cluster:*"
 
 CLUSTER_MONITOR:
-  readonly: true
+  reserved: true
   permissions:
     - "cluster:monitor/*"
 
 CLUSTER_COMPOSITE_OPS_RO:
-  readonly: true
+  reserved: true
   permissions:
     - "indices:data/read/mget"
     - "indices:data/read/msearch"
@@ -144,7 +144,7 @@ CLUSTER_COMPOSITE_OPS_RO:
     - "indices:data/read/scroll"
 
 CLUSTER_COMPOSITE_OPS:
-  readonly: true
+  reserved: true
   permissions:
     - "indices:data/write/bulk"
     - "indices:admin/aliases*"
@@ -152,7 +152,7 @@ CLUSTER_COMPOSITE_OPS:
     - CLUSTER_COMPOSITE_OPS_RO
   
 MANAGE_SNAPSHOTS:
-  readonly: true
+  reserved: true
   permissions:
     - "cluster:admin/snapshot/*"
     - "cluster:admin/repository/*"

@@ -39,19 +39,10 @@ sg_all_access:
     t1: RW
     t2: ro
     t3: IMPLICIT
+    t4:
   applications: #(perms for global tenant only/or no MT)
     - kibana:saved_objects/canvas/read
     - kibana:saved_objects/canvas/delete
-  mapto:
-    users:
-      - admin
-    hosts:
-      - admin.company.com
-    backend_roles:
-      - 'cn=ldaprole,ou=groups,dc=example,dc=com'
-    and_backend_roles:
-      - a
-      - b
 
 
 sg_kibana_user:
@@ -85,16 +76,6 @@ sg_kibana_user:
         - indices:data/read/xpack/rollup*
         - indices:admin/mappings/get*
         - indices:admin/get
-  mapto:
-      users:
-        - admin
-      hosts:
-        - admin.company.com
-      backend_roles:
-        - 'cn=ldaprole,ou=groups,dc=example,dc=com'
-      and_backend_roles:
-        - a
-        - b
 .with.dots:
   readonly: true
   description: "..."
