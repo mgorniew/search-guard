@@ -751,9 +751,9 @@ public class BackendRegistry implements ConfigurationChangeListener {
 
         try {
             if (impersonatedUser != null && !adminDns.isTransportImpersonationAllowed(new LdapName(origPKIuser.getName()), impersonatedUser)) {
-                throw new ElasticsearchSecurityException("'"+origPKIuser.getName() + "' is not allowed to impersonate as '" + impersonatedUser+"'");
+                throw new ElasticsearchSecurityException("'"+origPKIuser.getName() + "' is not allowed to impersonate as transport user '" + impersonatedUser+"'");
             } else if (impersonatedUser != null) {
-                //loop over all http/rest auth domains
+                //loop over all transport auth domains
                 for (final AuthDomain authDomain: transportAuthDomains) {
                     final AuthenticationBackend authenticationBackend = authDomain.getBackend();
                     final User impersonatedUserObject = checkExistsAndAuthz(transportImpersonationCache, new User(impersonatedUser), authenticationBackend, transportAuthorizers);
@@ -764,13 +764,13 @@ public class BackendRegistry implements ConfigurationChangeListener {
                     }
 
                     if(log.isDebugEnabled()) {
-                        log.debug("Impersonate from '{}' to '{}'",origPKIuser.getName(), impersonatedUser);
+                        log.debug("Impersonate transport user from '{}' to '{}'",origPKIuser.getName(), impersonatedUser);
                     }
                     return impersonatedUserObject;
                 }
 
-                log.debug("Unable to impersonate rest user from '{}' to '{}' because the impersonated user does not exists", origPKIuser.getName(), impersonatedUser);
-                throw new ElasticsearchSecurityException("No such user:" + impersonatedUser, RestStatus.FORBIDDEN);
+                log.debug("Unable to impersonate transport user from '{}' to '{}' because the impersonated user does not exists", origPKIuser.getName(), impersonatedUser);
+                throw new ElasticsearchSecurityException("No such transport user:" + impersonatedUser, RestStatus.FORBIDDEN);
             }
         } catch (final InvalidNameException e1) {
             throw new ElasticsearchSecurityException("PKI does not have a valid name ('" + origPKIuser.getName() + "'), should never happen",
