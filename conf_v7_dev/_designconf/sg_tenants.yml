@@ -3,16 +3,15 @@ _sg_meta:
     type: "tenants"
     config_version: 2
 
-admin_tenant: 
+my_tenant: 
   reserved: true
   hidden: false
   description: "The admin tenant"
-  applications: 
-    - kibana:saved_objects/visualizations/read
-    - kibana:saved_objects/dashboards/delete
+
 .other.tenant: 
   reserved: false
   hidden: false
   description: "An othertenant"
-  applications: 
-    - kibana:saved_objects/visualizations/*
+  
+#_GLOBAL_: wäre static
+#_PRIVATE_: ?? wäre static

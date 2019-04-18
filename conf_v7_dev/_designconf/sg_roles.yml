@@ -3,13 +3,21 @@ _sg_meta:
     type: "roles"
     config_version: 2
 
+#allow empty roles, also in rest api
+#grants no perms
+sg_empty:
+  cluster_permissions: []
+  index_permissions: []
+  tenant_permissions: []
+
+
 sg_all_access:
-  readonly: true
+  reserved: true
   hidden: true
   description: "..."
   cluster_permissions:
     - UNLIMITED
-  indices_permissions:
+  index_permissions:
     - index_patterns: 
         - '*'
         - '/abc/'
@@ -35,23 +43,31 @@ sg_all_access:
       masked_fields:
         - field88
         - field99 
-  tenants:
-    t1: RW
-    t2: ro
-    t3: IMPLICIT
-    t4:
-  applications: #(perms for global tenant only/or no MT)
-    - kibana:saved_objects/canvas/read
-    - kibana:saved_objects/canvas/delete
+  tenant_permissions:
+    - tenant_patterns:
+        - my*_tenant
+        - /regular/
+        - _GLOBAL_?
+        - _PRIVATE_?
+      allowed_actions: 
+        - kibana:saved_objects/visualizations/read
+        - kibana:saved_objects/dashboards/delete
+    - tenant_patterns:
+        - other_tenant
+        - '*xxx?'
+      allowed_actions: 
+        - kibana:saved_objects/visualizations/write
+        - kibana:saved_objects/dashboards/*
+
 
 
 sg_kibana_user:
-  readonly: true
+  reserved: true
   description: "..."
   cluster_permissions:
     - INDICES_MONITOR
     - CLUSTER_COMPOSITE_OPS
-  indices_permissions:
+  index_permissions:
     - index_patterns: #or
         - '.kibana'
         - '.kibana-6'
@@ -77,9 +93,9 @@ sg_kibana_user:
         - indices:admin/mappings/get*
         - indices:admin/get
 .with.dots:
-  readonly: true
+  reserved: true
   description: "..."
-  indices_permissions:
+  index_permissions:
     - index_patterns: 
         - '${user.name}'
       allowed_actions:

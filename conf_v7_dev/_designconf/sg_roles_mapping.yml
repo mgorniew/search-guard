@@ -18,7 +18,7 @@ sg_all_access:
     - b
 
 sg_logstash:
-  backendroles:
+  backend_roles:
     - logstash
     
 sg_kibana_server:
