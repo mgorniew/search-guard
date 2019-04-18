@@ -770,7 +770,7 @@ public class BackendRegistry implements ConfigurationChangeListener {
                 }
 
                 log.debug("Unable to impersonate transport user from '{}' to '{}' because the impersonated user does not exists", origPKIuser.getName(), impersonatedUser);
-                throw new ElasticsearchSecurityException("No such transport user:" + impersonatedUser, RestStatus.FORBIDDEN);
+                throw new ElasticsearchSecurityException("No such transport user: " + impersonatedUser, RestStatus.FORBIDDEN);
             }
         } catch (final InvalidNameException e1) {
             throw new ElasticsearchSecurityException("PKI does not have a valid name ('" + origPKIuser.getName() + "'), should never happen",
