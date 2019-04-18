@@ -163,16 +163,15 @@ public class BackendRegistry implements ConfigurationChangeListener {
                         log.debug("Clear user cache for {} due to {}", notification.getKey(), notification.getCause());
                     }
                 }).build();
-        
-        transportImpersonationCache = CacheBuilder.newBuilder()
-                .expireAfterWrite(ttlInMin, TimeUnit.MINUTES)
+
+        transportImpersonationCache = CacheBuilder.newBuilder().expireAfterWrite(ttlInMin, TimeUnit.MINUTES)
                 .removalListener(new RemovalListener<String, User>() {
                     @Override
                     public void onRemoval(RemovalNotification<String, User> notification) {
                         log.debug("Clear user cache for {} due to {}", notification.getKey(), notification.getCause());
                     }
                 }).build();
-        
+
     }
 
     public BackendRegistry(final Settings settings, final Path configPath, final AdminDNs adminDns, final XFFResolver xffResolver,
