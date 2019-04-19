@@ -17,7 +17,11 @@
 
 package com.floragunn.searchguard.auth;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,9 +53,12 @@ import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportRequest;
 
 import com.floragunn.searchguard.auditlog.AuditLog;
+import com.floragunn.searchguard.auth.blocking.ClientBlockRegistry;
 import com.floragunn.searchguard.auth.internal.InternalAuthenticationBackend;
 import com.floragunn.searchguard.auth.internal.NoOpAuthenticationBackend;
 import com.floragunn.searchguard.auth.internal.NoOpAuthorizationBackend;
+import com.floragunn.searchguard.auth.limiting.AddressBasedRateLimiter;
+import com.floragunn.searchguard.auth.limiting.UserNameBasedRateLimiter;
 import com.floragunn.searchguard.configuration.AdminDNs;
 import com.floragunn.searchguard.configuration.ConfigurationChangeListener;
 import com.floragunn.searchguard.http.HTTPBasicAuthenticator;
@@ -69,6 +76,9 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 
 public class BackendRegistry implements ConfigurationChangeListener {
 
@@ -79,6 +89,10 @@ public class BackendRegistry implements ConfigurationChangeListener {
     private SortedSet<AuthDomain> transportAuthDomains;
     private Set<AuthorizationBackend> transportAuthorizers;
     private List<Destroyable> destroyableComponents;
+    private List<AuthFailureListener> ipAuthFailureListeners;
+    private Multimap<String, AuthFailureListener> authBackendFailureListeners;
+    private List<ClientBlockRegistry<InetAddress>> ipClientBlockRegistries;
+    private Multimap<String, ClientBlockRegistry<String>> authBackendClientBlockRegistries;
     private volatile boolean initialized;
     private final AdminDNs adminDns;
     private final XFFResolver xffResolver;
@@ -191,6 +205,9 @@ public class BackendRegistry implements ConfigurationChangeListener {
         authImplMap.put("openid_h", "com.floragunn.dlic.auth.http.jwt.keybyoidc.HTTPJwtKeyByOpenIdConnectAuthenticator");
         authImplMap.put("saml_h", "com.floragunn.dlic.auth.http.saml.HTTPSamlAuthenticator");
 
+        authImplMap.put("ip_authFailureListener", AddressBasedRateLimiter.class.getName());
+        authImplMap.put("username_authFailureListener", UserNameBasedRateLimiter.class.getName());
+
         this.ttlInMin = settings.getAsInt(ConfigConstants.SEARCHGUARD_CACHE_TTL_MINUTES, 60);
 
         createCaches();
@@ -218,6 +235,10 @@ public class BackendRegistry implements ConfigurationChangeListener {
         final SortedSet<AuthDomain> transportAuthDomains0 = new TreeSet<>();
         final Set<AuthorizationBackend> transportAuthorizers0 = new HashSet<>();
         final List<Destroyable> destroyableComponents0 = new LinkedList<>();
+        final List<AuthFailureListener> ipAuthFailureListeners0 = new ArrayList<>();
+        final Multimap<String, AuthFailureListener> authBackendFailureListeners0 = ArrayListMultimap.create();
+        final List<ClientBlockRegistry<InetAddress>> ipClientBlockRegistries0 = new ArrayList<>();
+        final Multimap<String, ClientBlockRegistry<String>> authBackendClientBlockRegistries0 = ArrayListMultimap.create();
 
         final Map<String, Settings> authzDyn = settings.getGroups("searchguard.dynamic.authz");
 
@@ -311,6 +332,9 @@ public class BackendRegistry implements ConfigurationChangeListener {
             }
         }
 
+        createAuthFailureListeners(settings.getGroups("searchguard.dynamic.auth_failure_listeners"), ipAuthFailureListeners0,
+                authBackendFailureListeners0, ipClientBlockRegistries0, authBackendClientBlockRegistries0, destroyableComponents0);
+
         invalidateCache();
 
         transportUsernameAttribute = settings.get("searchguard.dynamic.transport_userrname_attribute", null);
@@ -324,6 +348,10 @@ public class BackendRegistry implements ConfigurationChangeListener {
         restAuthorizers = Collections.unmodifiableSet(restAuthorizers0);
         transportAuthorizers = Collections.unmodifiableSet(transportAuthorizers0);
         destroyableComponents = Collections.unmodifiableList(destroyableComponents0);
+        ipAuthFailureListeners = Collections.unmodifiableList(ipAuthFailureListeners0);
+        ipClientBlockRegistries = Collections.unmodifiableList(ipClientBlockRegistries0);
+        authBackendClientBlockRegistries = Multimaps.unmodifiableMultimap(authBackendClientBlockRegistries0);
+        authBackendFailureListeners = Multimaps.unmodifiableMultimap(authBackendFailureListeners0);
 
         //SG6 no default authc
         initialized = !restAuthDomains.isEmpty() || anonymousAuthEnabled;
@@ -336,10 +364,69 @@ public class BackendRegistry implements ConfigurationChangeListener {
 
     }
 
+    private void createAuthFailureListeners(Map<String, Settings> authFailureListenerSettings, List<AuthFailureListener> ipAuthFailureListeners,
+            Multimap<String, AuthFailureListener> authBackendFailureListeners, List<ClientBlockRegistry<InetAddress>> ipClientBlockRegistries,
+            Multimap<String, ClientBlockRegistry<String>> authBackendUserClientBlockRegistries, List<Destroyable> destroyableComponents0) {
+
+        for (Map.Entry<String, Settings> entry : authFailureListenerSettings.entrySet()) {
+            Settings entrySettings = entry.getValue();
+            String type = entrySettings.get("type");
+            String authenticationBackend = entrySettings.get("authentication_backend");
+
+            AuthFailureListener authFailureListener = newInstance(type, "authFailureListener", entrySettings, configPath);
+
+            if (Strings.isNullOrEmpty(authenticationBackend)) {
+                ipAuthFailureListeners.add(authFailureListener);
+
+                if (authFailureListener instanceof ClientBlockRegistry) {
+                    if (InetAddress.class.isAssignableFrom(((ClientBlockRegistry<?>) authFailureListener).getClientIdType())) {
+                        @SuppressWarnings("unchecked")
+                        ClientBlockRegistry<InetAddress> clientBlockRegistry = (ClientBlockRegistry<InetAddress>) authFailureListener;
+
+                        ipClientBlockRegistries.add(clientBlockRegistry);
+                    } else {
+                        log.error("Illegal ClientIdType for AuthFailureListener" + entry.getKey() + ": "
+                                + ((ClientBlockRegistry<?>) authFailureListener).getClientIdType() + "; must be InetAddress.");
+                    }
+                }
+
+            } else {
+
+                authenticationBackend = translateShortcutToClassName(authenticationBackend, "c");
+
+                authBackendFailureListeners.put(authenticationBackend, authFailureListener);
+
+                if (authFailureListener instanceof ClientBlockRegistry) {
+                    if (String.class.isAssignableFrom(((ClientBlockRegistry<?>) authFailureListener).getClientIdType())) {
+                        @SuppressWarnings("unchecked")
+                        ClientBlockRegistry<String> clientBlockRegistry = (ClientBlockRegistry<String>) authFailureListener;
+
+                        authBackendUserClientBlockRegistries.put(authenticationBackend, clientBlockRegistry);
+                    } else {
+                        log.error("Illegal ClientIdType for AuthFailureListener" + entry.getKey() + ": "
+                                + ((ClientBlockRegistry<?>) authFailureListener).getClientIdType() + "; must be InetAddress.");
+                    }
+                }
+            }
+
+            if (authFailureListener instanceof Destroyable) {
+                destroyableComponents0.add((Destroyable) authFailureListener);
+            }
+        }
+
+    }
+
     public User authenticate(final TransportRequest request, final String sslPrincipal, final Task task, final String action) {
 
         if (log.isDebugEnabled() && request.remoteAddress() != null) {
             log.debug("Transport authentication request from {}", request.remoteAddress());
+        }
+
+        if (request.remoteAddress() != null && isBlocked(request.remoteAddress().address().getAddress())) {
+            if (log.isDebugEnabled()) {
+                log.debug("Rejecting transport request because of blocked address: " + request.remoteAddress());
+            }
+            return null;
         }
 
         User origPKIUser = new User(sslPrincipal);
@@ -386,6 +473,11 @@ public class BackendRegistry implements ConfigurationChangeListener {
             }
 
             if (authenticatedUser == null) {
+                for (AuthFailureListener authFailureListener : authBackendFailureListeners.get(authDomain.getBackend().getClass().getName())) {
+                    authFailureListener.onAuthFailure(request.remoteAddress() != null ? request.remoteAddress().address().getAddress() : null, creds,
+                            request);
+                }
+
                 if (log.isDebugEnabled()) {
                     log.debug("Cannot authenticate user {} (or add roles) with authdomain {}/{}, try next",
                             creds == null ? (impersonatedTransportUser == null ? origPKIUser.getName() : impersonatedTransportUser.getName())
@@ -423,6 +515,8 @@ public class BackendRegistry implements ConfigurationChangeListener {
                 creds == null ? impersonatedTransportUser == null ? origPKIUser.getName() : impersonatedTransportUser.getName() : creds.getUsername(),
                 request.remoteAddress());
 
+        notifyIpAuthFailureListeners(request.remoteAddress() != null ? request.remoteAddress().address().getAddress() : null, creds, request);
+
         return null;
     }
 
@@ -434,6 +528,16 @@ public class BackendRegistry implements ConfigurationChangeListener {
      * @throws ElasticsearchSecurityException
      */
     public boolean authenticate(final RestRequest request, final RestChannel channel, final ThreadContext threadContext) {
+
+        if (request.getRemoteAddress() instanceof InetSocketAddress && isBlocked(((InetSocketAddress) request.getRemoteAddress()).getAddress())) {
+            if (log.isDebugEnabled()) {
+                log.debug("Rejecting REST request because of blocked address: " + request.getRemoteAddress());
+            }
+            
+            channel.sendResponse(new BytesRestResponse(RestStatus.UNAUTHORIZED, "Authentication finally failed"));
+
+            return false;
+        }
 
         final String sslPrincipal = (String) threadPool.getThreadContext().getTransient(ConfigConstants.SG_SSL_PRINCIPAL);
 
@@ -493,6 +597,15 @@ public class BackendRegistry implements ConfigurationChangeListener {
                 }
                 continue;
             }
+
+            if (ac != null && isBlocked(authDomain.getBackend().getClass().getName(), ac.getUsername())) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Rejecting REST request because of blocked user: " + ac.getUsername() + "; authDomain: " + authDomain);
+                }
+
+                continue;
+            }
+
             authCredenetials = ac;
 
             if (ac == null) {
@@ -532,6 +645,13 @@ public class BackendRegistry implements ConfigurationChangeListener {
                 if (log.isDebugEnabled()) {
                     log.debug("Cannot authenticate user {} (or add roles) with authdomain {}/{}, try next", ac.getUsername(),
                             authDomain.getBackend().getType(), authDomain.getOrder());
+                }
+
+                for (AuthFailureListener authFailureListener : this.authBackendFailureListeners.get(authDomain.getBackend().getClass().getName())) {
+                    authFailureListener.onAuthFailure(
+                            (request.getRemoteAddress() instanceof InetSocketAddress) ? ((InetSocketAddress) request.getRemoteAddress()).getAddress()
+                                    : null,
+                            ac, request);
                 }
                 continue;
             }
@@ -589,17 +709,35 @@ public class BackendRegistry implements ConfigurationChangeListener {
                     log.warn("Authentication finally failed for {} from {}", authCredenetials == null ? null : authCredenetials.getUsername(),
                             remoteAddress);
                     auditLog.logFailedLogin(authCredenetials == null ? null : authCredenetials.getUsername(), false, null, request);
+
+                    notifyIpAuthFailureListeners(request, authCredenetials);
+
                     return false;
                 }
             }
 
             log.warn("Authentication finally failed for {} from {}", authCredenetials == null ? null : authCredenetials.getUsername(), remoteAddress);
             auditLog.logFailedLogin(authCredenetials == null ? null : authCredenetials.getUsername(), false, null, request);
+
+            notifyIpAuthFailureListeners(request, authCredenetials);
+
             channel.sendResponse(new BytesRestResponse(RestStatus.UNAUTHORIZED, "Authentication finally failed"));
             return false;
         }
 
         return authenticated;
+    }
+
+    private void notifyIpAuthFailureListeners(RestRequest request, AuthCredentials authCredentials) {
+        notifyIpAuthFailureListeners(
+                (request.getRemoteAddress() instanceof InetSocketAddress) ? ((InetSocketAddress) request.getRemoteAddress()).getAddress() : null,
+                authCredentials, request);
+    }
+
+    private void notifyIpAuthFailureListeners(InetAddress remoteAddress, AuthCredentials authCredentials, Object request) {
+        for (AuthFailureListener authFailureListener : this.ipAuthFailureListeners) {
+            authFailureListener.onAuthFailure(remoteAddress, authCredentials, request);
+        }
     }
 
     /**
@@ -846,6 +984,15 @@ public class BackendRegistry implements ConfigurationChangeListener {
         return ReflectionHelper.instantiateAAA(clazz, settings, configPath, isEnterprise);
     }
 
+    private String translateShortcutToClassName(final String clazzOrShortcut, final String type) {
+
+        if (authImplMap.containsKey(clazzOrShortcut + "_" + type)) {
+            return authImplMap.get(clazzOrShortcut + "_" + type);
+        } else {
+            return clazzOrShortcut;
+        }
+    }
+
     private void destroyDestroyables(List<Destroyable> destroyableComponents) {
         for (Destroyable destroyable : destroyableComponents) {
             try {
@@ -873,4 +1020,40 @@ public class BackendRegistry implements ConfigurationChangeListener {
 
         return pkiUser;
     }
+
+    private boolean isBlocked(InetAddress address) {
+        if (this.ipClientBlockRegistries == null || this.ipClientBlockRegistries.isEmpty()) {
+            return false;
+        }
+
+        for (ClientBlockRegistry<InetAddress> clientBlockRegistry : ipClientBlockRegistries) {
+            if (clientBlockRegistry.isBlocked(address)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean isBlocked(String authBackend, String userName) {
+
+        if (this.authBackendClientBlockRegistries == null) {
+            return false;
+        }
+
+        Collection<ClientBlockRegistry<String>> clientBlockRegistries = this.authBackendClientBlockRegistries.get(authBackend);
+
+        if (clientBlockRegistries.isEmpty()) {
+            return false;
+        }
+
+        for (ClientBlockRegistry<String> clientBlockRegistry : clientBlockRegistries) {
+            if (clientBlockRegistry.isBlocked(userName)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 }
