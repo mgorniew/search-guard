@@ -4,44 +4,41 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
 import com.floragunn.searchguard.sgconf.Hideable;
-import com.floragunn.searchguard.sgconf.impl.v6.RoleMappingsV6;
 import com.floragunn.searchguard.sgconf.impl.v6.RoleV6;
-import com.google.common.collect.Lists;
 
 public class RoleV7 implements Hideable {
 
-    private boolean readonly;
+    private boolean reserved;
     private boolean hidden;
     private String description;
     private List<String> cluster_permissions = Collections.emptyList();
-    private List<Index> indices_permissions = Collections.emptyList();
-    private Map<String, String> tenants = Collections.emptyMap();
-    private List<String> applications = Collections.emptyList();
-    private MapTo mapto = new MapTo();
+    private List<Index> index_permissions = Collections.emptyList();
+    private List<Tenant> tenant_permissions = Collections.emptyList();
     
     public RoleV7() {
         
     }
     
-    public RoleV7(RoleV6 roleV6, RoleMappingsV6 roleMappingsV6) {
-        this.readonly = roleV6.isReadonly();
+    public RoleV7(RoleV6 roleV6) {
+        this.reserved = roleV6.isReserved();
         this.hidden = roleV6.isHidden();
         this.description = "Migrated from v6 (all types mapped)";
         this.cluster_permissions = roleV6.getCluster();
-        this.tenants = roleV6.getTenants();
-        indices_permissions = new ArrayList<>();
-        for(Entry<String, RoleV6.Index> v6i: roleV6.getIndices().entrySet()) {
-            indices_permissions.add(new Index(v6i.getKey(), v6i.getValue()));
-        }
+        index_permissions = new ArrayList<>();
+        tenant_permissions = new ArrayList<>();
         
-        if(roleMappingsV6 != null) {
-            this.mapto = new MapTo(roleMappingsV6);
+        for(Entry<String, RoleV6.Index> v6i: roleV6.getIndices().entrySet()) {
+            index_permissions.add(new Index(v6i.getKey(), v6i.getValue()));
         }
+
+        for(Entry<String, String> v6t: roleV6.getTenants().entrySet()) {
+            //tenant_permissions.add(new Tenant(d));
+        }
+
     }
 
     public static class Index {
@@ -106,65 +103,55 @@ public class RoleV7 implements Hideable {
                     + ", allowed_actions=" + allowed_actions + "]";
         }
     }
+    
+    
+    public static class Tenant {
 
-    public static class MapTo {
-        private List<String> users = Collections.emptyList();
-        private List<String> hosts = Collections.emptyList();
-        private List<String> backend_roles = Collections.emptyList();
-        private List<String> and_backend_roles = Collections.emptyList();
+        private List<String> tenant_patterns = Collections.emptyList();
+        private List<String> allowed_actions = Collections.emptyList();
         
-        public MapTo(RoleMappingsV6 roleMappingsV6) {
+        /*public Index(String pattern, RoleV6.Index v6Index) {
             super();
-            users = roleMappingsV6.getUsers();
-            hosts = roleMappingsV6.getHosts();
-            backend_roles = roleMappingsV6.getBackendroles();
-            and_backend_roles = roleMappingsV6.getAndBackendroles();
-        }
+            index_patterns = Collections.singletonList(pattern);
+            dls = v6Index.get_dls_();
+            fls = v6Index.get_fls_();
+            masked_fields = v6Index.get_masked_fields_();
+            Set<String> tmpActions = new HashSet<>(); 
+            for(Entry<String, List<String>> type: v6Index.getTypes().entrySet()) {
+                tmpActions.addAll(type.getValue());
+            }
+            allowed_actions = new ArrayList<>(tmpActions);
+        }*/
         
         
-        public MapTo() {
+        public Tenant() {
             super();
         }
-        public List<String> getUsers() {
-            return users;
+
+        public List<String> getTenant_patterns() {
+            return tenant_patterns;
         }
-        public void setUsers(List<String> users) {
-            this.users = users;
+
+        public void setTenant_patterns(List<String> tenant_patterns) {
+            this.tenant_patterns = tenant_patterns;
         }
-        public List<String> getHosts() {
-            return hosts;
+
+        public List<String> getAllowed_actions() {
+            return allowed_actions;
         }
-        public void setHosts(List<String> hosts) {
-            this.hosts = hosts;
+
+        public void setAllowed_actions(List<String> allowed_actions) {
+            this.allowed_actions = allowed_actions;
         }
-        public List<String> getBackend_roles() {
-            return backend_roles;
-        }
-        public void setBackend_roles(List<String> backend_roles) {
-            this.backend_roles = backend_roles;
-        }
-        public List<String> getAnd_backend_roles() {
-            return and_backend_roles;
-        }
-        public void setAnd_backend_roles(List<String> and_backend_roles) {
-            this.and_backend_roles = and_backend_roles;
-        }
+
         @Override
         public String toString() {
-            return "MapTo [users=" + users + ", hosts=" + hosts + ", backend_roles=" + backend_roles + ", and_backend_roles=" + and_backend_roles
-                    + "]";
+            return "Tenant [tenant_patterns=" + tenant_patterns + ", allowed_actions=" + allowed_actions + "]";
         }
         
         
     }
     
-    public boolean isReadonly() {
-        return readonly;
-    }
-
-    public void setReadonly(boolean readonly) {
-        this.readonly = readonly;
-    }
 
     public boolean isHidden() {
         return hidden;
@@ -190,53 +177,33 @@ public class RoleV7 implements Hideable {
         this.cluster_permissions = cluster_permissions;
     }
 
-    public List<Index> getIndices_permissions() {
-        return indices_permissions;
+    
+
+    public List<Index> getIndex_permissions() {
+        return index_permissions;
     }
 
-    public void setIndices_permissions(List<Index> indices_permissions) {
-        this.indices_permissions = indices_permissions;
+    public void setIndex_permissions(List<Index> index_permissions) {
+        this.index_permissions = index_permissions;
     }
 
-    public Map<String, String> getTenants() {
-        return tenants;
+    public List<Tenant> getTenant_permissions() {
+        return tenant_permissions;
     }
 
-    public void setTenants(Map<String, String> tenants) {
-        if(tenants != null) {
-            Set<String> valueCheck = new HashSet<>(tenants.values());
-            valueCheck.removeAll(Lists.newArrayList("rW","Rw","rw", "ro","Ro","rO","implicit", "rw".toUpperCase(), "ro".toUpperCase(), "implicit".toUpperCase()));
-            if(valueCheck.size() > 0) {
-                throw new IllegalArgumentException("Non allowed modifiers for tenants: "+valueCheck);
-            }
-        }
-        
-        this.tenants = tenants;
+    public void setTenant_permissions(List<Tenant> tenant_permissions) {
+        this.tenant_permissions = tenant_permissions;
     }
 
-    public List<String> getApplications() {
-        return applications;
+    public boolean isReserved() {
+        return reserved;
     }
 
-    public void setApplications(List<String> applications) {
-        this.applications = applications;
+    public void setReserved(boolean reserved) {
+        this.reserved = reserved;
     }
 
-    public MapTo getMapto() {
-        return mapto;
-    }
-
-    public void setMapto(MapTo mapto) {
-        this.mapto = mapto;
-    }
-
-    @Override
-    public String toString() {
-        return "RoleV7 [readonly=" + readonly + ", hidden=" + hidden + ", description=" + description + ", cluster_permissions=" + cluster_permissions
-                + ", indices_permissions=" + indices_permissions + ", tenants=" + tenants + ", applications=" + applications + ", mapto=" + mapto
-                + "]";
-    }
-
+    
     
 
     

@@ -104,5 +104,10 @@ public class RoleV6 implements Hideable {
     public String toString() {
         return "Role [readonly=" + readonly + ", hidden=" + hidden + ", cluster=" + cluster + ", tenants=" + tenants + ", indices=" + indices + "]";
     }
+    
+    @JsonIgnore
+    public boolean isReserved() {
+        return readonly;
+    }
 
 }

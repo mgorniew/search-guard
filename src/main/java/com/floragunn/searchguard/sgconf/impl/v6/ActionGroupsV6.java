@@ -3,6 +3,7 @@ package com.floragunn.searchguard.sgconf.impl.v6;
 import java.util.Collections;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.floragunn.searchguard.sgconf.Hideable;
 
 public class ActionGroupsV6 implements Hideable {
@@ -14,6 +15,11 @@ public class ActionGroupsV6 implements Hideable {
 
     public ActionGroupsV6() {
         super();
+    }
+    
+    @JsonIgnore
+    public boolean isReserved() {
+        return readonly;
     }
     public boolean isReadonly() {
         return readonly;

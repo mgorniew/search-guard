@@ -10,7 +10,7 @@ public class ActionGroupsV7 implements Hideable {
 
     
     
-    private boolean readonly;
+    private boolean reserved;
     private boolean hidden;
     private List<String> permissions = Collections.emptyList();
     private String type;
@@ -20,7 +20,7 @@ public class ActionGroupsV7 implements Hideable {
         super();
     }
     public ActionGroupsV7(String agName, ActionGroupsV6 ag6) {
-        readonly = ag6.isReadonly();
+        reserved = ag6.isReserved();
         hidden = ag6.isHidden();
         permissions = ag6.getPermissions();
         type = agName.toLowerCase().contains("cluster")?"cluster":"index";
@@ -45,11 +45,12 @@ public class ActionGroupsV7 implements Hideable {
         this.description = description;
     }
     
-    public boolean isReadonly() {
-        return readonly;
+    
+    public boolean isReserved() {
+        return reserved;
     }
-    public void setReadonly(boolean readonly) {
-        this.readonly = readonly;
+    public void setReserved(boolean reserved) {
+        this.reserved = reserved;
     }
     public boolean isHidden() {
         return hidden;
@@ -65,7 +66,7 @@ public class ActionGroupsV7 implements Hideable {
     }
     @Override
     public String toString() {
-        return "ActionGroups [readonly=" + readonly + ", hidden=" + hidden + ", permissions=" + permissions + "]";
+        return "ActionGroups [reserved=" + reserved + ", hidden=" + hidden + ", permissions=" + permissions + "]";
     }
     
     

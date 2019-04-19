@@ -78,6 +78,11 @@ public class InternalUserV6 implements Hideable, Hashed {
             return "SgInternalUser [hash=" + hash + ", readonly=" + readonly + ", hidden=" + hidden + ", roles=" + roles + ", attributes="
                     + attributes + "]";
         }
+        
+        @JsonIgnore
+        public boolean isReserved() {
+            return readonly;
+        }
 
         @Override
         @JsonIgnore

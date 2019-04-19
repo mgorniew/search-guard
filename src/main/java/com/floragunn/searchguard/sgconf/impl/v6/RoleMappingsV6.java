@@ -3,6 +3,7 @@ package com.floragunn.searchguard.sgconf.impl.v6;
 import java.util.Collections;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.floragunn.searchguard.sgconf.Hideable;
 
@@ -67,6 +68,9 @@ public class RoleMappingsV6 implements Hideable {
                 + users + ", andBackendroles=" + andBackendroles + "]";
     }
     
-    
+    @JsonIgnore
+    public boolean isReserved() {
+        return readonly;
+    }
 
 }

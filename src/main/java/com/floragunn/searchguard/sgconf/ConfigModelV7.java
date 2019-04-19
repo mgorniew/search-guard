@@ -231,7 +231,7 @@ public class ConfigModelV7 extends ConfigModel {
 
                     //final Map<String, DynamicConfiguration> permittedAliasesIndices = sgRoleSettings.getGroups(DotPath.of("indices"));
 
-                        for (final Index permittedAliasesIndex : sgRole.getValue().getIndices_permissions()) {
+                        for (final Index permittedAliasesIndex : sgRole.getValue().getIndex_permissions()) {
 
                             //final String resolvedRole = sgRole;
                             //final String indexPattern = permittedAliasesIndex;
