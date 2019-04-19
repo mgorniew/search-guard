@@ -55,7 +55,7 @@ public class SearchGuardIndexAccessEvaluator {
         //sgIndexDeniedActionPatternsList.add("indices:admin/template/*");
         sgIndexDeniedActionPatternsList.add("indices:admin/freeze*");
         sgIndexDeniedActionPatternsList.add("indices:admin/settings/update*");
-        sgIndexDeniedActionPatternsList.add("indices:admin/aliases*");
+        sgIndexDeniedActionPatternsList.add("indices:admin/aliases");
 
         final List<String> sgIndexDeniedActionPatternsListNoSnapshot = new ArrayList<String>();
         sgIndexDeniedActionPatternsListNoSnapshot.addAll(sgIndexDeniedActionPatternsList);
