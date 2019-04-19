@@ -164,7 +164,11 @@ sg_kibana_server:
   readonly: true
   users:
     - kibanaserver
-    
+
+sg_env_test:
+  users:
+    - env.replace@example.comp.com
+
 sg_remote_ccs:
   users:
     - crusherw
