@@ -1,5 +1,6 @@
 package com.floragunn.searchguard.sgconf;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,9 +10,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.threadpool.ThreadPool;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.floragunn.searchguard.DefaultObjectMapper;
 import com.floragunn.searchguard.auth.internal.InternalAuthenticationBackend;
 import com.floragunn.searchguard.configuration.ClusterInfoHolder;
 import com.floragunn.searchguard.configuration.ConfigurationChangeListener;
@@ -90,11 +95,40 @@ public class DynamicConfigFactory implements Initializable, ConfigurationChangeL
         
         
         if(config.getImplementingClass() == ConfigV7.class) {
+            
+            
+            try {
+                //statics
+                JsonNode staticRolesJsonNode = DefaultObjectMapper.YAML_MAPPER.readTree(this.getClass().getResourceAsStream("/static_config/static_roles.yml"));
+                SgDynamicConfiguration<RoleV7> staticRoles = SgDynamicConfiguration.fromNode(staticRolesJsonNode, CType.ROLES, 2, 0, 0);
+                if(!roles.add(staticRoles)) {
+                    throw new RuntimeException("Unable to load static roles");
+                }
+                log.debug("Static roles loaded ({})", staticRoles.getCEntries().size());
+
+                
+                JsonNode staticActionGroupsJsonNode = DefaultObjectMapper.YAML_MAPPER.readTree(this.getClass().getResourceAsStream("/static_config/static_action_goups.yml"));
+                SgDynamicConfiguration<ActionGroupsV7> staticActionGroups = SgDynamicConfiguration.fromNode(staticActionGroupsJsonNode, CType.ACTIONGROUPS, 2, 0, 0);
+                if(!actionGroups.add(staticActionGroups)) {
+                    throw new RuntimeException("Unable to load static action groups");
+                }
+                log.debug("Static action groups loaded ({})", staticActionGroups.getCEntries().size());
+
+                log.debug("Static configuration loaded (total roles: {}/total action groups: {})", roles.getCEntries().size(), actionGroups.getCEntries().size());
+                
+            } catch (IOException e) {
+                throw new RuntimeException("Unable to load static config", e);
+            }
+            
 
             //rebuild v7 Models
             DynamicConfigModel dcf = new DynamicConfigModelV7(getConfigV7(config), esSettings, configPath, iab);
             InternalUsersModel cfff = new InternalUsersModelV7((SgDynamicConfiguration<InternalUserV7>) internalusers);
             ConfigModel cf = new ConfigModelV7((SgDynamicConfiguration<RoleV7>) roles,(SgDynamicConfiguration<RoleMappingsV7>)rolesmapping, (SgDynamicConfiguration<ActionGroupsV7>)actionGroups, (SgDynamicConfiguration<TenantV7>) tenants,dcf, esSettings);
+            
+            
+            
+            
             
             //notify listeners
             

@@ -82,7 +82,7 @@ public class ConfigModelV7 extends ConfigModel {
             SgDynamicConfiguration<TenantV7> tenants, 
             DynamicConfigModel dcm,
             Settings esSettings) {
-        
+
         this.roles = roles;
         this.tenants = tenants;
         

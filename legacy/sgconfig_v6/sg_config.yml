@@ -215,7 +215,8 @@ searchguard:
             #  - 'cn=Michael Jackson,ou*people,o=TEST'
             #  - '/\S*/'    
       roles_from_another_ldap:
-        enabled: false
+        http_enabled: false
+        transport_enabled: false
         authorization_backend:
           type: ldap # NOT FREE FOR COMMERCIAL USE
           #config goes here ...

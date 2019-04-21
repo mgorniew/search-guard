@@ -13,12 +13,12 @@
   <parent>
     <groupId>com.floragunn</groupId>
     <artifactId>search-guard-parent</artifactId>
-    <version>6.22.1</version>
+    <version>7.35.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>search-guard-7</artifactId>
   <packaging>jar</packaging>
-  <!-- 6.x.y-a.b-->
+  <!-- 7.x.y-a.b.c-->
   <version>7.x-HEAD-SNAPSHOT</version>
   <name>Search Guard</name>
   <description>Provide access control related features for Elasticsearch 6</description>
@@ -262,7 +262,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.0.0-M3</version>
 
         <configuration>
           <argLine>-Xmx3072m</argLine>

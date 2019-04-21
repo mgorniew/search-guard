@@ -44,10 +44,8 @@ public class ConfigHelper {
     
     public static void uploadFile(Client tc, String filepath, String index, CType cType, int configVersion) throws Exception {
         LOGGER.info("Will update '" + cType + "' with " + filepath);
-        
 
         ConfigHelper.fromYamlFile(filepath, cType, configVersion, 0, 0);
-        
         
         try (Reader reader = new FileReader(filepath)) {
 

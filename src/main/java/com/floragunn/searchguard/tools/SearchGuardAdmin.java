@@ -738,12 +738,13 @@ public class SearchGuardAdmin {
                 }
                 
                 boolean success = uploadFile(tc, file, index, type, legacy);
-                ConfigUpdateResponse cur = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{type})).actionGet();
                 
                 if(!success) {
                     System.out.println("ERR: cannot upload configuration, see errors above");
                     return -1;
                 }
+                
+                ConfigUpdateResponse cur = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{type})).actionGet();
                 
                 success = checkConfigUpdateResponse(cur, nodesInfo, 1) && success;
                 
