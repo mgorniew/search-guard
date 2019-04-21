@@ -101,12 +101,12 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 			Assert.assertEquals(1, actionGet.getHits().getHits().length);
 			System.out.println("------- 6 ---------");
 
-			gr =tc.prepareGet("searchguard", "sg", "config").setRealtime(false).get();
+			gr =tc.prepareGet("searchguard", getType(), "config").setRealtime(false).get();
 			Assert.assertFalse(gr.isExists());
 
 			System.out.println("------- 7 ---------");
 
-			gr =tc.prepareGet("searchguard", "sg", "config").setRealtime(true).get();
+			gr =tc.prepareGet("searchguard", getType(), "config").setRealtime(true).get();
 			Assert.assertFalse(gr.isExists());
 
 			System.out.println("------- 8 ---------");
@@ -117,7 +117,7 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 			System.out.println("------- 9 ---------");
 
 			try {
-				tc.index(new IndexRequest("searchguard").type("sg").id("config").source("config", FileHelper.readYamlContent("sg_config.yml"))).actionGet();
+				tc.index(new IndexRequest("searchguard").type(getType()).id("config").source("config", FileHelper.readYamlContent("sg_config.yml"))).actionGet();
 				Assert.fail();
 			} catch (Exception e) {
 				System.out.println(e.getMessage());
@@ -190,7 +190,7 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 			ctx = tc.threadPool().getThreadContext().stashContext();
 			try {
 				tc.threadPool().getThreadContext().putHeader("sg_impersonate_as", "nagilum");
-				gr = tc.prepareGet("searchguard", "sg", "config").setRealtime(Boolean.TRUE).get();
+				gr = tc.prepareGet("searchguard", getType(), "config").setRealtime(Boolean.TRUE).get();
 				Assert.assertFalse(gr.isExists());
 				Assert.assertTrue(gr.isSourceEmpty());
 			} finally {
@@ -256,7 +256,7 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 			ctx = tc.threadPool().getThreadContext().stashContext();
 			try {
 				tc.threadPool().getThreadContext().putHeader("sg_impersonate_as", "nagilum");
-				gr = tc.prepareGet("searchguard", "sg", "config").setRealtime(Boolean.TRUE).get();
+				gr = tc.prepareGet("searchguard", getType(), "config").setRealtime(Boolean.TRUE).get();
 				Assert.assertFalse(gr.isExists());
 				Assert.assertTrue(gr.isSourceEmpty());
 			} finally {
@@ -269,7 +269,7 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 			try {
 				Header header = encodeBasicHeader("worf", "worf");
 				tc.threadPool().getThreadContext().putHeader(header.getName(), header.getValue());
-				gr = tc.prepareGet("searchguard", "sg", "config").setRealtime(Boolean.TRUE).get();
+				gr = tc.prepareGet("searchguard", getType(), "config").setRealtime(Boolean.TRUE).get();
 				Assert.fail();
 			} catch (Exception e) {
 				Assert.assertTrue(e.getMessage().contains("no permissions for [indices:data/read/get] and User [name=worf"));
@@ -285,7 +285,7 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 			try {
 				Header header = encodeBasicHeader("nagilum", "nagilum");
 				tc.threadPool().getThreadContext().putHeader(header.getName(), header.getValue());
-				gr = tc.prepareGet("searchguard", "sg", "config").setRealtime(Boolean.TRUE).get();
+				gr = tc.prepareGet("searchguard", getType(), "config").setRealtime(Boolean.TRUE).get();
 				Assert.assertFalse(gr.isExists());
 				Assert.assertTrue(gr.isSourceEmpty());
 			} finally {
@@ -297,7 +297,7 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 			ctx = tc.threadPool().getThreadContext().stashContext();
 			try {
 				tc.threadPool().getThreadContext().putHeader("sg_impersonate_as", "nagilum");
-				gr = tc.prepareGet("searchguard", "sg", "config").setRealtime(Boolean.FALSE).get();
+				gr = tc.prepareGet("searchguard", getType(), "config").setRealtime(Boolean.FALSE).get();
 				Assert.assertFalse(gr.isExists());
 				Assert.assertTrue(gr.isSourceEmpty());
 			} finally {
@@ -459,12 +459,12 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 			Assert.assertEquals(1, actionGet.getHits().getHits().length);
 			System.out.println("------- 6 ---------");
 
-			gr =tc.prepareGet("searchguard", "sg", "config").setRealtime(false).get();
+			gr =tc.prepareGet("searchguard", getType(), "config").setRealtime(false).get();
 			Assert.assertFalse(gr.isExists());
 
 			System.out.println("------- 7 ---------");
 
-			gr =tc.prepareGet("searchguard", "sg", "config").setRealtime(true).get();
+			gr =tc.prepareGet("searchguard", getType(), "config").setRealtime(true).get();
 			Assert.assertFalse(gr.isExists());
 
 			System.out.println("------- 8 ---------");
@@ -475,7 +475,7 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 			System.out.println("------- 9 ---------");
 
 			try {
-				tc.index(new IndexRequest("searchguard").type("sg").id("config").source("config", FileHelper.readYamlContent("sg_config.yml"))).actionGet();
+				tc.index(new IndexRequest("searchguard").type(getType()).id("config").source("config", FileHelper.readYamlContent("sg_config.yml"))).actionGet();
 				Assert.fail();
 			} catch (Exception e) {
 				System.out.println(e.getMessage());
@@ -548,7 +548,7 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 			ctx = tc.threadPool().getThreadContext().stashContext();
 			try {
 				tc.threadPool().getThreadContext().putHeader("sg_impersonate_as", "nagilum");
-				gr = tc.prepareGet("searchguard", "sg", "config").setRealtime(Boolean.TRUE).get();
+				gr = tc.prepareGet("searchguard", getType(), "config").setRealtime(Boolean.TRUE).get();
 				Assert.assertFalse(gr.isExists());
 				Assert.assertTrue(gr.isSourceEmpty());
 			} finally {
@@ -614,7 +614,7 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 			ctx = tc.threadPool().getThreadContext().stashContext();
 			try {
 				tc.threadPool().getThreadContext().putHeader("sg_impersonate_as", "nagilum");
-				gr = tc.prepareGet("searchguard", "sg", "config").setRealtime(Boolean.TRUE).get();
+				gr = tc.prepareGet("searchguard", getType(), "config").setRealtime(Boolean.TRUE).get();
 				Assert.assertFalse(gr.isExists());
 				Assert.assertTrue(gr.isSourceEmpty());
 			} finally {
@@ -627,7 +627,7 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 			try {
 				Header header = encodeBasicHeader("worf", "worf");
 				tc.threadPool().getThreadContext().putHeader(header.getName(), header.getValue());
-				gr = tc.prepareGet("searchguard", "sg", "config").setRealtime(Boolean.TRUE).get();
+				gr = tc.prepareGet("searchguard", getType(), "config").setRealtime(Boolean.TRUE).get();
 				Assert.fail();
 			} catch (Exception e) {
 				Assert.assertTrue(e.getMessage().contains("no permissions for [indices:data/read/get] and User [name=worf"));
@@ -643,7 +643,7 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 			try {
 				Header header = encodeBasicHeader("nagilum", "nagilum");
 				tc.threadPool().getThreadContext().putHeader(header.getName(), header.getValue());
-				gr = tc.prepareGet("searchguard", "sg", "config").setRealtime(Boolean.TRUE).get();
+				gr = tc.prepareGet("searchguard", getType(), "config").setRealtime(Boolean.TRUE).get();
 				Assert.assertFalse(gr.isExists());
 				Assert.assertTrue(gr.isSourceEmpty());
 			} finally {
@@ -655,7 +655,7 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 			ctx = tc.threadPool().getThreadContext().stashContext();
 			try {
 				tc.threadPool().getThreadContext().putHeader("sg_impersonate_as", "nagilum");
-				gr = tc.prepareGet("searchguard", "sg", "config").setRealtime(Boolean.FALSE).get();
+				gr = tc.prepareGet("searchguard", getType(), "config").setRealtime(Boolean.FALSE).get();
 				Assert.assertFalse(gr.isExists());
 				Assert.assertTrue(gr.isSourceEmpty());
 			} finally {

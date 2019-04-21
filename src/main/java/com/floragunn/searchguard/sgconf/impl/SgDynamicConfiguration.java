@@ -51,6 +51,11 @@ public class SgDynamicConfiguration<T> implements ToXContent {
         sdc.seqNo = seqNo;
         sdc.primaryTerm = primaryTerm;
         sdc.version = version;
+        
+        if(version < 2 && sdc.get_sg_meta() != null) {
+            throw new IOException("A version of "+version+" can not have a _sg_meta key for "+ctype);
+        }
+        
         return sdc;
     }
     

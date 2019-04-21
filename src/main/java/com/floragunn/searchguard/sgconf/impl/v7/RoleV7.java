@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.floragunn.searchguard.sgconf.Hideable;
 import com.floragunn.searchguard.sgconf.impl.v6.RoleV6;
@@ -34,9 +35,25 @@ public class RoleV7 implements Hideable {
         for(Entry<String, RoleV6.Index> v6i: roleV6.getIndices().entrySet()) {
             index_permissions.add(new Index(v6i.getKey(), v6i.getValue()));
         }
-
-        for(Entry<String, String> v6t: roleV6.getTenants().entrySet()) {
-            //tenant_permissions.add(new Tenant(d));
+        
+        //rw tenants
+        List<String> rwTenants = roleV6.getTenants().entrySet().stream().filter(e->  "rw".equalsIgnoreCase(e.getValue())).map(e->e.getKey()).collect(Collectors.toList());
+        
+        if(rwTenants != null && !rwTenants.isEmpty()) {
+            Tenant t = new Tenant();
+            t.setAllowed_actions(Collections.singletonList("kibana:saved_objects/*"));
+            t.setTenant_patterns(rwTenants);
+            tenant_permissions.add(t);
+        }
+        
+        
+        List<String> roTenants = roleV6.getTenants().entrySet().stream().filter(e->  "ro".equalsIgnoreCase(e.getValue())).map(e->e.getKey()).collect(Collectors.toList());
+        
+        if(roTenants != null && !roTenants.isEmpty()) {
+            Tenant t = new Tenant();
+            t.setAllowed_actions(Collections.singletonList("kibana:saved_objects/*/read"));
+            t.setTenant_patterns(roTenants);
+            tenant_permissions.add(t);
         }
 
     }

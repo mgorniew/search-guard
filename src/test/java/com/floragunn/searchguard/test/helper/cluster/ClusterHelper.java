@@ -43,7 +43,6 @@ import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.cluster.node.DiscoveryNode.Role;
-import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
@@ -51,7 +50,6 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.PluginAwareNode;
 
-import com.floragunn.searchguard.SearchGuardPlugin;
 import com.floragunn.searchguard.test.NodeSettingsSupplier;
 import com.floragunn.searchguard.test.helper.cluster.ClusterConfiguration.NodeSettings;
 import com.floragunn.searchguard.test.helper.network.SocketUtils;
@@ -60,12 +58,7 @@ public final class ClusterHelper {
 
     static {
         System.setProperty("es.enforce.bootstrap.checks", "true");
-        
-        if(SearchGuardPlugin.FORCE_CONFIG_V6) {
-            System.setProperty("sg.default_init.dir", new File("./sgconfig").getAbsolutePath());
-        } else {
-            System.setProperty("sg.default_init.dir", new File("./sgconfig/v7").getAbsolutePath());
-        }
+        System.setProperty("sg.default_init.dir", new File("./sgconfig").getAbsolutePath());
     }
     
 	protected final Logger log = LogManager.getLogger(ClusterHelper.class);

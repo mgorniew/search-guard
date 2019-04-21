@@ -108,23 +108,9 @@ public class ConfigurationLoaderSG7 {
                         latch.countDown();
                         return;
                     }
-                } else {
-                    //created with SG 7
-                    //skip rolemapping
-                    
-                    if(log.isDebugEnabled()) {
-                        log.debug("Skip rolemapping because we are migrated to ES 7 (index was created  with ES 7 and type is not legacy [sg])");
-                    }
-                    
-                    if(CType.fromString(id) == CType.ROLESMAPPING) {
-                        rs.put(CType.fromString(id), SgDynamicConfiguration.empty());
-                        latch.countDown();
-                        return;
-                    }
                 }
                 
                 log.warn("No data for {} while retrieving configuration for {}  (index={} and type={})", id, Arrays.toString(events), searchguardIndex, type);
-
             }
             
             @Override

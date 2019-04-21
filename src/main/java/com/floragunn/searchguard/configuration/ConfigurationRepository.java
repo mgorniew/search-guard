@@ -55,7 +55,6 @@ import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.engine.VersionConflictEngineException;
 import org.elasticsearch.threadpool.ThreadPool;
 
-import com.floragunn.searchguard.SearchGuardPlugin;
 import com.floragunn.searchguard.auditlog.AuditLog;
 import com.floragunn.searchguard.compliance.ComplianceConfig;
 import com.floragunn.searchguard.sgconf.DynamicConfigFactory;
@@ -85,7 +84,7 @@ public class ConfigurationRepository {
     private final ThreadPool threadPool;
     private volatile SearchGuardLicense effectiveLicense;
     private DynamicConfigFactory dynamicConfigFactory;
-    private final int configVersion = SearchGuardPlugin.FORCE_CONFIG_V6?1:2;
+    private final int configVersion = 2;
     private final Thread bgThread;
     private final AtomicBoolean installDefaultConfig = new AtomicBoolean();
 
@@ -123,7 +122,6 @@ public class ConfigurationRepository {
                         
                         try {
                             String lookupDir = System.getProperty("sg.default_init.dir");
-                            //for conf v7 its maybe /search-guard-7/sgconfig/v7/
                             final String cd = lookupDir != null? (lookupDir+"/") : new Environment(settings, configPath).pluginsFile().toAbsolutePath().toString()+"/search-guard-7/sgconfig/";
                             File confFile = new File(cd+"sg_config.yml");
                             if(confFile.exists()) {

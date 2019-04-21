@@ -9,11 +9,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.threadpool.ThreadPool;
 
-import com.floragunn.searchguard.SearchGuardPlugin;
 import com.floragunn.searchguard.auth.internal.InternalAuthenticationBackend;
 import com.floragunn.searchguard.configuration.ClusterInfoHolder;
 import com.floragunn.searchguard.configuration.ConfigurationChangeListener;
@@ -28,9 +26,9 @@ import com.floragunn.searchguard.sgconf.impl.v6.RoleV6;
 import com.floragunn.searchguard.sgconf.impl.v7.ActionGroupsV7;
 import com.floragunn.searchguard.sgconf.impl.v7.ConfigV7;
 import com.floragunn.searchguard.sgconf.impl.v7.InternalUserV7;
+import com.floragunn.searchguard.sgconf.impl.v7.RoleMappingsV7;
 import com.floragunn.searchguard.sgconf.impl.v7.RoleV7;
 import com.floragunn.searchguard.sgconf.impl.v7.TenantV7;
-import com.floragunn.searchguard.support.ConfigConstants;
 
 public class DynamicConfigFactory implements Initializable, ConfigurationChangeListener {
     
@@ -53,13 +51,19 @@ public class DynamicConfigFactory implements Initializable, ConfigurationChangeL
     private final List<DCFListener> listeners = new ArrayList<>();
     private final Settings esSettings;
     private final Path configPath;
-    private final Client client;
     private final InternalAuthenticationBackend iab = new InternalAuthenticationBackend();
-    private final ThreadPool threadPool;
-    private final ClusterInfoHolder cih;
 
     SgDynamicConfiguration<?> config;
-    private final String searchguardIndex;
+    
+    public DynamicConfigFactory(ConfigurationRepository cr, final Settings esSettings, 
+            final Path configPath, Client client, ThreadPool threadPool, ClusterInfoHolder cih) {
+        super();
+        this.cr = cr;
+        this.esSettings = esSettings;
+        this.configPath = configPath;
+        registerDCFListener(this.iab);
+        this.cr.subscribeOnChange(this);
+    }
     
     @Override
     public void onChange(Map<CType, SgDynamicConfiguration<?>> typeToConfig) {
@@ -85,12 +89,12 @@ public class DynamicConfigFactory implements Initializable, ConfigurationChangeL
         
         
         
-        if(config.getImplementingClass() == ConfigV7.class && !SearchGuardPlugin.FORCE_CONFIG_V6) {
+        if(config.getImplementingClass() == ConfigV7.class) {
 
             //rebuild v7 Models
             DynamicConfigModel dcf = new DynamicConfigModelV7(getConfigV7(config), esSettings, configPath, iab);
             InternalUsersModel cfff = new InternalUsersModelV7((SgDynamicConfiguration<InternalUserV7>) internalusers);
-            ConfigModel cf = new ConfigModelV7((SgDynamicConfiguration<RoleV7>) roles, (SgDynamicConfiguration<ActionGroupsV7>)actionGroups, dcf, esSettings);
+            ConfigModel cf = new ConfigModelV7((SgDynamicConfiguration<RoleV7>) roles,(SgDynamicConfiguration<RoleMappingsV7>)rolesmapping, (SgDynamicConfiguration<ActionGroupsV7>)actionGroups, (SgDynamicConfiguration<TenantV7>) tenants,dcf, esSettings);
             
             //notify listeners
             
@@ -101,29 +105,38 @@ public class DynamicConfigFactory implements Initializable, ConfigurationChangeL
         } else {
             
             
-            if(SearchGuardPlugin.AUTO_MIGRATE_FROMV6) {
+            /*if(SearchGuardPlugin.AUTO_MIGRATE_FROMV6) {
                 log.warn("Will perform automatic in memory migration from v6 to v7 configs");
                 
-                SgDynamicConfiguration<ActionGroupsV7> actionGroupsV7 = Migration.migrateActionGroups((SgDynamicConfiguration<ActionGroupsV6>) actionGroups);
-                SgDynamicConfiguration<ConfigV7> configV7 = Migration.migrateConfig((SgDynamicConfiguration<ConfigV6>) config);
-                SgDynamicConfiguration<InternalUserV7> internalUsersV7 = Migration.migrateInternalUsers((SgDynamicConfiguration<InternalUserV6>) internalusers);
-                Tuple<SgDynamicConfiguration<RoleV7>, SgDynamicConfiguration<TenantV7>> roleTenants7 = Migration.
-                        migrateRoles((SgDynamicConfiguration<RoleV6>) roles, (SgDynamicConfiguration<RoleMappingsV6>) rolesmapping);
-                
-                DynamicConfigModel dcf = new DynamicConfigModelV7(getConfigV7(configV7), esSettings, configPath, iab);
-                InternalUsersModel cfff = new InternalUsersModelV7((SgDynamicConfiguration<InternalUserV7>) internalUsersV7);
-                ConfigModel cf = new ConfigModelV7((SgDynamicConfiguration<RoleV7>) roleTenants7.v1(), actionGroupsV7, dcf, esSettings);
-                
-                //notify listeners
-                
-                for(DCFListener listener: listeners) {
-                    listener.onChanged(cf, dcf, cfff);
+                try {
+                    SgDynamicConfiguration<ActionGroupsV7> actionGroupsV7 = Migration.migrateActionGroups((SgDynamicConfiguration<ActionGroupsV6>) actionGroups);
+                    SgDynamicConfiguration<ConfigV7> configV7 = Migration.migrateConfig((SgDynamicConfiguration<ConfigV6>) config);
+                    SgDynamicConfiguration<InternalUserV7> internalUsersV7 = Migration.migrateInternalUsers((SgDynamicConfiguration<InternalUserV6>) internalusers);
+                    SgDynamicConfiguration<RoleMappingsV7> rolesmappingV7= Migration.migrateRoleMappings((SgDynamicConfiguration<RoleMappingsV6>) rolesmapping);
+                    Tuple<SgDynamicConfiguration<RoleV7>, SgDynamicConfiguration<TenantV7>> roleTenants7 = Migration.migrateRoles((SgDynamicConfiguration<RoleV6>) roles, (SgDynamicConfiguration<RoleMappingsV6>) rolesmapping);
+                    
+                    DynamicConfigModel dcf = new DynamicConfigModelV7(getConfigV7(configV7), esSettings, configPath, iab);
+                    InternalUsersModel cfff = new InternalUsersModelV7((SgDynamicConfiguration<InternalUserV7>) internalUsersV7);
+                    ConfigModel cf = new ConfigModelV7((SgDynamicConfiguration<RoleV7>) roleTenants7.v1(), rolesmappingV7, actionGroupsV7, roleTenants7.v2(),dcf, esSettings);
+                    
+                    //notify listeners
+                    
+                    for(DCFListener listener: listeners) {
+                        listener.onChanged(cf, dcf, cfff);
+                    }
+                    
+                    initialized.set(true);
+                    return;
+                } catch (MigrationException e) {
+                    log.error("Unable to migrate because of {}",e.toString(),e);
                 }
                 
-                initialized.set(true);
-                return;
-                
             }
+            
+            if(SearchGuardPlugin.DISALLOW_V6) {
+                throw new RuntimeException("Not allowed to load v6 config");
+            }*/
+            
             
             //rebuild v6 Models
             DynamicConfigModel dcf = new DynamicConfigModelV6(getConfigV6(config), esSettings, configPath, iab);
@@ -180,20 +193,6 @@ public class DynamicConfigFactory implements Initializable, ConfigurationChangeL
     @Override
     public final boolean isInitialized() {
         return initialized.get();
-    }
-    
-    public DynamicConfigFactory(ConfigurationRepository cr, final Settings esSettings, 
-            final Path configPath, Client client, ThreadPool threadPool, ClusterInfoHolder cih) {
-        super();
-        this.cr = cr;
-        this.esSettings = esSettings;
-        this.configPath = configPath;
-        this.client = client;
-        this.threadPool = threadPool;
-        this.cih = cih;
-        this.searchguardIndex = this.esSettings.get(ConfigConstants.SEARCHGUARD_CONFIG_INDEX_NAME, ConfigConstants.SG_DEFAULT_CONFIG_INDEX);
-        registerDCFListener(this.iab);
-        this.cr.subscribeOnChange(this);
     }
     
     public void registerDCFListener(DCFListener listener) {

@@ -49,8 +49,10 @@ import org.elasticsearch.common.transport.TransportAddress;
 import com.floragunn.searchguard.resolver.IndexResolverReplacer.Resolved;
 import com.floragunn.searchguard.sgconf.impl.SgDynamicConfiguration;
 import com.floragunn.searchguard.sgconf.impl.v7.ActionGroupsV7;
+import com.floragunn.searchguard.sgconf.impl.v7.RoleMappingsV7;
 import com.floragunn.searchguard.sgconf.impl.v7.RoleV7;
 import com.floragunn.searchguard.sgconf.impl.v7.RoleV7.Index;
+import com.floragunn.searchguard.sgconf.impl.v7.TenantV7;
 import com.floragunn.searchguard.support.ConfigConstants;
 import com.floragunn.searchguard.support.WildcardMatcher;
 import com.floragunn.searchguard.user.User;
@@ -71,14 +73,18 @@ public class ConfigModelV7 extends ConfigModel {
     private TenantHolder tenantHolder;
     private RoleMappingHolder roleMappingHolder;
     private SgDynamicConfiguration<RoleV7> roles;
+    private SgDynamicConfiguration<TenantV7> tenants;
 
     public ConfigModelV7(
             SgDynamicConfiguration<RoleV7> roles, 
+            SgDynamicConfiguration<RoleMappingsV7> rolemappings,
             SgDynamicConfiguration<ActionGroupsV7> actiongroups, 
+            SgDynamicConfiguration<TenantV7> tenants, 
             DynamicConfigModel dcm,
             Settings esSettings) {
         
         this.roles = roles;
+        this.tenants = tenants;
         
         try {
             rolesMappingResolution = ConfigConstants.RolesMappingResolution.valueOf(
@@ -91,22 +97,12 @@ public class ConfigModelV7 extends ConfigModel {
         
         agr = reloadActionGroups(actiongroups);
         sgRoles = reload(roles);
-        tenantHolder = new TenantHolder(roles);
-        roleMappingHolder = new RoleMappingHolder(roles, dcm.getHostsResolverMode());
+        tenantHolder = new TenantHolder(roles, tenants);
+        roleMappingHolder = new RoleMappingHolder(rolemappings, dcm.getHostsResolverMode());
     }
     
     public Set<String> getAllConfiguredTenantNames() {
-        final Set<String> configuredTenants = new HashSet<>();
-        for (Entry<String, RoleV7> sgRole : roles.getCEntries().entrySet()) {
-            Map<String, String> tenants = sgRole.getValue().getTenants();
-
-            if (tenants != null) {
-                configuredTenants.addAll(tenants.keySet());
-            }
-
-        }
-
-        return Collections.unmodifiableSet(configuredTenants);
+        return Collections.unmodifiableSet(tenants.getCEntries().keySet());
     }
     
     public SgRoles getSgRoles() {
@@ -210,31 +206,20 @@ public class ConfigModelV7 extends ConfigModel {
                     final Set<String> permittedClusterActions = agr.resolvedActions(sgRole.getValue().getCluster_permissions());
                     _sgRole.addClusterPerms(permittedClusterActions);
 
-                    //if(tenants != null) {
-                        for(Entry<String, String> tenant: sgRole.getValue().getTenants().entrySet()) {
+                        /*for(RoleV7.Tenant tenant: sgRole.getValue().getTenant_permissions()) {
 
                             //if(tenant.equals(user.getName())) {
                             //    continue;
                             //}
 
-                            if("RW".equalsIgnoreCase(tenant.getValue())) {
+                            if(isTenantsRw(tenant)) {
                                 _sgRole.addTenant(new Tenant(tenant.getKey(), true));
                             } else {
                                 _sgRole.addTenant(new Tenant(tenant.getKey(), false));
-                                //if(_sgRole.tenants.stream().filter(t->t.tenant.equals(tenant)).count() > 0) { //RW outperforms RO
-                                //    _sgRole.addTenant(new Tenant(tenant, false));
-                                //}
                             }
-                        }
-                    //}
-
-
-                    //final Map<String, DynamicConfiguration> permittedAliasesIndices = sgRoleSettings.getGroups(DotPath.of("indices"));
+                        }*/
 
                         for (final Index permittedAliasesIndex : sgRole.getValue().getIndex_permissions()) {
-
-                            //final String resolvedRole = sgRole;
-                            //final String indexPattern = permittedAliasesIndex;
 
                             final String dls = permittedAliasesIndex.getDls();
                             final List<String> fls = permittedAliasesIndex.getFls();
@@ -510,7 +495,7 @@ public class ConfigModelV7 extends ConfigModel {
     public static class SgRole {
 
         private final String name;
-        private final Set<Tenant> tenants = new HashSet<>();
+        //private final Set<Tenant> tenants = new HashSet<>();
         private final Set<IndexPattern> ipatterns = new HashSet<>();
         private final Set<String> clusterPerms = new HashSet<>();
 
@@ -566,12 +551,12 @@ public class ConfigModelV7 extends ConfigModel {
             return Collections.unmodifiableSet(retVal);
         }
 
-        private SgRole addTenant(Tenant tenant) {
+        /*private SgRole addTenant(Tenant tenant) {
             if (tenant != null) {
                 this.tenants.add(tenant);
             }
             return this;
-        }
+        }*/
 
         private SgRole addIndexPattern(IndexPattern indexPattern) {
             if (indexPattern != null) {
@@ -594,7 +579,7 @@ public class ConfigModelV7 extends ConfigModel {
             result = prime * result + ((clusterPerms == null) ? 0 : clusterPerms.hashCode());
             result = prime * result + ((ipatterns == null) ? 0 : ipatterns.hashCode());
             result = prime * result + ((name == null) ? 0 : name.hashCode());
-            result = prime * result + ((tenants == null) ? 0 : tenants.hashCode());
+            //result = prime * result + ((tenants == null) ? 0 : tenants.hashCode());
             return result;
         }
 
@@ -622,24 +607,24 @@ public class ConfigModelV7 extends ConfigModel {
                     return false;
             } else if (!name.equals(other.name))
                 return false;
-            if (tenants == null) {
-                if (other.tenants != null)
-                    return false;
-            } else if (!tenants.equals(other.tenants))
-                return false;
+//            if (tenants == null) {
+//                if (other.tenants != null)
+//                    return false;
+//            } else if (!tenants.equals(other.tenants))
+//                return false;
             return true;
         }
 
         @Override
         public String toString() {
-            return System.lineSeparator() + "  " + name + System.lineSeparator() + "    tenants=" + tenants + System.lineSeparator()
+            return System.lineSeparator() + "  " + name + System.lineSeparator()
                     + "    ipatterns=" + ipatterns + System.lineSeparator() + "    clusterPerms=" + clusterPerms;
         }
 
-        public Set<Tenant> getTenants(User user) {
-            //TODO filter out user tenants
-            return Collections.unmodifiableSet(tenants);
-        }
+        //public Set<Tenant> getTenants(User user) {
+        //    //TODO filter out user tenants
+        //    return Collections.unmodifiableSet(tenants);
+        //}
 
         public Set<IndexPattern> getIpatterns() {
             return Collections.unmodifiableSet(ipatterns);
@@ -991,7 +976,7 @@ public class ConfigModelV7 extends ConfigModel {
 
         private SetMultimap<String, Tuple<String, Boolean>> tenantsMM = null;
 
-        public TenantHolder(SgDynamicConfiguration<RoleV7> roles) {
+        public TenantHolder(SgDynamicConfiguration<RoleV7> roles, SgDynamicConfiguration<TenantV7> definedTenants) {
             final Set<Future<Tuple<String, Set<Tuple<String, Boolean>>>>> futures = new HashSet<>(roles.getCEntries().size());
 
             final ExecutorService execs = Executors.newFixedThreadPool(10);
@@ -1006,20 +991,14 @@ public class ConfigModelV7 extends ConfigModel {
                     @Override
                     public Tuple<String, Set<Tuple<String, Boolean>>> call() throws Exception {
                         final Set<Tuple<String, Boolean>> tuples = new HashSet<>();
-                        final Map<String, String> tenants = sgRole.getValue().getTenants();
+                        final List<RoleV7.Tenant> tenants = sgRole.getValue().getTenant_permissions();
 
                         if (tenants != null) {
                             
-                            for (String tenant : tenants.keySet()) {
-
-                                if ("RW".equalsIgnoreCase(tenants.get(tenant))) {
-                                    //RW
-                                    tuples.add(new Tuple<String, Boolean>(tenant, true));
-                                } else {
-                                    //RO
-                                    //if(!tenantsMM.containsValue(value)) { //RW outperforms RO
-                                    tuples.add(new Tuple<String, Boolean>(tenant, false));
-                                    //}
+                            for (RoleV7.Tenant tenant : tenants) {
+                                
+                                for(String matchingTenant: WildcardMatcher.getMatchAny(tenant.getTenant_patterns(), definedTenants.getCEntries().keySet())) {
+                                    tuples.add(new Tuple<String, Boolean>(matchingTenant, tenant.getAllowed_actions().contains("kibana:saved_objects/*")));
                                 }
                             }
                         }
@@ -1091,7 +1070,7 @@ public class ConfigModelV7 extends ConfigModel {
         private ListMultimap<String, String> hosts;
         private final String hostResolverMode;
 
-        private RoleMappingHolder(final SgDynamicConfiguration<RoleV7> roles, final String hostResolverMode) {
+        private RoleMappingHolder(final SgDynamicConfiguration<RoleMappingsV7> rolemappings, final String hostResolverMode) {
 
             this.hostResolverMode = hostResolverMode;
             
@@ -1102,23 +1081,23 @@ public class ConfigModelV7 extends ConfigModel {
                 final ListMultimap<String, String> bars_ = ArrayListMultimap.create();
                 final ListMultimap<String, String> hosts_ = ArrayListMultimap.create();
 
-                for (final Entry<String, RoleV7> roleMap : roles.getCEntries().entrySet()) {
+                for (final Entry<String, RoleMappingsV7> roleMap : rolemappings.getCEntries().entrySet()) {
 
-                    for (String u : roleMap.getValue().getMapto().getUsers()) {
+                    for (String u : roleMap.getValue().getUsers()) {
                         users_.put(u, roleMap.getKey());
                     }
 
-                    final Set<String> abar = new HashSet<String>(roleMap.getValue().getMapto().getAnd_backend_roles());
+                    final Set<String> abar = new HashSet<String>(roleMap.getValue().getAnd_backend_roles());
 
                     if (!abar.isEmpty()) {
                         abars_.put(abar, roleMap.getKey());
                     }
 
-                    for (String bar : roleMap.getValue().getMapto().getBackend_roles()) {
+                    for (String bar : roleMap.getValue().getBackend_roles()) {
                         bars_.put(bar, roleMap.getKey());
                     }
 
-                    for (String host : roleMap.getValue().getMapto().getHosts()) {
+                    for (String host : roleMap.getValue().getHosts()) {
                         hosts_.put(host, roleMap.getKey());
                     }
                 }

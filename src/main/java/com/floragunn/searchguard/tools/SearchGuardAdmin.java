@@ -106,9 +106,11 @@ import com.floragunn.searchguard.action.whoami.WhoAmIResponse;
 import com.floragunn.searchguard.sgconf.Migration;
 import com.floragunn.searchguard.sgconf.impl.CType;
 import com.floragunn.searchguard.sgconf.impl.SgDynamicConfiguration;
+import com.floragunn.searchguard.sgconf.impl.v6.RoleMappingsV6;
 import com.floragunn.searchguard.sgconf.impl.v7.ActionGroupsV7;
 import com.floragunn.searchguard.sgconf.impl.v7.ConfigV7;
 import com.floragunn.searchguard.sgconf.impl.v7.InternalUserV7;
+import com.floragunn.searchguard.sgconf.impl.v7.RoleMappingsV7;
 import com.floragunn.searchguard.sgconf.impl.v7.RoleV7;
 import com.floragunn.searchguard.sgconf.impl.v7.TenantV7;
 import com.floragunn.searchguard.ssl.util.ExceptionUtils;
@@ -120,7 +122,7 @@ import com.google.common.io.Files;
 
 public class SearchGuardAdmin {
 
-    private static final boolean CREATE_AS_LEGACY = SearchGuardPlugin.FORCE_CONFIG_V6 || Boolean.parseBoolean(System.getenv("TESTARG_migration_sgadmin_create_as_legacy"));
+    private static final boolean CREATE_AS_LEGACY = Boolean.parseBoolean(System.getenv("TESTARG_migration_sgadmin_create_as_legacy"));
     private static final boolean ALLOW_MIXED = Boolean.parseBoolean(System.getenv("SG_ADMIN_ALLOW_MIXED_CLUSTER"));
     private static final String SG_TS_PASS = "SG_TS_PASS";
     private static final String SG_KS_PASS = "SG_KS_PASS";
@@ -227,9 +229,7 @@ public class SearchGuardAdmin {
 
         options.addOption(Option.builder("backup").hasArg().argName("folder").desc("Backup configuration to folder").build());
 
-        if(!SearchGuardPlugin.FORCE_CONFIG_V6) {
-            options.addOption(Option.builder("migrate").hasArg().argName("folder").desc("Migrate and use folder to store migrated files").build());
-        }
+        options.addOption(Option.builder("migrate").hasArg().argName("folder").desc("Migrate and use folder to store migrated files").build());
         
         //when adding new options also adjust validate(CommandLine line)
         
@@ -1144,9 +1144,7 @@ public class SearchGuardAdmin {
         boolean success = retrieveFile(tc, backupDir.getAbsolutePath()+"/sg_config.yml", index, "config", legacy);
         success = retrieveFile(tc, backupDir.getAbsolutePath()+"/sg_roles.yml", index, "roles", legacy) && success;
         
-        if(legacy) {
-            success = retrieveFile(tc, backupDir.getAbsolutePath()+"/sg_roles_mapping.yml", index, "rolesmapping", legacy) && success;
-        }
+        success = retrieveFile(tc, backupDir.getAbsolutePath()+"/sg_roles_mapping.yml", index, "rolesmapping", legacy) && success;
         success = retrieveFile(tc, backupDir.getAbsolutePath()+"/sg_internal_users.yml", index, "internalusers", legacy) && success;
         success = retrieveFile(tc, backupDir.getAbsolutePath()+"/sg_action_groups.yml", index, "actiongroups", legacy) && success;
         
@@ -1160,9 +1158,7 @@ public class SearchGuardAdmin {
     private static int upload(TransportClient tc, String index, String cd, boolean legacy, NodesInfoResponse nodesInfo) {
         boolean success = uploadFile(tc, cd+"sg_config.yml", index, "config", legacy);
         success = uploadFile(tc, cd+"sg_roles.yml", index, "roles", legacy) && success;
-        if(legacy) {
-            success = uploadFile(tc, cd+"sg_roles_mapping.yml", index, "rolesmapping", legacy) && success;
-        }
+        success = uploadFile(tc, cd+"sg_roles_mapping.yml", index, "rolesmapping", legacy) && success;
         
         success = uploadFile(tc, cd+"sg_internal_users.yml", index, "internalusers", legacy) && success;
         success = uploadFile(tc, cd+"sg_action_groups.yml", index, "actiongroups", legacy) && success;
@@ -1207,16 +1203,16 @@ public class SearchGuardAdmin {
             SgDynamicConfiguration<ActionGroupsV7> actionGroupsV7 = Migration.migrateActionGroups(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(new File(backupDir,"sg_action_groups.yml")), CType.ACTIONGROUPS, 1, 0, 0));
             SgDynamicConfiguration<ConfigV7> configV7 = Migration.migrateConfig(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(new File(backupDir,"sg_config.yml")), CType.CONFIG, 1, 0, 0));
             SgDynamicConfiguration<InternalUserV7> internalUsersV7 = Migration.migrateInternalUsers(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(new File(backupDir,"sg_internal_users.yml")), CType.INTERNALUSERS, 1, 0, 0));
-            Tuple<SgDynamicConfiguration<RoleV7>, SgDynamicConfiguration<TenantV7>> rolesTenantsV7 = Migration.migrateRoles(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(new File(backupDir,"sg_roles.yml")), CType.ROLES, 1, 0, 0),
-                    SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(new File(backupDir,"sg_roles_mapping.yml")), CType.ROLESMAPPING, 1, 0, 0)
-                    );
-            
+            SgDynamicConfiguration<RoleMappingsV6> rolesmappingV6 = SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(new File(backupDir,"sg_roles_mapping.yml")), CType.ROLESMAPPING, 1, 0, 0);
+            Tuple<SgDynamicConfiguration<RoleV7>, SgDynamicConfiguration<TenantV7>> rolesTenantsV7 = Migration.migrateRoles(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(new File(backupDir,"sg_roles.yml")), CType.ROLES, 1, 0, 0), rolesmappingV6);
+            SgDynamicConfiguration<RoleMappingsV7> rolesmappingV7 = Migration.migrateRoleMappings(rolesmappingV6);
             
             DefaultObjectMapper.YAML_MAPPER.writeValue(new File(v7Dir, "/sg_action_groups.yml"), actionGroupsV7);
             DefaultObjectMapper.YAML_MAPPER.writeValue(new File(v7Dir, "/sg_config.yml"), configV7);
             DefaultObjectMapper.YAML_MAPPER.writeValue(new File(v7Dir, "/sg_internal_users.yml"), internalUsersV7);
             DefaultObjectMapper.YAML_MAPPER.writeValue(new File(v7Dir, "/sg_roles.yml"), rolesTenantsV7.v1());
             DefaultObjectMapper.YAML_MAPPER.writeValue(new File(v7Dir, "/sg_tenants.yml"), rolesTenantsV7.v2());
+            DefaultObjectMapper.YAML_MAPPER.writeValue(new File(v7Dir, "/sg_roles_mapping.yml"), rolesmappingV7);
         } catch (Exception e) {
             System.out.println("ERR: Unable to migrate config files due to "+e);
             e.printStackTrace();

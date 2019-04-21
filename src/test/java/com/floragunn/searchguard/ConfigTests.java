@@ -40,10 +40,10 @@ import com.floragunn.searchguard.sgconf.impl.v6.RoleV6;
 import com.floragunn.searchguard.sgconf.impl.v7.ActionGroupsV7;
 import com.floragunn.searchguard.sgconf.impl.v7.ConfigV7;
 import com.floragunn.searchguard.sgconf.impl.v7.InternalUserV7;
+import com.floragunn.searchguard.sgconf.impl.v7.RoleMappingsV7;
 import com.floragunn.searchguard.sgconf.impl.v7.RoleV7;
 import com.floragunn.searchguard.sgconf.impl.v7.TenantV7;
 
-@Ignore
 public class ConfigTests {
     
     private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory());
@@ -56,38 +56,42 @@ public class ConfigTests {
     @Test
     public void testMigrate() throws Exception {
 
-        Tuple<SgDynamicConfiguration<RoleV7>, SgDynamicConfiguration<TenantV7>> rolesResult = Migration.migrateRoles((SgDynamicConfiguration<RoleV6>)load("./sgconfig/sg_roles.yml", CType.ROLES), 
-                (SgDynamicConfiguration<RoleMappingsV6>)load("./sgconfig/sg_roles_mapping.yml", CType.ROLESMAPPING));
+        Tuple<SgDynamicConfiguration<RoleV7>, SgDynamicConfiguration<TenantV7>> rolesResult = Migration.migrateRoles((SgDynamicConfiguration<RoleV6>)load("./legacy/sgconfig_v6/sg_roles.yml", CType.ROLES),
+                (SgDynamicConfiguration<RoleMappingsV6>)load("./legacy/sgconfig_v6/sg_roles_mapping.yml", CType.ROLESMAPPING));
         
-        System.out.println(Strings.toString(rolesResult.v1(), true, false));
         System.out.println(Strings.toString(rolesResult.v2(), true, false));
+        System.out.println(Strings.toString(rolesResult.v1(), true, false));
         
-        SgDynamicConfiguration<ActionGroupsV7> actionGroupsResult = Migration.migrateActionGroups((SgDynamicConfiguration<ActionGroupsV6>)load("./sgconfig/sg_action_groups.yml", CType.ACTIONGROUPS));
+        
+        SgDynamicConfiguration<ActionGroupsV7> actionGroupsResult = Migration.migrateActionGroups((SgDynamicConfiguration<ActionGroupsV6>)load("./legacy/sgconfig_v6/sg_action_groups.yml", CType.ACTIONGROUPS));
         System.out.println(Strings.toString(actionGroupsResult, true, false));
-        SgDynamicConfiguration<ConfigV7> configResult =Migration.migrateConfig((SgDynamicConfiguration<ConfigV6>)load("./sgconfig/sg_config.yml", CType.CONFIG));
+        SgDynamicConfiguration<ConfigV7> configResult =Migration.migrateConfig((SgDynamicConfiguration<ConfigV6>)load("./legacy/sgconfig_v6/sg_config.yml", CType.CONFIG));
         System.out.println(Strings.toString(configResult, true, false));
-        SgDynamicConfiguration<InternalUserV7> internalUsersResult = Migration.migrateInternalUsers((SgDynamicConfiguration<InternalUserV6>)load("./sgconfig/sg_internal_users.yml", CType.INTERNALUSERS));
+        SgDynamicConfiguration<InternalUserV7> internalUsersResult = Migration.migrateInternalUsers((SgDynamicConfiguration<InternalUserV6>)load("./legacy/sgconfig_v6/sg_internal_users.yml", CType.INTERNALUSERS));
         System.out.println(Strings.toString(internalUsersResult, true, false));
-
+        SgDynamicConfiguration<RoleMappingsV7> rolemappingsResult = Migration.migrateRoleMappings((SgDynamicConfiguration<RoleMappingsV6>)load("./legacy/sgconfig_v6/sg_roles_mapping.yml", CType.ROLESMAPPING));
+        System.out.println(Strings.toString(rolemappingsResult, true, false));
     }
     
     @Test
     public void testParseSg67Config() throws Exception {
 
+        check("./legacy/sgconfig_v6/sg_action_groups.yml", CType.ACTIONGROUPS);
         check("./sgconfig/sg_action_groups.yml", CType.ACTIONGROUPS);
-        check("./sgconfig/v7/sg_action_groups.yml", CType.ACTIONGROUPS);
         
+        check("./legacy/sgconfig_v6/sg_config.yml", CType.CONFIG);
         check("./sgconfig/sg_config.yml", CType.CONFIG);
-        check("./sgconfig/v7/sg_config.yml", CType.CONFIG);
         
+        check("./legacy/sgconfig_v6/sg_roles.yml", CType.ROLES);
         check("./sgconfig/sg_roles.yml", CType.ROLES);
-        check("./sgconfig/v7/sg_roles.yml", CType.ROLES);
         
+        check("./legacy/sgconfig_v6/sg_internal_users.yml", CType.INTERNALUSERS);
         check("./sgconfig/sg_internal_users.yml", CType.INTERNALUSERS);
-        check("./sgconfig/v7/sg_internal_users.yml", CType.INTERNALUSERS);
         
+        check("./legacy/sgconfig_v6/sg_roles_mapping.yml", CType.ROLESMAPPING);
         check("./sgconfig/sg_roles_mapping.yml", CType.ROLESMAPPING);
-        check("./sgconfig/v7/sg_tenants.yml", CType.TENANTS);
+        
+        check("./sgconfig/sg_tenants.yml", CType.TENANTS);
         
     }
     

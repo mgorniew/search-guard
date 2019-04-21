@@ -80,8 +80,6 @@ public abstract class AbstractSGUnitTest {
 		System.out.println("Open SSL version: " + OpenSsl.versionString());
 		withRemoteCluster = Boolean.parseBoolean(System.getenv("TESTARG_unittests_with_remote_cluster"));
 		System.out.println("With remote cluster: " + withRemoteCluster);
-        System.out.println("Auto migrate from V6: " + SearchGuardPlugin.AUTO_MIGRATE_FROMV6);
-	    //System.setProperty("sg.display_lic_none","true");
 	}
 	
 	protected final Logger log = LogManager.getLogger(this.getClass());
@@ -191,12 +189,12 @@ public abstract class AbstractSGUnitTest {
             sr = tc.search(new SearchRequest("searchguard")).actionGet();
             //Assert.assertEquals(5L, sr.getHits().getTotalHits());
             
-            String type=SearchGuardPlugin.AUTO_MIGRATE_FROMV6?"_doc":"sg";
+            String type=sgconfig.getType();
 
             Assert.assertTrue(tc.get(new GetRequest("searchguard", type, "config")).actionGet().isExists());
             Assert.assertTrue(tc.get(new GetRequest("searchguard",type,"internalusers")).actionGet().isExists());
             Assert.assertTrue(tc.get(new GetRequest("searchguard",type,"roles")).actionGet().isExists());
-            Assert.assertTrue(SearchGuardPlugin.AUTO_MIGRATE_FROMV6 || tc.get(new GetRequest("searchguard",type,"rolesmapping")).actionGet().isExists());
+            Assert.assertTrue(tc.get(new GetRequest("searchguard",type,"rolesmapping")).actionGet().isExists());
             Assert.assertTrue(tc.get(new GetRequest("searchguard",type,"actiongroups")).actionGet().isExists());
             Assert.assertFalse(tc.get(new GetRequest("searchguard",type,"rolesmapping_xcvdnghtu165759i99465")).actionGet().isExists());
             Assert.assertTrue(tc.get(new GetRequest("searchguard",type,"config")).actionGet().isExists());
@@ -265,5 +263,9 @@ public abstract class AbstractSGUnitTest {
     
     protected String getResourceFolder() {
         return null;
+    }
+    
+    protected String getType() {
+        return "_doc";
     }
 }

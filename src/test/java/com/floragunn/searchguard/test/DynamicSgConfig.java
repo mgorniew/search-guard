@@ -32,10 +32,13 @@ public class DynamicSgConfig {
     private String searchGuardIndexName = "searchguard";
     private String sgConfig = "sg_config.yml";
     private String sgRoles = "sg_roles.yml";
+    private String sgTenants = "sg_roles_tenants.yml";
     private String sgRolesMapping = "sg_roles_mapping.yml";
     private String sgInternalUsers = "sg_internal_users.yml";
     private String sgActionGroups = "sg_action_groups.yml";
     private String sgConfigAsYamlString = null;
+    private String type = "_doc";
+    private String legacyConfigFolder = "";
 
     public String getSearchGuardIndexName() {
         return searchGuardIndexName;
@@ -75,42 +78,58 @@ public class DynamicSgConfig {
         return this;
     }
     
+    public DynamicSgConfig setLegacy() {
+        this.type = "sg";
+        this.legacyConfigFolder = "legacy/sgconfig_v6/";
+        return this;
+    }
+
+    public String getType() {
+        return type;
+    }
     public List<IndexRequest> getDynamicConfig(String folder) {
         
-        final String prefix = folder == null?"":folder+"/";
+        final String prefix = legacyConfigFolder+(folder == null?"":folder+"/");
         
         List<IndexRequest> ret = new ArrayList<IndexRequest>();
         
         ret.add(new IndexRequest(searchGuardIndexName)
-               .type("sg")
+               .type(type)
                .id(CType.CONFIG.toLCString())
                .setRefreshPolicy(RefreshPolicy.IMMEDIATE)
                .source(CType.CONFIG.toLCString(), sgConfigAsYamlString==null?FileHelper.readYamlContent(prefix+sgConfig):FileHelper.readYamlContentFromString(sgConfigAsYamlString)));
         
         ret.add(new IndexRequest(searchGuardIndexName)
-        .type("sg")
+                .type(type)
         .id(CType.ACTIONGROUPS.toLCString())
         .setRefreshPolicy(RefreshPolicy.IMMEDIATE)
         .source(CType.ACTIONGROUPS.toLCString(), FileHelper.readYamlContent(prefix+sgActionGroups)));
  
         ret.add(new IndexRequest(searchGuardIndexName)
-        .type("sg")
+                .type(type)
         .id(CType.INTERNALUSERS.toLCString())
         .setRefreshPolicy(RefreshPolicy.IMMEDIATE)
         .source(CType.INTERNALUSERS.toLCString(), FileHelper.readYamlContent(prefix+sgInternalUsers)));
  
         ret.add(new IndexRequest(searchGuardIndexName)
-        .type("sg")
+                .type(type)
         .id(CType.ROLES.toLCString())
         .setRefreshPolicy(RefreshPolicy.IMMEDIATE)
         .source(CType.ROLES.toLCString(), FileHelper.readYamlContent(prefix+sgRoles)));
  
         ret.add(new IndexRequest(searchGuardIndexName)
-        .type("sg")
+                .type(type)
         .id(CType.ROLESMAPPING.toLCString())
         .setRefreshPolicy(RefreshPolicy.IMMEDIATE)
         .source(CType.ROLESMAPPING.toLCString(), FileHelper.readYamlContent(prefix+sgRolesMapping)));
- 
+        
+        if("".equals(legacyConfigFolder)) {
+            ret.add(new IndexRequest(searchGuardIndexName)
+                    .type(type)
+            .id(CType.TENANTS.toLCString())
+            .setRefreshPolicy(RefreshPolicy.IMMEDIATE)
+            .source(CType.TENANTS.toLCString(), FileHelper.readYamlContent(prefix+sgTenants)));
+        }
         
         return Collections.unmodifiableList(ret);
     }
