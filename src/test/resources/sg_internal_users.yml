@@ -111,7 +111,8 @@ knuddel:
   reserved: false
   hidden: false
   backend_roles: []
-  attributes: {}
+  attributes:
+    test1: test2
   description: "Migrated from v6"
 557:
   hash: "$2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m"
@@ -318,3 +319,6 @@ userwithblankpasswd:
   - "starfleet"
   attributes: {}
   description: "Migrated from v6"
+env.replace@example.comp.com:
+  hash: $2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m
+  #password is: nagilum

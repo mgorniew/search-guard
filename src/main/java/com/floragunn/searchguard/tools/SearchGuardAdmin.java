@@ -118,6 +118,8 @@ import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
 import com.floragunn.searchguard.support.ConfigConstants;
 import com.floragunn.searchguard.support.ConfigHelper;
 import com.floragunn.searchguard.support.SearchGuardDeprecationHandler;
+import com.floragunn.searchguard.support.SgUtils;
+import com.google.common.io.CharStreams;
 import com.google.common.io.Files;
 
 public class SearchGuardAdmin {
@@ -231,6 +233,9 @@ public class SearchGuardAdmin {
 
         options.addOption(Option.builder("migrate").hasArg().argName("folder").desc("Migrate and use folder to store migrated files").build());
         
+        options.addOption(Option.builder("rev").longOpt("resolve-env-vars").desc("Resolve/Substitute env vars in config with their value before uploading").build());
+
+        
         //when adding new options also adjust validate(CommandLine line)
         
         String hostname = "localhost";
@@ -276,6 +281,7 @@ public class SearchGuardAdmin {
         String explicitReplicas = null;
         String backup = null;
         String migrate = null;
+        final boolean resolveEnvVars;
         
         CommandLineParser parser = new DefaultParser();
         try {
@@ -363,6 +369,9 @@ public class SearchGuardAdmin {
             backup = line.getOptionValue("backup");
             
             migrate = line.getOptionValue("migrate");
+            
+            resolveEnvVars = line.hasOption("rev");
+            
         }
         catch( ParseException exp ) {
             System.out.println("ERR: Parsing failed.  Reason: " + exp.getMessage());
@@ -719,7 +728,7 @@ public class SearchGuardAdmin {
                     System.out.println("ERR: Seems cluster is already migrated");
                     return -1;
                 }
-                return migrate(tc, index, new File(migrate), nodesInfo);
+                return migrate(tc, index, new File(migrate), nodesInfo, resolveEnvVars);
             }
             
             boolean isCdAbs = new File(cd).isAbsolute();
@@ -737,7 +746,7 @@ public class SearchGuardAdmin {
                     return (-1);
                 }
                 
-                boolean success = uploadFile(tc, file, index, type, legacy);
+                boolean success = uploadFile(tc, file, index, type, legacy, resolveEnvVars);
                 
                 if(!success) {
                     System.out.println("ERR: cannot upload configuration, see errors above");
@@ -752,8 +761,7 @@ public class SearchGuardAdmin {
                 return (success?0:-1);
             }
             
-            
-            return upload(tc, index, cd, legacy, nodesInfo);
+            return upload(tc, index, cd, legacy, nodesInfo, resolveEnvVars);
         }
         // TODO audit changes to searchguard index
     }
@@ -789,7 +797,7 @@ public class SearchGuardAdmin {
         return success;
     }
     
-    private static boolean uploadFile(final Client tc, final String filepath, final String index, final String _id, final boolean legacy) {
+    private static boolean uploadFile(final Client tc, final String filepath, final String index, final String _id, final boolean legacy, boolean resolveEnvVars) {
         
         String type = "_doc";
         String id = _id;
@@ -817,9 +825,10 @@ public class SearchGuardAdmin {
         System.out.println("Will update '"+type+"/" + id + "' with " + filepath+" "+(legacy?"(legacy mode)":""));
         
         try (Reader reader = new FileReader(filepath)) {
+            final String content = CharStreams.toString(reader);
             final String res = tc
                     .index(new IndexRequest(index).type(type).id(id).setRefreshPolicy(RefreshPolicy.IMMEDIATE)
-                            .source(_id, readXContent(reader, XContentType.YAML))).actionGet().getId();
+                            .source(_id, readXContent(resolveEnvVars?SgUtils.replaceEnvVars(content, Settings.EMPTY):content, XContentType.YAML))).actionGet().getId();
 
             if (id.equals(res)) {
                 System.out.println("   SUCC: Configuration for '" + _id + "' created or updated");
@@ -888,11 +897,11 @@ public class SearchGuardAdmin {
         return false;
     }
 
-    private static BytesReference readXContent(final Reader reader, final XContentType xContentType) throws IOException {
+    private static BytesReference readXContent(final String content, final XContentType xContentType) throws IOException {
         BytesReference retVal;
         XContentParser parser = null;
         try {
-            parser = XContentFactory.xContent(xContentType).createParser(NamedXContentRegistry.EMPTY, SearchGuardDeprecationHandler.INSTANCE, reader);
+            parser = XContentFactory.xContent(xContentType).createParser(NamedXContentRegistry.EMPTY, SearchGuardDeprecationHandler.INSTANCE, content);
             parser.nextToken();
             final XContentBuilder builder = XContentFactory.jsonBuilder();
             builder.copyCurrentStructure(parser);
@@ -1156,17 +1165,17 @@ public class SearchGuardAdmin {
         return success?0:-1;
     }
     
-    private static int upload(TransportClient tc, String index, String cd, boolean legacy, NodesInfoResponse nodesInfo) {
-        boolean success = uploadFile(tc, cd+"sg_config.yml", index, "config", legacy);
-        success = uploadFile(tc, cd+"sg_roles.yml", index, "roles", legacy) && success;
-        success = uploadFile(tc, cd+"sg_roles_mapping.yml", index, "rolesmapping", legacy) && success;
+    private static int upload(TransportClient tc, String index, String cd, boolean legacy, NodesInfoResponse nodesInfo, boolean resolveEnvVars) {
+        boolean success = uploadFile(tc, cd+"sg_config.yml", index, "config", legacy, resolveEnvVars);
+        success = uploadFile(tc, cd+"sg_roles.yml", index, "roles", legacy, resolveEnvVars) && success;
+        success = uploadFile(tc, cd+"sg_roles_mapping.yml", index, "rolesmapping", legacy, resolveEnvVars) && success;
         
-        success = uploadFile(tc, cd+"sg_internal_users.yml", index, "internalusers", legacy) && success;
-        success = uploadFile(tc, cd+"sg_action_groups.yml", index, "actiongroups", legacy) && success;
+        success = uploadFile(tc, cd+"sg_internal_users.yml", index, "internalusers", legacy, resolveEnvVars) && success;
+        success = uploadFile(tc, cd+"sg_action_groups.yml", index, "actiongroups", legacy, resolveEnvVars) && success;
 
         
         if(!legacy) {
-            success = uploadFile(tc, cd+"sg_tenants.yml", index, "tenants", legacy) && success;
+            success = uploadFile(tc, cd+"sg_tenants.yml", index, "tenants", legacy, resolveEnvVars) && success;
         }
         
         if(!success) {
@@ -1182,7 +1191,7 @@ public class SearchGuardAdmin {
         return (success?0:-1);
     }
     
-    private static int migrate(TransportClient tc, String index, File backupDir, NodesInfoResponse nodesInfo) {
+    private static int migrate(TransportClient tc, String index, File backupDir, NodesInfoResponse nodesInfo, boolean resolveEnvVars) {
         
         System.out.println("== Migration started ==");
         System.out.println("=======================");
@@ -1228,7 +1237,7 @@ public class SearchGuardAdmin {
         
         System.out.println("-> Upload new configuration into Elasticsearch cluster");
         
-        int uploadResult = upload(tc, index, v7Dir.getAbsolutePath()+"/", false, nodesInfo);
+        int uploadResult = upload(tc, index, v7Dir.getAbsolutePath()+"/", false, nodesInfo, resolveEnvVars);
         
         if(uploadResult == 0) {
             System.out.println("  done");

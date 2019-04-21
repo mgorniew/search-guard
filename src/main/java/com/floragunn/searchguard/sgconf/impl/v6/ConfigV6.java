@@ -35,10 +35,12 @@ public class ConfigV6 {
         public Http http = new Http();
         public Authc authc = new Authc();
         public Authz authz = new Authz();
+        public AuthFailureListeners auth_failure_listeners = new AuthFailureListeners();
         public boolean do_not_fail_on_forbidden;
         public boolean multi_rolespan_enabled;
         public String hosts_resolver_mode = "ip-only";
         public String transport_userrname_attribute;
+        public boolean do_not_fail_on_forbidden_empty;
     
         @Override
         public String toString() {
@@ -72,6 +74,46 @@ public class ConfigV6 {
         }
         
         
+    }
+    
+    public static class AuthFailureListeners {
+        @JsonIgnore
+        private final Map<String, AuthFailureListener> listeners = new HashMap<>();
+
+        @JsonAnySetter
+        void setListeners(String key, AuthFailureListener value) {
+            listeners.put(key, value);
+        }
+
+        @JsonAnyGetter
+        public Map<String, AuthFailureListener> getListeners() {
+            return listeners;
+        }
+
+        
+    }
+    
+    public static class AuthFailureListener {
+        public String type;
+        public String authentication_backend;
+        public int allowed_tries = 10;
+        public int time_window_seconds = 60 * 60;
+        public int block_expiry_seconds = 60 * 10;
+        public int max_blocked_clients = 100_000;
+        public int max_tracked_clients = 100_000;
+        
+        public AuthFailureListener() {
+            super();
+        }
+        
+        @JsonIgnore
+        public String asJson() {
+            try {
+                return DefaultObjectMapper.writeValueAsString(this, false);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
     
     public static class Xff {

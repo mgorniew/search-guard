@@ -50,6 +50,7 @@ import com.floragunn.searchguard.sgconf.impl.CType;
 import com.floragunn.searchguard.sgconf.impl.SgDynamicConfiguration;
 import com.floragunn.searchguard.support.ConfigConstants;
 import com.floragunn.searchguard.support.SearchGuardDeprecationHandler;
+import com.floragunn.searchguard.support.SgUtils;
 
 public class ConfigurationLoaderSG7 {
 
@@ -57,10 +58,12 @@ public class ConfigurationLoaderSG7 {
     private final Client client;
     private final String searchguardIndex;
     private final ClusterService cs;
+    private final Settings settings;
     
     ConfigurationLoaderSG7(final Client client, ThreadPool threadPool, final Settings settings, ClusterService cs) {
         super();
         this.client = client;
+        this.settings = settings;
         this.searchguardIndex = settings.get(ConfigConstants.SEARCHGUARD_CONFIG_INDEX_NAME, ConfigConstants.SG_DEFAULT_CONFIG_INDEX);
         this.cs = cs;
         log.debug("Index is: {}", searchguardIndex);
@@ -210,7 +213,7 @@ public class ConfigurationLoaderSG7 {
             
             parser.nextToken();
             
-            final String jsonAsString = new String(parser.binaryValue());
+            final String jsonAsString = SgUtils.replaceEnvVars(new String(parser.binaryValue()), settings);
             final JsonNode jsonNode = DefaultObjectMapper.readTree(jsonAsString);
             int configVersion = 1;
             

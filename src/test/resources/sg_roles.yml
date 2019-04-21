@@ -985,9 +985,21 @@ sg_twitter:
   index_permissions:
   - index_patterns:
     - "twitter"
+    - "analytics"
     dls: null
     fls: null
     masked_fields: null
     allowed_actions:
     - "*"
   tenant_permissions: []
+sg_env_test:
+  cluster_permissions:
+  - '*'
+  index_permissions:
+  - index_patterns:
+    - '${env.INDEXNAME1:-index1}'
+    - '${env.INDEXNAME2:-index2}'
+    - '${user_name}'
+    - '${env.INDEXNAME3}'
+    allowed_actions:
+    - "*"

@@ -1,6 +1,8 @@
 package com.floragunn.searchguard.sgconf;
 
+import java.net.InetAddress;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -14,10 +16,12 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentType;
 
 import com.floragunn.searchguard.auth.AuthDomain;
+import com.floragunn.searchguard.auth.AuthFailureListener;
 import com.floragunn.searchguard.auth.AuthenticationBackend;
 import com.floragunn.searchguard.auth.AuthorizationBackend;
 import com.floragunn.searchguard.auth.Destroyable;
 import com.floragunn.searchguard.auth.HTTPAuthenticator;
+import com.floragunn.searchguard.auth.blocking.ClientBlockRegistry;
 import com.floragunn.searchguard.auth.internal.InternalAuthenticationBackend;
 import com.floragunn.searchguard.sgconf.impl.v7.ConfigV7;
 import com.floragunn.searchguard.sgconf.impl.v7.ConfigV7.Authc;
@@ -25,6 +29,10 @@ import com.floragunn.searchguard.sgconf.impl.v7.ConfigV7.AuthcDomain;
 import com.floragunn.searchguard.sgconf.impl.v7.ConfigV7.Authz;
 import com.floragunn.searchguard.sgconf.impl.v7.ConfigV7.AuthzDomain;
 import com.floragunn.searchguard.support.ReflectionHelper;
+import com.google.common.base.Strings;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 
 public class DynamicConfigModelV7 extends DynamicConfigModel {
     
@@ -37,6 +45,11 @@ public class DynamicConfigModelV7 extends DynamicConfigModel {
     private Set<AuthorizationBackend> transportAuthorizers;
     private List<Destroyable> destroyableComponents;
     private final InternalAuthenticationBackend iab;
+
+    private List<AuthFailureListener> ipAuthFailureListeners;
+    private Multimap<String, AuthFailureListener> authBackendFailureListeners;
+    private List<ClientBlockRegistry<InetAddress>> ipClientBlockRegistries;
+    private Multimap<String, ClientBlockRegistry<String>> authBackendClientBlockRegistries;
     
     public DynamicConfigModelV7(ConfigV7 config, Settings esSettings, Path configPath, InternalAuthenticationBackend iab) {
         super();
@@ -131,6 +144,33 @@ public class DynamicConfigModelV7 extends DynamicConfigModel {
     public String getHostsResolverMode() {
         return config.dynamic.hosts_resolver_mode;
     }
+    
+    @Override
+    public boolean isDnfofForEmptyResultsEnabled() {
+        return config.dynamic.do_not_fail_on_forbidden_empty;
+    }
+    
+    @Override
+    public List<AuthFailureListener> getIpAuthFailureListeners() {
+        return Collections.unmodifiableList(ipAuthFailureListeners);
+    }
+    
+    @Override
+    public Multimap<String, AuthFailureListener> getAuthBackendFailureListeners() {
+        return Multimaps.unmodifiableMultimap(authBackendFailureListeners);
+    }
+    
+    @Override
+    public List<ClientBlockRegistry<InetAddress>> getIpClientBlockRegistries() {
+        return Collections.unmodifiableList(ipClientBlockRegistries);
+    }
+    
+    @Override
+    public Multimap<String, ClientBlockRegistry<String>> getAuthBackendClientBlockRegistries() {
+        return Multimaps.unmodifiableMultimap(authBackendClientBlockRegistries);
+    }
+    
+    
     private void buildAAA() {
         
         final SortedSet<AuthDomain> restAuthDomains0 = new TreeSet<>();
@@ -138,6 +178,10 @@ public class DynamicConfigModelV7 extends DynamicConfigModel {
         final SortedSet<AuthDomain> transportAuthDomains0 = new TreeSet<>();
         final Set<AuthorizationBackend> transportAuthorizers0 = new HashSet<>();
         final List<Destroyable> destroyableComponents0 = new LinkedList<>();
+        final List<AuthFailureListener> ipAuthFailureListeners0 = new ArrayList<>();
+        final Multimap<String, AuthFailureListener> authBackendFailureListeners0 = ArrayListMultimap.create();
+        final List<ClientBlockRegistry<InetAddress>> ipClientBlockRegistries0 = new ArrayList<>();
+        final Multimap<String, ClientBlockRegistry<String>> authBackendClientBlockRegistries0 = ArrayListMultimap.create();
 
         final Authz authzDyn = config.dynamic.authz;
 
@@ -258,8 +302,16 @@ public class DynamicConfigModelV7 extends DynamicConfigModel {
         
         originalDestroyableComponents = null;
 
+        createAuthFailureListeners(ipAuthFailureListeners0,
+                authBackendFailureListeners0, ipClientBlockRegistries0, authBackendClientBlockRegistries0, destroyableComponents0);
+        
+        ipAuthFailureListeners = Collections.unmodifiableList(ipAuthFailureListeners0);
+        ipClientBlockRegistries = Collections.unmodifiableList(ipClientBlockRegistries0);
+        authBackendClientBlockRegistries = Multimaps.unmodifiableMultimap(authBackendClientBlockRegistries0);
+        authBackendFailureListeners = Multimaps.unmodifiableMultimap(authBackendFailureListeners0);
+
     }
-    
+
     private void destroyDestroyables(List<Destroyable> destroyableComponents) {
         for (Destroyable destroyable : destroyableComponents) {
             try {
@@ -286,5 +338,70 @@ public class DynamicConfigModelV7 extends DynamicConfigModel {
         }
 
         return ReflectionHelper.instantiateAAA(clazz, settings, configPath, isEnterprise);
+    }
+    
+    private String translateShortcutToClassName(final String clazzOrShortcut, final String type) {
+
+        if (authImplMap.containsKey(clazzOrShortcut + "_" + type)) {
+            return authImplMap.get(clazzOrShortcut + "_" + type);
+        } else {
+            return clazzOrShortcut;
+        }
+    }
+    
+    private void createAuthFailureListeners(List<AuthFailureListener> ipAuthFailureListeners,
+            Multimap<String, AuthFailureListener> authBackendFailureListeners, List<ClientBlockRegistry<InetAddress>> ipClientBlockRegistries,
+            Multimap<String, ClientBlockRegistry<String>> authBackendUserClientBlockRegistries, List<Destroyable> destroyableComponents0) {
+
+        for (Entry<String, ConfigV7.AuthFailureListener> entry : config.dynamic.auth_failure_listeners.getListeners().entrySet()) {
+            
+            Settings entrySettings = Settings.builder()
+            .put(esSettings)
+            .put(Settings.builder().loadFromSource(entry.getValue().asJson(), XContentType.JSON).build()).build();
+            
+            String type = entry.getValue().type;
+            String authenticationBackend = entry.getValue().authentication_backend;
+
+            AuthFailureListener authFailureListener = newInstance(type, "authFailureListener", entrySettings, configPath);
+
+            if (Strings.isNullOrEmpty(authenticationBackend)) {
+                ipAuthFailureListeners.add(authFailureListener);
+
+                if (authFailureListener instanceof ClientBlockRegistry) {
+                    if (InetAddress.class.isAssignableFrom(((ClientBlockRegistry<?>) authFailureListener).getClientIdType())) {
+                        @SuppressWarnings("unchecked")
+                        ClientBlockRegistry<InetAddress> clientBlockRegistry = (ClientBlockRegistry<InetAddress>) authFailureListener;
+
+                        ipClientBlockRegistries.add(clientBlockRegistry);
+                    } else {
+                        log.error("Illegal ClientIdType for AuthFailureListener" + entry.getKey() + ": "
+                                + ((ClientBlockRegistry<?>) authFailureListener).getClientIdType() + "; must be InetAddress.");
+                    }
+                }
+
+            } else {
+
+                authenticationBackend = translateShortcutToClassName(authenticationBackend, "c");
+
+                authBackendFailureListeners.put(authenticationBackend, authFailureListener);
+
+                if (authFailureListener instanceof ClientBlockRegistry) {
+                    if (String.class.isAssignableFrom(((ClientBlockRegistry<?>) authFailureListener).getClientIdType())) {
+                        @SuppressWarnings("unchecked")
+                        ClientBlockRegistry<String> clientBlockRegistry = (ClientBlockRegistry<String>) authFailureListener;
+
+                        authBackendUserClientBlockRegistries.put(authenticationBackend, clientBlockRegistry);
+                    } else {
+                        log.error("Illegal ClientIdType for AuthFailureListener" + entry.getKey() + ": "
+                                + ((ClientBlockRegistry<?>) authFailureListener).getClientIdType() + "; must be InetAddress.");
+                    }
+                }
+            }
+
+            if (authFailureListener instanceof Destroyable) {
+                destroyableComponents0.add((Destroyable) authFailureListener);
+            }
+        }
+
     }
 }

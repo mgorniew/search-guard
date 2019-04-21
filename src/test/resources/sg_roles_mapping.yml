@@ -364,3 +364,6 @@ sg_twitter:
   - "twitter"
   and_backend_roles: []
   description: "Migrated from v6"
+sg_env_test:
+  users:
+    - env.replace@example.comp.com

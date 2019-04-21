@@ -152,3 +152,19 @@ sg_config:
     multi_rolespan_enabled: false
     hosts_resolver_mode: "ip-only"
     transport_userrname_attribute: null
+#    auth_failure_listeners:
+#      ip_rate_limiting:
+#        type: ip
+#        allowed_tries: 10
+#        time_window_seconds: 3600
+#        block_expiry_seconds: 600
+#        max_blocked_clients: 100000
+#        max_tracked_clients: 100000
+#      internal_authentication_backend_limiting:
+#        type: username
+#        authentication_backend: intern        
+#        allowed_tries: 10
+#        time_window_seconds: 3600
+#        block_expiry_seconds: 600
+#        max_blocked_clients: 100000
+#        max_tracked_clients: 100000

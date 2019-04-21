@@ -37,6 +37,7 @@ import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest.AliasActions;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexAction;
+import org.elasticsearch.action.admin.indices.mapping.get.GetFieldMappingsRequest;
 import org.elasticsearch.action.bulk.BulkAction;
 import org.elasticsearch.action.bulk.BulkItemRequest;
 import org.elasticsearch.action.bulk.BulkShardRequest;
@@ -45,7 +46,9 @@ import org.elasticsearch.action.get.MultiGetAction;
 import org.elasticsearch.action.index.IndexAction;
 import org.elasticsearch.action.search.MultiSearchAction;
 import org.elasticsearch.action.search.SearchAction;
+import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchScrollAction;
+import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.termvectors.MultiTermVectorsAction;
 import org.elasticsearch.action.update.UpdateAction;
 import org.elasticsearch.cluster.metadata.AliasMetaData;
@@ -282,7 +285,7 @@ public class PrivilegesEvaluator implements DCFListener {
         }
 
         // term aggregations
-        if (termsAggregationEvaluator.evaluate(request, clusterService, user, sgRoles, resolver, presponse).isComplete()) {
+        if (termsAggregationEvaluator.evaluate(requestedResolved, request, clusterService, user, sgRoles, resolver, presponse).isComplete()) {
             return presponse;
         }
 
@@ -338,6 +341,34 @@ public class PrivilegesEvaluator implements DCFListener {
             Set<String> reduced = sgRoles.reduce(requestedResolved, user, allIndexPermsRequiredA, resolver, clusterService);
 
             if (reduced.isEmpty()) {
+                
+                if(dcm.isDnfofForEmptyResultsEnabled()) {
+                    //ITT-1886
+                    if(request instanceof SearchRequest) {
+                        ((SearchRequest) request).indices(new String[0]);
+                        ((SearchRequest) request).indicesOptions(IndicesOptions.fromOptions(true, true, false, false));
+                        presponse.missingPrivileges.clear();
+                        presponse.allowed = true;
+                        return presponse;
+                    }
+    
+                    if(request instanceof ClusterSearchShardsRequest) {
+                        ((ClusterSearchShardsRequest) request).indices(new String[0]);
+                        ((ClusterSearchShardsRequest) request).indicesOptions(IndicesOptions.fromOptions(true, true, false, false));
+                        presponse.missingPrivileges.clear();
+                        presponse.allowed = true;
+                        return presponse;
+                    }
+                    
+                    if(request instanceof GetFieldMappingsRequest) {
+                        ((GetFieldMappingsRequest) request).indices(new String[0]);
+                        ((GetFieldMappingsRequest) request).indicesOptions(IndicesOptions.fromOptions(true, true, false, false));
+                        presponse.missingPrivileges.clear();
+                        presponse.allowed = true;
+                        return presponse;
+                    }
+                }
+
                 presponse.allowed = false;
                 return presponse;
             }
