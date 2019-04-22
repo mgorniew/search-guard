@@ -39,11 +39,12 @@ import com.google.common.io.Files;
 
 public class Migrater {
 
-    public static void main0(final String[] args) {
+    public static void main(final String[] args) {
 
         final Options options = new Options();
         final HelpFormatter formatter = new HelpFormatter();
         options.addOption(Option.builder("dir").argName("directory").hasArg().required().desc("Directory containing file to be migrated").build());
+        options.addOption(Option.builder("b").desc("Backup files before changing them").build());
 
         final CommandLineParser parser = new DefaultParser();
         try {
@@ -51,7 +52,7 @@ public class Migrater {
             
             if(line.hasOption("dir")) {
                 final File dir = new File(line.getOptionValue("dir"));
-                if(!migrateDirectory(dir)) {
+                if(!migrateDirectory(dir, line.hasOption("b"))) {
                     System.exit(-1);
                 } else {
                     System.exit(0);
@@ -65,24 +66,7 @@ public class Migrater {
         System.exit(-1);
     }
     
-    public static void main(String[] args) {
-        
-//        final File f = new File("/Users/salyh/sgdev/search-guard/src/test/resources/sg_config_ldap.yml");
-//        migrateFile(f);
-//        System.exit(0);
-        
-        final File dir = new File("/Users/salyh/sgdev/search-guard-enterprise/src/test/resources/saml");
-        if(!migrateDirectory(dir)) {
-            System.out.println("Errors");
-            System.exit(-1);
-        } else {
-            System.out.println("Success");
-            System.exit(0);
-        }
-        
-    }
-    
-    public static boolean migrateDirectory(File dir) {
+    public static boolean migrateDirectory(File dir, boolean backup) {
         if(!dir.exists()) {
             System.out.println(dir.getAbsolutePath()+" does not exist");
             return false;
@@ -108,7 +92,7 @@ public class Migrater {
         boolean retVal = true;
         
         for(File file: files) {
-            if(!migrateFile(file)) {
+            if(!migrateFile(file, backup)) {
                 retVal = false;
             }
         }
@@ -116,7 +100,7 @@ public class Migrater {
         return retVal;
     }
     
-    public static boolean migrateFile(File file) {
+    public static boolean migrateFile(File file, boolean backup) {
         final String absolutePath = file.getAbsolutePath();
         if(!file.exists()) {
             System.out.println("Skip "+absolutePath+" because it does not exist");
@@ -130,7 +114,7 @@ public class Migrater {
 
         try {
             SgDynamicConfiguration<?> val = Migration.migrateConfig(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(file), CType.CONFIG, 1, 0, 0));
-            return backupAndWrite(file, val);
+            return backupAndWrite(file, val, backup);
         } catch (UnrecognizedPropertyException e) {
             //e.printStackTrace();
             //suppress
@@ -140,36 +124,36 @@ public class Migrater {
         
         try {
             Tuple<SgDynamicConfiguration<RoleV7>, SgDynamicConfiguration<TenantV7>> tup = Migration.migrateRoles(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(file), CType.ROLES, 1, 0, 0), null);
-            boolean roles = backupAndWrite(file, tup.v1());
-            return roles && backupAndWrite(new File(file.getParent(),file.getName().replace(".yml", "")+"_tenants.yml"), tup.v2());
+            boolean roles = backupAndWrite(file, tup.v1(), backup);
+            return roles && backupAndWrite(new File(file.getParent(),file.getName().replace(".yml", "")+"_tenants.yml"), tup.v2(), backup);
         } catch (Exception e) {
             //suppress
         }
         
         try {
             SgDynamicConfiguration<?> val = Migration.migrateInternalUsers(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(file), CType.INTERNALUSERS, 1, 0, 0));
-            return backupAndWrite(file, val);
+            return backupAndWrite(file, val, backup);
         } catch (Exception e) {
             //suppress
         }
         
         try {
             SgDynamicConfiguration<?> val = Migration.migrateRoleMappings(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(file), CType.ROLESMAPPING, 1, 0, 0));
-            return backupAndWrite(file, val);
+            return backupAndWrite(file, val, backup);
         } catch (Exception e) {
             //suppress
         }
         
         try {
             SgDynamicConfiguration<?> val = Migration.migrateActionGroups(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(file), CType.ACTIONGROUPS, 1, 0, 0));
-            return backupAndWrite(file, val);
+            return backupAndWrite(file, val, backup);
         } catch (Exception e) {
             //suppress
         }
         
         try {
             SgDynamicConfiguration<?> val = Migration.migrateActionGroups(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(file), CType.ACTIONGROUPS, 0, 0, 0));
-            return backupAndWrite(file, val);
+            return backupAndWrite(file, val, backup);
         } catch (Exception e) {
             //suppress
         }
@@ -179,14 +163,14 @@ public class Migrater {
         
     }
     
-    private static boolean backupAndWrite(File file, SgDynamicConfiguration<?> val) {
+    private static boolean backupAndWrite(File file, SgDynamicConfiguration<?> val, boolean backup) {
         try {
             if(val == null) {
                 System.out.println("NULL object for "+file.getAbsolutePath());
                 return false;
             }
-            if(file.exists()) {
-                //Files.copy(file, new File(file.getParent(), file.getName()+".bck6"));
+            if(backup && file.exists()) {
+                Files.copy(file, new File(file.getParent(), file.getName()+".bck6"));
             }
             DefaultObjectMapper.YAML_MAPPER.writeValue(file, val);
             System.out.println("Migrated (as "+val.getCType()+"/"+val.getImplementingClass()+") "+file.getAbsolutePath());
