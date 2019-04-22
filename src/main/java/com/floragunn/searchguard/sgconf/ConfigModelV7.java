@@ -1059,6 +1059,10 @@ public class ConfigModelV7 extends ConfigModel {
                     result.put(tenant, rw);
                 }
             });
+            
+            if(!result.containsKey("GLOBAL_TENANT") && roles.contains("sg_kibana_user")) {
+                result.put("GLOBAL_TENANT", true);
+            }
 
             return Collections.unmodifiableMap(result);
         }
