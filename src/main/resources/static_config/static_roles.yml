@@ -37,3 +37,9 @@ sg_kibana_user:
         - ".management-beats"
       allowed_actions:
         - "INDICES_ALL"
+  #tenant_permissions:
+  #  - tenant_patterns:
+  #      - "SG_GLOBAL"
+  #      - "SG_PRIVATE"
+  #    allowed_actions:
+  #      - "kibana:saved_objects/*"

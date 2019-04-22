@@ -113,8 +113,15 @@ public class DynamicConfigFactory implements Initializable, ConfigurationChangeL
                     throw new RuntimeException("Unable to load static action groups");
                 }
                 log.debug("Static action groups loaded ({})", staticActionGroups.getCEntries().size());
+                
+                JsonNode staticTenantsJsonNode = DefaultObjectMapper.YAML_MAPPER.readTree(this.getClass().getResourceAsStream("/static_config/static_tenants.yml"));
+                SgDynamicConfiguration<ActionGroupsV7> staticTenants = SgDynamicConfiguration.fromNode(staticTenantsJsonNode, CType.TENANTS, 2, 0, 0);
+                if(!tenants.add(staticTenants)) {
+                    throw new RuntimeException("Unable to load static tenants");
+                }
+                log.debug("Static tenants loaded ({})", staticTenants.getCEntries().size());
 
-                log.debug("Static configuration loaded (total roles: {}/total action groups: {})", roles.getCEntries().size(), actionGroups.getCEntries().size());
+                log.debug("Static configuration loaded (total roles: {}/total action groups: {}/total tenants: {})", roles.getCEntries().size(), actionGroups.getCEntries().size(), tenants.getCEntries().size());
                 
             } catch (IOException e) {
                 throw new RuntimeException("Unable to load static config", e);

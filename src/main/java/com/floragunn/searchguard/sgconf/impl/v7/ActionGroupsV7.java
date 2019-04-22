@@ -12,7 +12,7 @@ public class ActionGroupsV7 implements Hideable {
     
     private boolean reserved;
     private boolean hidden;
-    private List<String> permissions = Collections.emptyList();
+    private List<String> allowed_actions = Collections.emptyList();
     private String type;
     private String description;
     
@@ -22,13 +22,13 @@ public class ActionGroupsV7 implements Hideable {
     public ActionGroupsV7(String agName, ActionGroupsV6 ag6) {
         reserved = ag6.isReserved();
         hidden = ag6.isHidden();
-        permissions = ag6.getPermissions();
+        allowed_actions = ag6.getPermissions();
         type = agName.toLowerCase().contains("cluster")?"cluster":"index";
         description = "Migrated from v6";
     }
 
-    public ActionGroupsV7(String key, List<String> perms) {
-        permissions = perms;
+    public ActionGroupsV7(String key, List<String> allowed_actions) {
+        this.allowed_actions = allowed_actions;
         type = "unknown";
         description = "Migrated from v6 (legacy)";
     }
@@ -58,16 +58,19 @@ public class ActionGroupsV7 implements Hideable {
     public void setHidden(boolean hidden) {
         this.hidden = hidden;
     }
-    public List<String> getPermissions() {
-        return permissions;
+    public List<String> getAllowed_actions() {
+        return allowed_actions;
     }
-    public void setPermissions(List<String> permissions) {
-        this.permissions = permissions;
+    public void setAllowed_actions(List<String> allowed_actions) {
+        this.allowed_actions = allowed_actions;
     }
     @Override
     public String toString() {
-        return "ActionGroups [reserved=" + reserved + ", hidden=" + hidden + ", permissions=" + permissions + "]";
+        return "ActionGroupsV7 [reserved=" + reserved + ", hidden=" + hidden + ", allowed_actions=" + allowed_actions + ", type=" + type
+                + ", description=" + description + "]";
     }
+    
+    
     
     
 }

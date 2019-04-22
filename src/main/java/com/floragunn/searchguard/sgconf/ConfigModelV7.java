@@ -156,7 +156,7 @@ public class ConfigModelV7 extends ConfigModel {
                     
                     
                 } else if(actionGroupAsObject != null &&  actionGroupAsObject instanceof ActionGroupsV7) {
-                    for (final String perm: ((ActionGroupsV7) actionGroupAsObject).getPermissions()) {
+                    for (final String perm: ((ActionGroupsV7) actionGroupAsObject).getAllowed_actions()) {
                         if (actionGroups.getCEntries().keySet().contains(perm)) {
                             ret.addAll(resolve(actionGroups,perm));
                         } else {
