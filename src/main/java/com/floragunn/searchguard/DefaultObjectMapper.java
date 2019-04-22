@@ -22,6 +22,7 @@ import java.security.PrivilegedExceptionAction;
 import org.elasticsearch.SpecialPermission;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
@@ -37,7 +38,10 @@ public class DefaultObjectMapper {
     
     static {
         objectMapper.setSerializationInclusion(Include.NON_NULL);
+        //objectMapper.enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
+        objectMapper.enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
         defaulOmittingObjectMapper.setSerializationInclusion(Include.NON_DEFAULT);
+        defaulOmittingObjectMapper.enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
     }
 
     public static <T> T readTree(JsonNode node, Class<T> clazz) throws IOException {
