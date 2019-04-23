@@ -209,6 +209,8 @@ public class ConfigConstants {
 
     public static final String SEARCHGUARD_SSL_ONLY = "searchguard.ssl_only";
     
+    public static final String SEARCHGUARD_DISABLE_ENVVAR_REPLACEMENT = "searchguard.disable_envvar_replacement";
+    
     public enum RolesMappingResolution {
         MAPPING_ONLY,
         BACKENDROLES_ONLY,
@@ -233,4 +235,5 @@ public class ConfigConstants {
     public static final String SEARCHGUARD_UNSUPPORTED_RESTORE_SGINDEX_ENABLED = "searchguard.unsupported.restore.sgindex.enabled";
     public static final String SEARCHGUARD_UNSUPPORTED_INJECT_USER_ENABLED = "searchguard.unsupported.inject_user.enabled";
     public static final String SEARCHGUARD_UNSUPPORTED_INJECT_ADMIN_USER_ENABLED = "searchguard.unsupported.inject_user.admin.enabled";
+    public static final String SEARCHGUARD_UNSUPPORTED_ALLOW_NOW_IN_DLS = "searchguard.unsupported.allow_now_in_dls";
 }
