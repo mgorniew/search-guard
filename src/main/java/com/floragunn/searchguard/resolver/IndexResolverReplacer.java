@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -159,6 +160,9 @@ public final class IndexResolverReplacer implements ConfigurationChangeListener 
         }
         
         if(isAllWithNoRemote(requestedPatterns0)) {
+            if(log.isTraceEnabled()) {
+                log.trace(Arrays.toString(requestedPatterns0)+" is an ALL pattern without any remote indices");
+            }
             return Resolved._LOCAL_ALL;
         }
         
@@ -185,6 +189,11 @@ public final class IndexResolverReplacer implements ConfigurationChangeListener 
                     iterator.remove();
                 }
             }
+            
+            if(log.isTraceEnabled()) {
+                log.trace("CCS is enabled, we found this local patterns "+localRequestedPatterns+" and this remote patterns: "+remoteIndices);
+            }
+            
         } else {
             remoteIndices = Collections.emptySet();
         }
@@ -194,17 +203,19 @@ public final class IndexResolverReplacer implements ConfigurationChangeListener 
         final Set<String> matchingAllIndices;
         
        if(isLocalAll(requestedPatterns0)) {
+           if(log.isTraceEnabled()) {
+               log.trace(Arrays.toString(requestedPatterns0)+" is an LOCAL ALL pattern");
+           }
            matchingAliases = Resolved.All_SET;
            matchingIndices = Resolved.All_SET;
            matchingAllIndices = Resolved.All_SET;
            
-       } 
-       
-       else if (!remoteIndices.isEmpty() && localRequestedPatterns.isEmpty()){
-           return Resolved._EMPTY;
-       }
-       
-       else {
+       } else if (!remoteIndices.isEmpty() && localRequestedPatterns.isEmpty()){
+           if(log.isTraceEnabled()) {
+               log.trace(Arrays.toString(requestedPatterns0)+" is an LOCAL EMPTY request");
+           }
+           return new Resolved.Builder().addOriginalRequested(Arrays.asList(requestedPatterns0)).addRemoteIndices(remoteIndices).build();
+       } else {
 
            ClusterState state = clusterService.state();
     
@@ -475,7 +486,6 @@ public final class IndexResolverReplacer implements ConfigurationChangeListener 
         private static final Set<String> All_SET = Collections.singleton("*");
         private static final long serialVersionUID = 1L;
         public final static Resolved _LOCAL_ALL = new Resolved(All_SET, All_SET, All_SET, All_SET, Collections.emptySet(), Collections.emptySet());
-        private final static Resolved _EMPTY = new Resolved(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
         private final Set<String> aliases;
         private final Set<String> indices;
         private final Set<String> allIndices;
@@ -657,6 +667,20 @@ public final class IndexResolverReplacer implements ConfigurationChangeListener 
                 addTypes(r.types);
                 return this;
             }
+            
+            public Builder addOriginalRequested(List<String> originalRequested) {
+                if(originalRequested != null) {
+                    this.originalRequested.addAll(originalRequested);
+                }
+                return this;
+            }
+            
+            public Builder addRemoteIndices(Set<String> remoteIndices) {
+                if(remoteIndices != null) {
+                    this.remoteIndices.addAll(remoteIndices);
+                }
+                return this;
+            }
 
             public Resolved build() {
                 if(types.isEmpty()) {
@@ -690,15 +714,20 @@ public final class IndexResolverReplacer implements ConfigurationChangeListener 
     }
 
     private List<String> renamedIndices(final RestoreSnapshotRequest request, final List<String> filteredIndices) {
-        final List<String> renamedIndices = new ArrayList<>();
-        for (final String index : filteredIndices) {
-            String renamedIndex = index;
-            if (request.renameReplacement() != null && request.renamePattern() != null) {
-                renamedIndex = index.replaceAll(request.renamePattern(), request.renameReplacement());
+        try {
+            final List<String> renamedIndices = new ArrayList<>();
+            for (final String index : filteredIndices) {
+                String renamedIndex = index;
+                if (request.renameReplacement() != null && request.renamePattern() != null) {
+                    renamedIndex = index.replaceAll(request.renamePattern(), request.renameReplacement());
+                }
+                renamedIndices.add(renamedIndex);
             }
-            renamedIndices.add(renamedIndex);
+            return renamedIndices;
+        } catch (PatternSyntaxException e) {
+            log.error("Unable to parse the regular expression denoted in 'rename_pattern'. Please correct the pattern an try again.");
+            throw e;
         }
-        return renamedIndices;
     }
 
 

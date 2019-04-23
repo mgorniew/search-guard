@@ -182,7 +182,7 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 				}
 
 			} catch (ElasticsearchSecurityException e) {
-				Assert.assertEquals("'CN=spock,OU=client,O=client,L=Test,C=DE' is not allowed to impersonate as 'gkar'", e.getMessage());
+				Assert.assertEquals("'CN=spock,OU=client,O=client,L=Test,C=DE' is not allowed to impersonate as transport user 'gkar'", e.getMessage());
 			}
 
 			System.out.println("------- 12 ---------");
@@ -407,7 +407,7 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 	public void testTransportClientUsernameAttribute() throws Exception {
 
 		final Settings settings = Settings.builder()
-				.putList(ConfigConstants.SEARCHGUARD_AUTHCZ_IMPERSONATION_DN+".CN=spock,OU=client,O=client,L=Test,C=DE", "worf", "nagilum")
+				.putList(ConfigConstants.SEARCHGUARD_AUTHCZ_IMPERSONATION_DN+".CN=spock,OU=client,O=client,L=Test,C=DE", "worf", "nagilum", "nonexist")
 				.put("discovery.initial_state_timeout","8s")
 				.build();
 		
@@ -540,7 +540,7 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 				}
 
 			} catch (ElasticsearchSecurityException e) {
-				Assert.assertEquals("'CN=spock,OU=client,O=client,L=Test,C=DE' is not allowed to impersonate as 'gkar'", e.getMessage());
+				Assert.assertEquals("'CN=spock,OU=client,O=client,L=Test,C=DE' is not allowed to impersonate as transport user 'gkar'", e.getMessage());
 			}
 
 			System.out.println("------- 12 ---------");
@@ -698,6 +698,20 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 			} finally {
 				ctx.close();
 			}
+			
+			ctx = tc.threadPool().getThreadContext().stashContext();
+            searchRes = null;
+            try {
+                tc.threadPool().getThreadContext().putHeader("sg_impersonate_as", "nonexist");
+                searchRes = tc.prepareSearch("starfleet").setTypes("ships").setScroll(TimeValue.timeValueMinutes(5)).get();
+                SearchResponse scrollRes = tc.prepareSearchScroll(searchRes.getScrollId()).get();
+                Assert.assertEquals(0, scrollRes.getFailedShards());
+            } catch (Exception e) {
+                Throwable root = ExceptionUtils.getRootCause(e);
+                Assert.assertTrue(root.getMessage(),root.getMessage().contains("No such transport user: nonexist"));
+            } finally {
+                ctx.close();
+            }
 
 			System.out.println("------- TRC end ---------");
 		}
