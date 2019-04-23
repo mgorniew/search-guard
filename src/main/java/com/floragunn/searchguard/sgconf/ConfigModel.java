@@ -346,11 +346,12 @@ public class ConfigModel implements ConfigurationChangeListener {
 
         }
 
-        //kibana special only
-        public Set<String> getAllPermittedIndices(User user, String[] actions, IndexNameExpressionResolver resolver, ClusterService cs) {
+        //kibana special only, terms eval
+        public Set<String> getAllPermittedIndicesForKibana(Resolved resolved, User user, String[] actions, IndexNameExpressionResolver resolver, ClusterService cs) {
             Set<String> retVal = new HashSet<>();
             for (SgRole sgr : roles) {
                 retVal.addAll(sgr.getAllResolvedPermittedIndices(Resolved._LOCAL_ALL, user, actions, resolver, cs));
+                retVal.addAll(resolved.getRemoteIndices());
             }
             return Collections.unmodifiableSet(retVal);
         }

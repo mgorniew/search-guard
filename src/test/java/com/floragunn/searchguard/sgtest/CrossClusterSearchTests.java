@@ -533,4 +533,293 @@ public class CrossClusterSearchTests extends AbstractSGUnitTest{
         Assert.assertTrue(ccs.getBody().contains("crl2"));
         Assert.assertTrue(ccs.getBody().contains("cross_cluster_two:twitter"));
     }
+    
+    @Test
+    public void testCcsKibanaAggregations() throws Exception {
+        setupCcs();
+        
+        final String cl1BodyMain = new RestHelper(cl1Info, false, false, getResourceFolder()).executeGetRequest("", encodeBasicHeader("twitter","nagilum")).getBody();
+        Assert.assertTrue(cl1BodyMain.contains("crl1"));
+        
+        final String cl2BodyMain = new RestHelper(cl2Info, false, false, getResourceFolder()).executeGetRequest("", encodeBasicHeader("twitter","nagilum")).getBody();
+        Assert.assertTrue(cl2BodyMain.contains("crl2"));
+        
+        try (TransportClient tc = getInternalTransportClient(cl1Info, Settings.EMPTY)) {
+            tc.index(new IndexRequest("coordinating").type("coordinating").setRefreshPolicy(RefreshPolicy.IMMEDIATE).id("0")
+                    .source("{\"cluster\": \""+cl1Info.clustername+"\"}", XContentType.JSON)).actionGet();
+            tc.index(new IndexRequest("abc").type("abc").setRefreshPolicy(RefreshPolicy.IMMEDIATE).id("0")
+                    .source("{\"cluster\": \""+cl1Info.clustername+"\"}", XContentType.JSON)).actionGet();
+        }
+        
+        
+        try (TransportClient tc = getInternalTransportClient(cl2Info, Settings.EMPTY)) {
+            tc.index(new IndexRequest("remote").type("remote").setRefreshPolicy(RefreshPolicy.IMMEDIATE).id("0")
+                    .source("{\"cluster\": \""+cl2Info.clustername+"\"}", XContentType.JSON)).actionGet();
+        }
+        
+        HttpResponse ccs = null;
+        
+        System.out.println("###################### kibana indices agg");
+        String kibanaIndicesAgg = "{\"size\":0,\"aggs\":{\"indices\":{\"terms\":{\"field\":\"_index\",\"size\":100}}}}";
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("*/_search?pretty", kibanaIndicesAgg, encodeBasicHeader("nagilum","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, ccs.getStatusCode());
+        Assert.assertFalse(ccs.getBody().contains("security_exception"));
+        Assert.assertFalse(ccs.getBody().contains("cross_cluster_two"));
+        Assert.assertTrue(ccs.getBody().contains("coordinating"));
+        Assert.assertTrue(ccs.getBody().contains("abc"));
+        Assert.assertFalse(ccs.getBody().contains("remote"));
+        ccs = new RestHelper(cl2Info, false, false, getResourceFolder()).executePostRequest("*/_search?pretty", kibanaIndicesAgg, encodeBasicHeader("nagilum","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, ccs.getStatusCode());
+        Assert.assertFalse(ccs.getBody().contains("security_exception"));
+        Assert.assertFalse(ccs.getBody().contains("cross_cluster_two"));
+        Assert.assertFalse(ccs.getBody().contains("coordinating"));
+        Assert.assertFalse(ccs.getBody().contains("abc"));
+        Assert.assertTrue(ccs.getBody().contains("remote"));
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:/_search?pretty", kibanaIndicesAgg, encodeBasicHeader("nagilum","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_NOT_FOUND, ccs.getStatusCode());
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:remo*,coo*/_search?pretty", kibanaIndicesAgg, encodeBasicHeader("nagilum","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, ccs.getStatusCode());
+        Assert.assertFalse(ccs.getBody().contains("security_exception"));
+        Assert.assertTrue(ccs.getBody().contains("cross_cluster_two"));
+        Assert.assertTrue(ccs.getBody().contains("remote"));
+        Assert.assertTrue(ccs.getBody().contains("coordinating"));
+        Assert.assertFalse(ccs.getBody().contains("abc"));
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:remote/_search?pretty", kibanaIndicesAgg, encodeBasicHeader("nagilum","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, ccs.getStatusCode());
+        Assert.assertFalse(ccs.getBody().contains("security_exception"));
+        Assert.assertTrue(ccs.getBody().contains("cross_cluster_two"));
+        Assert.assertTrue(ccs.getBody().contains("remote"));
+        Assert.assertFalse(ccs.getBody().contains("coordinating"));
+        Assert.assertFalse(ccs.getBody().contains("abc"));
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:*/_search?pretty", kibanaIndicesAgg, encodeBasicHeader("nagilum","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, ccs.getStatusCode());
+        Assert.assertFalse(ccs.getBody().contains("security_exception"));
+        Assert.assertTrue(ccs.getBody().contains("cross_cluster_two"));
+        Assert.assertTrue(ccs.getBody().contains("remote"));
+        Assert.assertFalse(ccs.getBody().contains("coordinating"));
+        Assert.assertFalse(ccs.getBody().contains("abc"));
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:*,*/_search?pretty", kibanaIndicesAgg, encodeBasicHeader("nagilum","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, ccs.getStatusCode());
+        Assert.assertFalse(ccs.getBody().contains("security_exception"));
+        Assert.assertTrue(ccs.getBody().contains("cross_cluster_two"));
+        Assert.assertTrue(ccs.getBody().contains("remote"));
+        Assert.assertTrue(ccs.getBody().contains("coordinating"));
+        Assert.assertTrue(ccs.getBody().contains("abc"));
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:remo*,ab*/_search?pretty", kibanaIndicesAgg, encodeBasicHeader("nagilum","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, ccs.getStatusCode());
+        Assert.assertFalse(ccs.getBody().contains("security_exception"));
+        Assert.assertTrue(ccs.getBody().contains("cross_cluster_two"));
+        Assert.assertTrue(ccs.getBody().contains("remote"));
+        Assert.assertFalse(ccs.getBody().contains("coordinating"));
+        Assert.assertTrue(ccs.getBody().contains("abc"));
+    }
+    
+    @Test
+    public void testCcsKibanaAggregationsNonAdminDnfof() throws Exception {
+        setupCcs(new DynamicSgConfig().setSgConfig("sg_config_dnfof.yml"));
+        
+        final String cl1BodyMain = new RestHelper(cl1Info, false, false, getResourceFolder()).executeGetRequest("", encodeBasicHeader("twitter","nagilum")).getBody();
+        Assert.assertTrue(cl1BodyMain.contains("crl1"));
+        
+        final String cl2BodyMain = new RestHelper(cl2Info, false, false, getResourceFolder()).executeGetRequest("", encodeBasicHeader("twitter","nagilum")).getBody();
+        Assert.assertTrue(cl2BodyMain.contains("crl2"));
+        
+        try (TransportClient tc = getInternalTransportClient(cl1Info, Settings.EMPTY)) {
+            tc.index(new IndexRequest("coordinating").type("coordinating").setRefreshPolicy(RefreshPolicy.IMMEDIATE).id("0")
+                    .source("{\"cluster\": \""+cl1Info.clustername+"\"}", XContentType.JSON)).actionGet();
+            tc.index(new IndexRequest("abc").type("abc").setRefreshPolicy(RefreshPolicy.IMMEDIATE).id("0")
+                    .source("{\"cluster\": \""+cl1Info.clustername+"\"}", XContentType.JSON)).actionGet();
+            tc.index(new IndexRequest("twitter").type("twitter").setRefreshPolicy(RefreshPolicy.IMMEDIATE).id("0")
+                    .source("{\"cluster\": \""+cl1Info.clustername+"\"}", XContentType.JSON)).actionGet();
+        }
+        
+        
+        try (TransportClient tc = getInternalTransportClient(cl2Info, Settings.EMPTY)) {
+            tc.index(new IndexRequest("remote").type("remote").setRefreshPolicy(RefreshPolicy.IMMEDIATE).id("0")
+                    .source("{\"cluster\": \""+cl2Info.clustername+"\"}", XContentType.JSON)).actionGet();
+            
+            tc.index(new IndexRequest("analytics").type("analytics").setRefreshPolicy(RefreshPolicy.IMMEDIATE).id("0")
+                    .source("{\"cluster\": \""+cl2Info.clustername+"\"}", XContentType.JSON)).actionGet();
+        }
+        
+        HttpResponse ccs = null;
+        
+        System.out.println("###################### kibana indices agg");
+        String kibanaIndicesAgg = "{\"size\":0,\"aggs\":{\"indices\":{\"terms\":{\"field\":\"_index\",\"size\":100}}}}";
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("*/_search?pretty", kibanaIndicesAgg, encodeBasicHeader("twitter","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, ccs.getStatusCode());
+        Assert.assertFalse(ccs.getBody().contains("security_exception"));
+        Assert.assertFalse(ccs.getBody().contains("cross_cluster_two"));
+        Assert.assertTrue(ccs.getBody().contains("twitter"));
+        Assert.assertTrue(ccs.getBody().contains("\"doc_count\" : 1"));
+        Assert.assertFalse(ccs.getBody().contains("analytics"));
+        Assert.assertFalse(ccs.getBody().contains("coordinating"));
+        Assert.assertFalse(ccs.getBody().contains("abc"));
+        Assert.assertFalse(ccs.getBody().contains("remote"));
+        ccs = new RestHelper(cl2Info, false, false, getResourceFolder()).executePostRequest("*/_search?pretty", kibanaIndicesAgg, encodeBasicHeader("twitter","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, ccs.getStatusCode());
+        Assert.assertFalse(ccs.getBody().contains("security_exception"));
+        Assert.assertFalse(ccs.getBody().contains("cross_cluster_two"));
+        Assert.assertFalse(ccs.getBody().contains("twitter"));
+        Assert.assertTrue(ccs.getBody().contains("\"doc_count\" : 1"));
+        Assert.assertTrue(ccs.getBody().contains("analytics"));
+        Assert.assertFalse(ccs.getBody().contains("coordinating"));
+        Assert.assertFalse(ccs.getBody().contains("abc"));
+        Assert.assertFalse(ccs.getBody().contains("remote"));
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:*,*/_search?pretty", kibanaIndicesAgg, encodeBasicHeader("twitter","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, ccs.getStatusCode());
+        Assert.assertFalse(ccs.getBody().contains("security_exception"));
+        Assert.assertTrue(ccs.getBody().contains("cross_cluster_two:analytics"));
+        Assert.assertTrue(ccs.getBody().contains("twitter"));
+        Assert.assertFalse(ccs.getBody().contains("coordinating"));
+        Assert.assertFalse(ccs.getBody().contains("abc"));
+        Assert.assertFalse(ccs.getBody().contains("remote"));
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:remo*,coo*/_search?pretty", kibanaIndicesAgg, encodeBasicHeader("twitter","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, ccs.getStatusCode());
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:ana*,twi*/_search?pretty", kibanaIndicesAgg, encodeBasicHeader("twitter","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, ccs.getStatusCode());
+        Assert.assertFalse(ccs.getBody().contains("security_exception"));
+        Assert.assertTrue(ccs.getBody().contains("cross_cluster_two:analytics"));
+        Assert.assertTrue(ccs.getBody().contains("twitter"));
+        Assert.assertFalse(ccs.getBody().contains("coordinating"));
+        Assert.assertFalse(ccs.getBody().contains("abc"));
+        Assert.assertFalse(ccs.getBody().contains("remote"));
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:ana*,xyz*/_search?pretty", kibanaIndicesAgg, encodeBasicHeader("twitter","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, ccs.getStatusCode());
+        Assert.assertFalse(ccs.getBody().contains("security_exception"));
+        Assert.assertTrue(ccs.getBody().contains("cross_cluster_two:analytics"));
+        Assert.assertFalse(ccs.getBody().contains("twitter"));
+        Assert.assertFalse(ccs.getBody().contains("coordinating"));
+        Assert.assertFalse(ccs.getBody().contains("abc"));
+        Assert.assertFalse(ccs.getBody().contains("remote"));
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:ana*,xyz/_search?pretty", kibanaIndicesAgg, encodeBasicHeader("twitter","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_NOT_FOUND, ccs.getStatusCode());
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:*/_search?pretty", kibanaIndicesAgg, encodeBasicHeader("twitter","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, ccs.getStatusCode());
+        Assert.assertFalse(ccs.getBody().contains("security_exception"));
+        Assert.assertTrue(ccs.getBody().contains("cross_cluster_two:analytics"));
+        Assert.assertFalse(ccs.getBody().contains("twitter"));
+        Assert.assertFalse(ccs.getBody().contains("coordinating"));
+        Assert.assertFalse(ccs.getBody().contains("abc"));
+        Assert.assertFalse(ccs.getBody().contains("remote"));
+    }
+    
+    @Test
+    public void testCcsAggregations() throws Exception {
+        setupCcs();
+        
+        final String cl1BodyMain = new RestHelper(cl1Info, false, false, getResourceFolder()).executeGetRequest("", encodeBasicHeader("twitter","nagilum")).getBody();
+        Assert.assertTrue(cl1BodyMain.contains("crl1"));
+        
+        final String cl2BodyMain = new RestHelper(cl2Info, false, false, getResourceFolder()).executeGetRequest("", encodeBasicHeader("twitter","nagilum")).getBody();
+        Assert.assertTrue(cl2BodyMain.contains("crl2"));
+        
+        try (TransportClient tc = getInternalTransportClient(cl1Info, Settings.EMPTY)) {
+            tc.index(new IndexRequest("coordinating").type("coordinating").setRefreshPolicy(RefreshPolicy.IMMEDIATE).id("0")
+                    .source("{\"cluster\": \""+cl1Info.clustername+"\"}", XContentType.JSON)).actionGet();
+            tc.index(new IndexRequest("abc").type("abc").setRefreshPolicy(RefreshPolicy.IMMEDIATE).id("0")
+                    .source("{\"cluster\": \""+cl1Info.clustername+"\"}", XContentType.JSON)).actionGet();
+        }
+        
+        
+        try (TransportClient tc = getInternalTransportClient(cl2Info, Settings.EMPTY)) {
+            tc.index(new IndexRequest("remote").type("remote").setRefreshPolicy(RefreshPolicy.IMMEDIATE).id("0")
+                    .source("{\"cluster\": \""+cl2Info.clustername+"\"}", XContentType.JSON)).actionGet();
+        }
+        
+        HttpResponse ccs = null;
+        
+        System.out.println("###################### aggs");
+        final String agg = "{\"size\":0,\"aggs\":{\"clusteragg\":{\"terms\":{\"field\":\"cluster.keyword\",\"size\":100}}}}";
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("*:*,*/_search?pretty", agg, encodeBasicHeader("nagilum","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, ccs.getStatusCode());
+        Assert.assertFalse(ccs.getBody().contains("security_exception"));
+        Assert.assertTrue(ccs.getBody().contains("\"timed_out\" : false"));
+        Assert.assertTrue(ccs.getBody().contains("crl1"));
+        Assert.assertTrue(ccs.getBody().contains("crl2"));
+        Assert.assertTrue(ccs.getBody().contains("\"doc_count\" : 2"));
+        Assert.assertTrue(ccs.getBody().contains("\"doc_count\" : 1"));
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("coordin*/_search?pretty", agg, encodeBasicHeader("nagilum","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, ccs.getStatusCode());
+        Assert.assertFalse(ccs.getBody().contains("security_exception"));
+        Assert.assertTrue(ccs.getBody().contains("\"timed_out\" : false"));
+        Assert.assertTrue(ccs.getBody().contains("crl1"));
+        Assert.assertFalse(ccs.getBody().contains("crl2"));
+        Assert.assertFalse(ccs.getBody().contains("\"doc_count\" : 2"));
+        Assert.assertTrue(ccs.getBody().contains("\"doc_count\" : 1"));
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:remo*/_search?pretty", agg, encodeBasicHeader("nagilum","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, ccs.getStatusCode());
+        Assert.assertFalse(ccs.getBody().contains("security_exception"));
+        Assert.assertTrue(ccs.getBody().contains("\"timed_out\" : false"));
+        Assert.assertFalse(ccs.getBody().contains("crl1"));
+        Assert.assertTrue(ccs.getBody().contains("crl2"));
+        Assert.assertFalse(ccs.getBody().contains("\"doc_count\" : 2"));
+        Assert.assertTrue(ccs.getBody().contains("\"doc_count\" : 1"));
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:notfound,*/_search?pretty", agg, encodeBasicHeader("nagilum","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_NOT_FOUND, ccs.getStatusCode());
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:*,notfound/_search?pretty", agg, encodeBasicHeader("nagilum","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_NOT_FOUND, ccs.getStatusCode());
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:notfound,notfound/_search?pretty", agg, encodeBasicHeader("nagilum","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_NOT_FOUND, ccs.getStatusCode());
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:notfou*,*/_search?pretty", agg, encodeBasicHeader("nagilum","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, ccs.getStatusCode());//TODO: Change for 25.0 to be forbidden (Indices options)
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:*,notfou*/_search?pretty", agg, encodeBasicHeader("nagilum","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, ccs.getStatusCode());//TODO: Change for 25.0 to be forbidden (Indices options)
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:not*,notf*/_search?pretty", agg, encodeBasicHeader("nagilum","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, ccs.getStatusCode());//TODO: Change for 25.0 to be forbidden (Indices options)
+    }
+    
+    @Test
+    public void testCcsAggregationsDnfof() throws Exception {
+        setupCcs(new DynamicSgConfig().setSgConfig("sg_config_dnfof.yml"));
+        
+        final String cl1BodyMain = new RestHelper(cl1Info, false, false, getResourceFolder()).executeGetRequest("", encodeBasicHeader("twitter","nagilum")).getBody();
+        Assert.assertTrue(cl1BodyMain.contains("crl1"));
+        
+        final String cl2BodyMain = new RestHelper(cl2Info, false, false, getResourceFolder()).executeGetRequest("", encodeBasicHeader("twitter","nagilum")).getBody();
+        Assert.assertTrue(cl2BodyMain.contains("crl2"));
+        
+        try (TransportClient tc = getInternalTransportClient(cl1Info, Settings.EMPTY)) {
+            tc.index(new IndexRequest("coordinating").type("coordinating").setRefreshPolicy(RefreshPolicy.IMMEDIATE).id("0")
+                    .source("{\"cluster\": \""+cl1Info.clustername+"\"}", XContentType.JSON)).actionGet();
+            tc.index(new IndexRequest("abc").type("abc").setRefreshPolicy(RefreshPolicy.IMMEDIATE).id("0")
+                    .source("{\"cluster\": \""+cl1Info.clustername+"\"}", XContentType.JSON)).actionGet();
+            tc.index(new IndexRequest("twitter").type("twitter").setRefreshPolicy(RefreshPolicy.IMMEDIATE).id("0")
+                    .source("{\"cluster\": \""+cl1Info.clustername+"\"}", XContentType.JSON)).actionGet();
+        }
+        
+        
+        try (TransportClient tc = getInternalTransportClient(cl2Info, Settings.EMPTY)) {
+            tc.index(new IndexRequest("remote").type("remote").setRefreshPolicy(RefreshPolicy.IMMEDIATE).id("0")
+                    .source("{\"cluster\": \""+cl2Info.clustername+"\"}", XContentType.JSON)).actionGet();
+            
+            tc.index(new IndexRequest("analytics").type("analytics").setRefreshPolicy(RefreshPolicy.IMMEDIATE).id("0")
+                    .source("{\"cluster\": \""+cl2Info.clustername+"\"}", XContentType.JSON)).actionGet();
+        }
+        
+        HttpResponse ccs = null;
+        
+        System.out.println("###################### aggs");
+        final String agg = "{\"size\":0,\"aggs\":{\"clusteragg\":{\"terms\":{\"field\":\"cluster.keyword\",\"size\":100}}}}";
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:notfound,*/_search?pretty", agg, encodeBasicHeader("twitter","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, ccs.getStatusCode());
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:notfound*,*/_search?pretty", agg, encodeBasicHeader("twitter","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, ccs.getStatusCode());
+        Assert.assertFalse(ccs.getBody().contains("security_exception"));
+        Assert.assertTrue(ccs.getBody().contains("\"timed_out\" : false"));
+        Assert.assertTrue(ccs.getBody().contains("crl1"));
+        Assert.assertFalse(ccs.getBody().contains("crl2"));
+        Assert.assertFalse(ccs.getBody().contains("\"doc_count\" : 2"));
+        Assert.assertTrue(ccs.getBody().contains("\"doc_count\" : 1"));
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:*,notfound/_search?pretty", agg, encodeBasicHeader("twitter","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, ccs.getStatusCode());
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:notfound,notfound/_search?pretty", agg, encodeBasicHeader("twitter","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, ccs.getStatusCode());
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:notfou*,*/_search?pretty", agg, encodeBasicHeader("twitter","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, ccs.getStatusCode());
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:*,notfou*/_search?pretty", agg, encodeBasicHeader("twitter","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, ccs.getStatusCode());
+        ccs = new RestHelper(cl1Info, false, false, getResourceFolder()).executePostRequest("cross_cluster_two:not*,notf*/_search?pretty", agg, encodeBasicHeader("twitter","nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, ccs.getStatusCode());
+    }
 }
