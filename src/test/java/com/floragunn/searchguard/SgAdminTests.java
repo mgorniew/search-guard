@@ -362,5 +362,23 @@ public class SgAdminTests extends SingleClusterTest {
         
         returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
         Assert.assertNotEquals(0, returnCode);
+        
+        argsAsList = new ArrayList<>();
+        argsAsList.add("-cd");
+        argsAsList.add(new File("./legacy/sgconfig_v6").getAbsolutePath());
+        argsAsList.add("-vc");
+        argsAsList.add("6");
+        
+        returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
+        Assert.assertEquals(0, returnCode);
+        
+        argsAsList = new ArrayList<>();
+        argsAsList.add("-cd");
+        argsAsList.add(new File("./sgconfig").getAbsolutePath());
+        argsAsList.add("-vc");
+        argsAsList.add("8");
+        
+        returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
+        Assert.assertNotEquals(0, returnCode);
     }
 }

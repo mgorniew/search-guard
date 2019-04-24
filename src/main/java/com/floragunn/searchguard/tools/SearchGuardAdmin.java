@@ -238,7 +238,7 @@ public class SearchGuardAdmin {
         
         options.addOption(Option.builder("rev").longOpt("resolve-env-vars").desc("Resolve/Substitute env vars in config with their value before uploading").build());
 
-        options.addOption(Option.builder("vc").longOpt("validate-configs").desc("Validate config").build());
+        options.addOption(Option.builder("vc").numberOfArgs(1).optionalArg(true).argName("version").longOpt("validate-configs").desc("Validate config for version 6 or 7 (default 7)").build());
 
         
         //when adding new options also adjust validate(CommandLine line)
@@ -287,7 +287,7 @@ public class SearchGuardAdmin {
         String backup = null;
         String migrate = null;
         final boolean resolveEnvVars;
-        boolean validateConfig;
+        Integer validateConfig = null;
         
         CommandLineParser parser = new DefaultParser();
         try {
@@ -378,7 +378,11 @@ public class SearchGuardAdmin {
             
             resolveEnvVars = line.hasOption("rev");
             
-            validateConfig = line.hasOption("vc");
+            validateConfig = !line.hasOption("vc")?null:Integer.parseInt(line.getOptionValue("vc", "7"));
+            
+            if(validateConfig != null && validateConfig.intValue() != 6 && validateConfig.intValue() != 7) {
+                throw new ParseException("version must be 6 or 7");
+            }
             
         }
         catch( ParseException exp ) {
@@ -388,9 +392,9 @@ public class SearchGuardAdmin {
         }
         
         
-        if(validateConfig) {
+        if(validateConfig != null) {
             System.out.println("Validate configuration");
-            return validateConfig(cd, file, type);
+            return validateConfig(cd, file, type, validateConfig.intValue());
         }
         
         
@@ -1284,24 +1288,24 @@ public class SearchGuardAdmin {
         return new SgJsonNode(jsonNode).get("_sg_meta").get("type").asString();
     }
 
-    private static int validateConfig(String cd, String file, String type) {
+    private static int validateConfig(String cd, String file, String type, int version) {
         if (file != null) {
             try {
-                ConfigHelper.fromYamlFile(file, CType.fromString(type==null?readTypeFromFile(new File(file)):type), 2, 0, 0);
+                ConfigHelper.fromYamlFile(file, CType.fromString(type==null?readTypeFromFile(new File(file)):type), version==7?2:1, 0, 0);
                 return 0;
             } catch (Exception e) {
-                System.out.println("ERR: Seems "+file+" is not in SG 7 format: "+e);
+                System.out.println("ERR: Seems "+file+" is not in SG "+version+" format: "+e);
                 return -1;
             }
         } else if(cd != null) {
-            boolean success = validateConfigFile(cd+"sg_action_groups.yml", CType.ACTIONGROUPS);
-            success = validateConfigFile(cd+"sg_internal_users.yml", CType.INTERNALUSERS) && success;
-            success = validateConfigFile(cd+"sg_roles.yml", CType.ROLES) && success;
-            success = validateConfigFile(cd+"sg_roles_mapping.yml", CType.ROLESMAPPING) && success;
-            success = validateConfigFile(cd+"sg_config.yml", CType.CONFIG) && success;
+            boolean success = validateConfigFile(cd+"sg_action_groups.yml", CType.ACTIONGROUPS, version);
+            success = validateConfigFile(cd+"sg_internal_users.yml", CType.INTERNALUSERS, version) && success;
+            success = validateConfigFile(cd+"sg_roles.yml", CType.ROLES, version) && success;
+            success = validateConfigFile(cd+"sg_roles_mapping.yml", CType.ROLESMAPPING, version) && success;
+            success = validateConfigFile(cd+"sg_config.yml", CType.CONFIG, version) && success;
             
-            if(new File(cd+"sg_tenants.yml").exists()) {
-                success = validateConfigFile(cd+"sg_tenants.yml", CType.TENANTS) && success;
+            if(new File(cd+"sg_tenants.yml").exists() && version != 6) {
+                success = validateConfigFile(cd+"sg_tenants.yml", CType.TENANTS, version) && success;
             }
             
             return success?0:-1;
@@ -1311,13 +1315,13 @@ public class SearchGuardAdmin {
         return -1;
     }
     
-    private static boolean validateConfigFile(String file, CType cType) {
+    private static boolean validateConfigFile(String file, CType cType, int version) {
         try {
-            ConfigHelper.fromYamlFile(file, cType, 2, 0, 0);
+            ConfigHelper.fromYamlFile(file, cType, version==7?2:1, 0, 0);
             System.out.println(file+" OK" );
             return true;
         } catch (Exception e) {
-            System.out.println("ERR: Seems "+file+" is not in SG 7 format: "+e);
+            System.out.println("ERR: Seems "+file+" is not in SG "+version+" format: "+e);
             return false;
         }
     }
