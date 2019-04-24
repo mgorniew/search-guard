@@ -275,7 +275,7 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
         
         log.info("Clustername: {}", settings.get("cluster.name", "elasticsearch"));
 
-        if (!transportSSLEnabled) {
+        if (!transportSSLEnabled && !sslOnly) {
             throw new IllegalStateException(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLED + " must be set to 'true'");
         }
 

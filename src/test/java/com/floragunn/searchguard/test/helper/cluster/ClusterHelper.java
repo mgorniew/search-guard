@@ -193,6 +193,7 @@ public final class ClusterHelper {
 		ClusterInfo cInfo = waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(timeout), nodes == null?esNodes.size():nodes.intValue());
 		cInfo.numNodes = internalNodeSettings.size();
 		cInfo.clustername = clustername;
+		cInfo.tcpMasterPortsOnly = tcpMasterPortsOnly.stream().map(s->"127.0.0.1:"+s).collect(Collectors.toList());
 		
 		final String defaultTemplate = "{\n" + 
 		        "          \"index_patterns\": [\"*\"],\n" + 
