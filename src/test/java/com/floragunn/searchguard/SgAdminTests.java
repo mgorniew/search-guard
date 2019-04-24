@@ -81,7 +81,7 @@ public class SgAdminTests extends SingleClusterTest {
         argsAsList.add("-cn");
         argsAsList.add(clusterInfo.clustername);
         argsAsList.add("-cd");
-        argsAsList.add(new File("./legacy/config_v6").getAbsolutePath());
+        argsAsList.add(new File("./legacy/sgconfig_v6").getAbsolutePath());
         argsAsList.add("-nhnv");
         
         
@@ -317,5 +317,50 @@ public class SgAdminTests extends SingleClusterTest {
         assertContains(res, "*UP*");
         assertContains(res, "*strict*");
         assertNotContains(res, "*DOWN*");
+    }
+    
+    @Test
+    public void testSgAdminValidateConfig() throws Exception {                
+        List<String> argsAsList = new ArrayList<>();
+        argsAsList.add("-cd");
+        argsAsList.add(new File("./sgconfig").getAbsolutePath());
+        argsAsList.add("-vc");
+        
+        int returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
+        Assert.assertEquals(0, returnCode);
+        
+        argsAsList = new ArrayList<>();
+        argsAsList.add("-f");
+        argsAsList.add(new File("./sgconfig/sg_roles.yml").getAbsolutePath());
+        argsAsList.add("-vc");
+        
+        returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
+        Assert.assertEquals(0, returnCode);
+        
+        argsAsList = new ArrayList<>();
+        argsAsList.add("-f");
+        argsAsList.add(new File("./sgconfig/sg_roles.yml").getAbsolutePath());
+        argsAsList.add("-vc");
+        argsAsList.add("-t");
+        argsAsList.add("config");
+        
+        returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
+        Assert.assertNotEquals(0, returnCode);
+        
+        argsAsList = new ArrayList<>();
+        argsAsList.add("-ks");
+        argsAsList.add(new File("./sgconfig").getAbsolutePath());
+        argsAsList.add("-vc");
+        
+        returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
+        Assert.assertNotEquals(0, returnCode);
+        
+        argsAsList = new ArrayList<>();
+        argsAsList.add("-cd");
+        argsAsList.add(new File("./legacy/sgconfig_v6").getAbsolutePath());
+        argsAsList.add("-vc");
+        
+        returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
+        Assert.assertNotEquals(0, returnCode);
     }
 }

@@ -91,6 +91,8 @@ import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.PluginInfo;
 import org.elasticsearch.transport.Netty4Plugin;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.floragunn.searchguard.DefaultObjectMapper;
 import com.floragunn.searchguard.SearchGuardPlugin;
 import com.floragunn.searchguard.action.configupdate.ConfigUpdateAction;
@@ -118,6 +120,7 @@ import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
 import com.floragunn.searchguard.support.ConfigConstants;
 import com.floragunn.searchguard.support.ConfigHelper;
 import com.floragunn.searchguard.support.SearchGuardDeprecationHandler;
+import com.floragunn.searchguard.support.SgJsonNode;
 import com.floragunn.searchguard.support.SgUtils;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Files;
@@ -235,6 +238,8 @@ public class SearchGuardAdmin {
         
         options.addOption(Option.builder("rev").longOpt("resolve-env-vars").desc("Resolve/Substitute env vars in config with their value before uploading").build());
 
+        options.addOption(Option.builder("vc").longOpt("validate-configs").desc("Validate config").build());
+
         
         //when adding new options also adjust validate(CommandLine line)
         
@@ -282,6 +287,7 @@ public class SearchGuardAdmin {
         String backup = null;
         String migrate = null;
         final boolean resolveEnvVars;
+        boolean validateConfig;
         
         CommandLineParser parser = new DefaultParser();
         try {
@@ -372,12 +378,21 @@ public class SearchGuardAdmin {
             
             resolveEnvVars = line.hasOption("rev");
             
+            validateConfig = line.hasOption("vc");
+            
         }
         catch( ParseException exp ) {
             System.out.println("ERR: Parsing failed.  Reason: " + exp.getMessage());
             formatter.printHelp("sgadmin.sh", options, true);
-            return 0;
+            return -1;
         }
+        
+        
+        if(validateConfig) {
+            System.out.println("Validate configuration");
+            return validateConfig(cd, file, type);
+        }
+        
         
         if(port < 9300) {
             System.out.println("WARNING: Seems you want connect to the Elasticsearch HTTP port."+System.lineSeparator()
@@ -716,6 +731,9 @@ public class SearchGuardAdmin {
                 success = retrieveFile(tc, cd+"sg_roles_mapping_"+date+".yml", index, "rolesmapping", legacy) && success;
                 success = retrieveFile(tc, cd+"sg_internal_users_"+date+".yml", index, "internalusers", legacy) && success;
                 success = retrieveFile(tc, cd+"sg_action_groups_"+date+".yml", index, "actiongroups", legacy) && success;
+                if(!legacy) {
+                    success = retrieveFile(tc, cd+"sg_tenants_"+date+".yml", index, "tenants", legacy) && success;
+                }
                 return (success?0:-1);
             }
             
@@ -732,13 +750,18 @@ public class SearchGuardAdmin {
             }
             
             boolean isCdAbs = new File(cd).isAbsolute();
-             
+
             System.out.println("Populate config from "+(isCdAbs?cd:new File(".", cd).getCanonicalPath()));
             
             if(file != null) {
-                if(type == null) {
-                    System.out.println("ERR: type missing");
-                    return (-1);
+                if(type != null) {
+                    System.out.println("Force type: "+type);
+                } else {
+                    type = readTypeFromFile(new File(file));
+                    if(type == null) {
+                        System.out.println("ERR: Unable to read type from file");
+                        return (-1);
+                    }
                 }
                 
                 if(!CType.lcStringValues().contains(type)) {
@@ -1056,12 +1079,16 @@ public class SearchGuardAdmin {
         if(line.hasOption("cn") && line.hasOption("icl")) {
             throw new ParseException("Only set one of -cn or -icl");
         }
+        
+        if(line.hasOption("vc") && !line.hasOption("cd") && !line.hasOption("f")) {
+            throw new ParseException("Specify at least -cd or -f together with vc");
+        }
 
-        if(!line.hasOption("ks") && !line.hasOption("cert") /*&& !line.hasOption("simple-auth")*/) {
+        if(!line.hasOption("vc") && !line.hasOption("ks") && !line.hasOption("cert") /*&& !line.hasOption("simple-auth")*/) {
             throw new ParseException("Specify at least -ks or -cert");
         }
         
-        if(!line.hasOption("ts") && !line.hasOption("cacert") /*&& !line.hasOption("simple-auth")*/) {
+        if(!line.hasOption("vc") && !line.hasOption("ts") && !line.hasOption("cacert") /*&& !line.hasOption("simple-auth")*/) {
             throw new ParseException("Specify at least -ts or -cacert");
         }
         
@@ -1248,5 +1275,50 @@ public class SearchGuardAdmin {
         return uploadResult;
     }
     
+    private static String readTypeFromFile(File file) throws IOException {
+        if(!file.exists() || !file.isFile()) {
+            System.out.println("ERR: No such file "+file.getAbsolutePath());
+            return null;
+        }
+        final JsonNode jsonNode = DefaultObjectMapper.YAML_MAPPER.readTree(file);
+        return new SgJsonNode(jsonNode).get("_sg_meta").get("type").asString();
+    }
+
+    private static int validateConfig(String cd, String file, String type) {
+        if (file != null) {
+            try {
+                ConfigHelper.fromYamlFile(file, CType.fromString(type==null?readTypeFromFile(new File(file)):type), 2, 0, 0);
+                return 0;
+            } catch (Exception e) {
+                System.out.println("ERR: Seems "+file+" is not in SG 7 format: "+e);
+                return -1;
+            }
+        } else if(cd != null) {
+            boolean success = validateConfigFile(cd+"sg_action_groups.yml", CType.ACTIONGROUPS);
+            success = validateConfigFile(cd+"sg_internal_users.yml", CType.INTERNALUSERS) && success;
+            success = validateConfigFile(cd+"sg_roles.yml", CType.ROLES) && success;
+            success = validateConfigFile(cd+"sg_roles_mapping.yml", CType.ROLESMAPPING) && success;
+            success = validateConfigFile(cd+"sg_config.yml", CType.CONFIG) && success;
+            
+            if(new File(cd+"sg_tenants.yml").exists()) {
+                success = validateConfigFile(cd+"sg_tenants.yml", CType.TENANTS) && success;
+            }
+            
+            return success?0:-1;
+
+        }
+        
+        return -1;
+    }
     
+    private static boolean validateConfigFile(String file, CType cType) {
+        try {
+            ConfigHelper.fromYamlFile(file, cType, 2, 0, 0);
+            System.out.println(file+" OK" );
+            return true;
+        } catch (Exception e) {
+            System.out.println("ERR: Seems "+file+" is not in SG 7 format: "+e);
+            return false;
+        }
+    }
 }
