@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2017 floragunn GmbH
+ * Copyright 2017 floragunn GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,21 +15,23 @@
  * 
  */
 
-package com.floragunn.searchguard.test.helper.cluster;
+package com.floragunn.searchguard.ssl;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import org.elasticsearch.rest.RestRequest;
+import org.elasticsearch.tasks.Task;
+import org.elasticsearch.transport.TransportRequest;
 
-import org.elasticsearch.common.transport.TransportAddress;
-
-public class ClusterInfo {
-	public int numNodes;
-	public String httpHost = null;
-	public int httpPort = -1;
-	public Set<TransportAddress> httpAdresses = new HashSet<TransportAddress>();
-	public String nodeHost;
-	public int nodePort;
-	public String clustername;
-    public List<String> tcpMasterPortsOnly;
+public interface SslExceptionHandler {
+    
+    default void logError(Throwable t, RestRequest request, int type) {
+        //no-op
+    }
+    
+    default void logError(Throwable t, boolean isRest) {
+      //no-op
+    }
+    
+    default void logError(Throwable t, final TransportRequest request, String action, Task task, int type) {
+      //no-op
+    }
 }

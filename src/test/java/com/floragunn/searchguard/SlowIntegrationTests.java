@@ -92,6 +92,7 @@ public class SlowIntegrationTests extends SingleClusterTest {
                 .put("path.home", ".")
                 .put("node.name", "transportclient")
                 .put("discovery.initial_state_timeout","8s")
+                .putList("discovery.zen.ping.unicast.hosts", clusterInfo.nodeHost+":"+clusterInfo.nodePort)
                 .put("searchguard.ssl.transport.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("kirk-keystore.jks"))
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_ALIAS,"kirk")
                 .build();
@@ -123,6 +124,7 @@ public class SlowIntegrationTests extends SingleClusterTest {
                 .put("path.home", ".")
                 .put("node.name", "transportclient")
                 .put("discovery.initial_state_timeout","8s")
+                .putList("discovery.zen.ping.unicast.hosts", clusterInfo.nodeHost+":"+clusterInfo.nodePort)
                 .put("searchguard.ssl.transport.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("spock-keystore.jks"))
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_ALIAS,"spock")
                 .build();

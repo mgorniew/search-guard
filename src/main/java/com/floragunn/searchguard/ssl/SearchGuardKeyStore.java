@@ -15,21 +15,21 @@
  * 
  */
 
-package com.floragunn.searchguard.test.helper.cluster;
+package com.floragunn.searchguard.ssl;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
 
-import org.elasticsearch.common.transport.TransportAddress;
+public interface SearchGuardKeyStore {
 
-public class ClusterInfo {
-	public int numNodes;
-	public String httpHost = null;
-	public int httpPort = -1;
-	public Set<TransportAddress> httpAdresses = new HashSet<TransportAddress>();
-	public String nodeHost;
-	public int nodePort;
-	public String clustername;
-    public List<String> tcpMasterPortsOnly;
+    public SSLEngine createHTTPSSLEngine() throws SSLException;
+
+    public SSLEngine createServerTransportSSLEngine() throws SSLException;
+
+    public SSLEngine createClientTransportSSLEngine(String peerHost, int peerPort) throws SSLException;
+
+    public String getHTTPProviderName();
+    public String getTransportServerProviderName();
+    public String getTransportClientProviderName();
+    
 }
