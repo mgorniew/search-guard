@@ -825,7 +825,7 @@ public class SSLTest extends SingleClusterTest {
 
         setupSslOnlyMode(settings);
         
-        RestHelper rh = restHelper();
+        RestHelper rh = nonSslRestHelper();
 
         final Settings tcSettings = Settings.builder().put("cluster.name", clusterInfo.clustername).put("path.home", ".")
                 .put("node.name", "client_node_" + new Random().nextInt())
