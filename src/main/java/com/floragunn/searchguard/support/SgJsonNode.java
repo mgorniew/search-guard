@@ -17,6 +17,7 @@
 
 package com.floragunn.searchguard.support;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +26,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.jsonFormatVisitors.JsonArrayFormatVisitor;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
+import com.floragunn.searchguard.DefaultObjectMapper;
 
 public final class SgJsonNode {
     
@@ -89,5 +91,9 @@ public final class SgJsonNode {
         }
         
         return Collections.unmodifiableList(retVal);
+    }
+    
+    public static SgJsonNode fromJson(String json) throws IOException {
+        return new SgJsonNode(DefaultObjectMapper.readTree(json));
     }
 }
