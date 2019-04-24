@@ -31,10 +31,10 @@ jobs:
             cd ~/circleci-sg
 
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
-              mvn -U -Pcoverage verify -Dtest="$TESTFILES" -s settings.xml
+              mvn -U -Pcoverage,with-static-openssl-linux-non-fedora,-with-dynamic-openssl verify -Dtest="$TESTFILES" -s settings.xml
             else
               #no coverage for non-master branches
-              mvn -U verify -Dtest="$TESTFILES" -s settings.xml
+              mvn -U verify -Dtest="$TESTFILES" -s settings.xml -Pwith-static-openssl-linux-non-fedora,-with-dynamic-openssl
             fi
       - store_test_results:
           path: target/surefire-reports
@@ -46,7 +46,7 @@ jobs:
             
             if [ "${CIRCLE_BRANCH}" == "master" ] && [ "${SG_JAVA_BUILD_VERSION}" == "8" ]; then
              mvn deploy -U -Penterprise -DskipTests -s settings.xml
-              mvn -U -Pcoverage sonar:sonar -Dsonar.organization=floragunncom-github -Dsonar.login=$SONAR_LOGIN -Dsonar.host.url=https://sonarcloud.io || true
+              mvn -U -Pcoverage,with-static-openssl-linux-non-fedora,-with-dynamic-openssl sonar:sonar -Dsonar.organization=floragunncom-github -Dsonar.login=$SONAR_LOGIN -Dsonar.host.url=https://sonarcloud.io || true
               mvn clean verify com.srcclr:srcclr-maven-plugin:scan -Penterprise -DskipTests -U
               ./dev/scan_veracode.sh
             fi

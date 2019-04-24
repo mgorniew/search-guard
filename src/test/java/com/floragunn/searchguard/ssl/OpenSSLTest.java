@@ -199,7 +199,7 @@ public class OpenSSLTest extends SSLTest {
         
         RestHelper rh = nonSslRestHelper();
 
-        final Settings tcSettings = Settings.builder().put("cluster.name", clusterInfo.clustername).put("path.home", ".")
+        final Settings tcSettings = Settings.builder().put("cluster.name", clusterInfo.clustername).put("path.home", "/tmp")
                 .put("node.name", "client_node_" + new Random().nextInt())
                 .put("node.data", false)
                 .put("node.master", false)
