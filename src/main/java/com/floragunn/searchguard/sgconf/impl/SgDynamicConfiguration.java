@@ -128,13 +128,11 @@ public class SgDynamicConfiguration<T> implements ToXContent {
         }
     }
     
-    @JsonIgnore
-    public SgDynamicConfiguration<T> getCEntryFull(String key) {
-        SgDynamicConfiguration<T> clone = this.deepClone();
-        T tmp = clone.centries.get(key);
-        clone.centries.clear();
-        clone.centries.put(key, tmp);
-        return clone;
+
+    public void removeOthers(String key) {
+        T tmp = this.centries.get(key);
+        this.centries.clear();
+        this.centries.put(key, tmp);
     }
     
     @JsonIgnore
