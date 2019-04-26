@@ -1036,6 +1036,9 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
             settings.add(Setting.boolSetting(ConfigConstants.SEARCHGUARD_UNSUPPORTED_INJECT_ADMIN_USER_ENABLED, false, Property.NodeScope,
                     Property.Filtered));
             settings.add(Setting.boolSetting(ConfigConstants.SEARCHGUARD_UNSUPPORTED_ALLOW_NOW_IN_DLS, false, Property.NodeScope, Property.Filtered));
+        
+            settings.add(Setting.boolSetting(ConfigConstants.SEARCHGUARD_UNSUPPORTED_RESTAPI_ALLOW_SGCONFIG_MODIFICATION, false, Property.NodeScope, Property.Filtered));
+
         }
 
         return settings;
