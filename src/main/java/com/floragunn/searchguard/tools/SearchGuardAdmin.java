@@ -31,6 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Currency;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -536,11 +537,14 @@ public class SearchGuardAdmin {
 
             if(updateSettings != null) { 
                 Settings indexSettings = Settings.builder().put("index.number_of_replicas", updateSettings).build();                
-                tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{"config","roles","rolesmapping","internalusers","actiongroups"})).actionGet();                
+                ConfigUpdateResponse res = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{"config","roles","rolesmapping","internalusers","actiongroups"})).actionGet();                
+                if(res.hasFailures()) {
+                    System.out.println("ERR: Unabe to reload config due to "+res.failures());
+                }
                 final AcknowledgedResponse response = tc.admin().indices().updateSettings((new UpdateSettingsRequest(index).settings(indexSettings))).actionGet();
                 System.out.println("Reload config on all nodes");
                 System.out.println("Update number of replicas to "+(updateSettings) +" with result: "+response.isAcknowledged());
-                return (response.isAcknowledged()?0:-1);
+                return ((response.isAcknowledged() && !res.hasFailures())?0:-1);
             }
             
             if(reload) { 
@@ -573,11 +577,14 @@ public class SearchGuardAdmin {
                 Settings indexSettings = Settings.builder()
                         .put("index.auto_expand_replicas", replicaAutoExpand?"0-all":"false")
                         .build();                
-                tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{"config","roles","rolesmapping","internalusers","actiongroups"})).actionGet();                
+                ConfigUpdateResponse res = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{"config","roles","rolesmapping","internalusers","actiongroups"})).actionGet();                
+                if(res.hasFailures()) {
+                    System.out.println("ERR: Unabe to reload config due to "+res.failures());
+                }
                 final AcknowledgedResponse response = tc.admin().indices().updateSettings((new UpdateSettingsRequest(index).settings(indexSettings))).actionGet();
                 System.out.println("Reload config on all nodes");
                 System.out.println("Auto-expand replicas "+(replicaAutoExpand?"enabled":"disabled"));
-                return (response.isAcknowledged()?0:-1);
+                return ((response.isAcknowledged() && !res.hasFailures())?0:-1);
             }   
             
             if(enableShardAllocation) { 
@@ -806,6 +813,10 @@ public class SearchGuardAdmin {
             }           
         }
 
+        if(response.hasFailures()) {
+            System.out.println("FAIL: "+response.failures().size()+" nodes reported failures. First failure is "+response.failures().get(0));
+        }
+        
         boolean success = response.getNodes().size() == expectedNodeCount;
         if(!success) {
             System.out.println("FAIL: Expected "+expectedNodeCount+" nodes to return response, but got "+response.getNodes().size());
@@ -820,8 +831,8 @@ public class SearchGuardAdmin {
             
             success = success && successNode;
         }
-        
-        return success;
+
+        return success && !response.hasFailures();
     }
     
     private static boolean uploadFile(final Client tc, final String filepath, final String index, final String _id, final boolean legacy, boolean resolveEnvVars) {

@@ -190,6 +190,7 @@ public class ConfigConstants {
     public static final String SEARCHGUARD_CACHE_TTL_MINUTES = "searchguard.cache.ttl_minutes";
     public static final String SEARCHGUARD_ALLOW_UNSAFE_DEMOCERTIFICATES = "searchguard.allow_unsafe_democertificates";
     public static final String SEARCHGUARD_ALLOW_DEFAULT_INIT_SGINDEX = "searchguard.allow_default_init_sgindex";
+    public static final String SEARCHGUARD_BACKGROUND_INIT_IF_SGINDEX_NOT_EXIST = "searchguard.background_init_if_sgindex_not_exist";
 
     public static final String SEARCHGUARD_ROLES_MAPPING_RESOLUTION = "searchguard.roles_mapping_resolution";
 

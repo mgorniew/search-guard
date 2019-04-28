@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -117,6 +119,8 @@ public class ConfigurationRepository {
             @Override
             public void run() {
                 try {
+                    LOGGER.info("Background init thread started. Install default config?: "+installDefaultConfig.get());
+
 
                     if(installDefaultConfig.get()) {
                         
@@ -184,7 +188,7 @@ public class ConfigurationRepository {
                         continue;
                     }
 
-                    while(true) {
+                    while(!dynamicConfigFactory.isInitialized()) {
                         try {
                             LOGGER.debug("Try to load config ...");
                             reloadConfiguration(Arrays.asList(CType.values()));
@@ -225,8 +229,12 @@ public class ConfigurationRepository {
                     LOGGER.info("{} index does not exist yet, so we create a default config", searchguardIndex);
                     installDefaultConfig.set(true);
                     bgThread.start();
-                } else {
+                } else if (settings.getAsBoolean(ConfigConstants.SEARCHGUARD_BACKGROUND_INIT_IF_SGINDEX_NOT_EXIST, true)){
                     LOGGER.info("{} index does not exist yet, so no need to load config on node startup. Use sgadmin to initialize cluster",
+                            searchguardIndex);
+                    bgThread.start();
+                } else {
+                    LOGGER.info("{} index does not exist yet, use sgadmin to initialize the cluster. We will not perform background initialization",
                             searchguardIndex);
                 }
             }
@@ -263,8 +271,28 @@ public class ConfigurationRepository {
         //    throw ExceptionsHelper.convertToElastic(e);
         //}
     }
+    
+    private final Lock LOCK = new ReentrantLock();
 
-    public void reloadConfiguration(Collection<CType> configTypes) {
+    public void reloadConfiguration(Collection<CType> configTypes) throws ConfigUpdateAlreadyInProgressException {
+        try {
+            if (LOCK.tryLock(60, TimeUnit.SECONDS)) {
+                try {
+                    reloadConfiguration0(configTypes);
+                } finally {
+                    LOCK.unlock();
+                }
+            } else {
+                throw new ConfigUpdateAlreadyInProgressException("A config update is already imn progress");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ConfigUpdateAlreadyInProgressException("Interrupted config update");
+        }
+    }
+
+
+   private void reloadConfiguration0(Collection<CType> configTypes) {
         final Map<CType, SgDynamicConfiguration<?>> loaded = getConfigurationsFromIndex(configTypes, false);
         configCache.putAll(loaded);
         notifyAboutChanges(loaded);
