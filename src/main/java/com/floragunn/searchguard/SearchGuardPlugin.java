@@ -163,7 +163,6 @@ import com.google.common.collect.Lists;
 public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements ClusterPlugin, MapperPlugin {
 
     private static final String KEYWORD = ".keyword";
-    private final boolean tribeNodeClient;
     private final boolean dlsFlsAvailable;
     private final Constructor<?> dlsFlsConstructor;
     private volatile SearchGuardRestFilter sgRestHandler;
@@ -192,7 +191,7 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
     }
 
     private final SslExceptionHandler evaluateSslExceptionHandler() {
-        if (client || tribeNodeClient || disabled || sslOnly) {
+        if (client || disabled || sslOnly) {
             return new SslExceptionHandler() {
             };
         }
@@ -214,7 +213,6 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
         disabled = isDisabled(settings);
 
         if (disabled) {
-            this.tribeNodeClient = false;
             this.dlsFlsAvailable = false;
             this.dlsFlsConstructor = null;
             this.enterpriseModulesEnabled = false;
@@ -227,7 +225,6 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
         sslOnly = isSslOnlyMode(settings);
 
         if (sslOnly) {
-            this.tribeNodeClient = false;
             this.dlsFlsAvailable = false;
             this.dlsFlsConstructor = null;
             this.enterpriseModulesEnabled = false;
@@ -279,16 +276,6 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
             throw new IllegalStateException(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLED + " must be set to 'true'");
         }
 
-        if (log.isDebugEnabled() && this.settings.getByPrefix("tribe").size() > 0) {
-            log.debug("Tribe configuration detected: {}", this.settings);
-        }
-
-        boolean tribeNode = this.settings.get("tribe.name", null) == null && this.settings.getByPrefix("tribe").size() > 0;
-        tribeNodeClient = this.settings.get("tribe.name", null) != null;
-
-        log.debug("This node [{}] is a transportClient: {}/tribeNode: {}/tribeNodeClient: {}", settings.get("node.name"), client, tribeNode,
-                tribeNodeClient);
-
         if (!client) {
             dlsFlsConstructor = ReflectionHelper.instantiateDlsFlsConstructor();
             dlsFlsAvailable = dlsFlsConstructor != null;
@@ -297,7 +284,7 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
             dlsFlsConstructor = null;
         }
 
-        if (!client && !tribeNodeClient) {
+        if (!client) {
             final List<Path> filesWithWrongPermissions = AccessController.doPrivileged(new PrivilegedAction<List<Path>>() {
                 @Override
                 public List<Path> run() {
@@ -326,7 +313,7 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
             }
         }
 
-        if (!client && !tribeNodeClient && !settings.getAsBoolean(ConfigConstants.SEARCHGUARD_ALLOW_UNSAFE_DEMOCERTIFICATES, false)) {
+        if (!client && !settings.getAsBoolean(ConfigConstants.SEARCHGUARD_ALLOW_UNSAFE_DEMOCERTIFICATES, false)) {
             //check for demo certificates
             final List<String> files = AccessController.doPrivileged(new PrivilegedAction<List<String>>() {
                 @Override
@@ -431,7 +418,7 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
 
         final List<RestHandler> handlers = new ArrayList<RestHandler>(1);
 
-        if (!client && !tribeNodeClient && !disabled) {
+        if (!client && !disabled) {
 
             handlers.addAll(super.getRestHandlers(settings, restController, clusterSettings, indexScopedSettings, settingsFilter,
                     indexNameExpressionResolver, nodesInCluster));
@@ -468,7 +455,7 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
     @Override
     public List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> getActions() {
         List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> actions = new ArrayList<>(1);
-        if (!tribeNodeClient && !disabled && !sslOnly) {
+        if (!disabled && !sslOnly) {
             actions.add(new ActionHandler<>(ConfigUpdateAction.INSTANCE, TransportConfigUpdateAction.class));
             actions.add(new ActionHandler<>(LicenseInfoAction.INSTANCE, TransportLicenseInfoAction.class));
             actions.add(new ActionHandler<>(WhoAmIAction.INSTANCE, TransportWhoAmIAction.class));
@@ -608,7 +595,7 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
     @Override
     public List<ActionFilter> getActionFilters() {
         List<ActionFilter> filters = new ArrayList<>(1);
-        if (!tribeNodeClient && !client && !disabled && !sslOnly) {
+        if (!client && !disabled && !sslOnly) {
             filters.add(Objects.requireNonNull(sgf));
         }
         return filters;
@@ -618,7 +605,7 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
     public List<TransportInterceptor> getTransportInterceptors(NamedWriteableRegistry namedWriteableRegistry, ThreadContext threadContext) {
         List<TransportInterceptor> interceptors = new ArrayList<TransportInterceptor>(1);
 
-        if (!client && !tribeNodeClient && !disabled && !sslOnly) {
+        if (!client && !disabled && !sslOnly) {
             interceptors.add(new TransportInterceptor() {
 
                 @Override
@@ -685,7 +672,7 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
         Map<String, Supplier<HttpServerTransport>> httpTransports = new HashMap<String, Supplier<HttpServerTransport>>(1);
 
         if (!disabled) {
-            if (!client && httpSSLEnabled && !tribeNodeClient) {
+            if (!client && httpSSLEnabled) {
 
                 final ValidatingDispatcher validatingDispatcher = new ValidatingDispatcher(threadPool.getThreadContext(), dispatcher, settings,
                         configPath, evaluateSslExceptionHandler());
@@ -694,7 +681,7 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
                         evaluateSslExceptionHandler(), xContentRegistry, validatingDispatcher);
 
                 httpTransports.put("com.floragunn.searchguard.http.SearchGuardHttpServerTransport", () -> sghst);
-            } else if (!client && !tribeNodeClient) {
+            } else if (!client) {
                 httpTransports.put("com.floragunn.searchguard.http.SearchGuardHttpServerTransport",
                         () -> new SearchGuardNonSslHttpServerTransport(settings, networkService, bigArrays, threadPool, xContentRegistry,
                                 dispatcher));
@@ -719,7 +706,7 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
 
         final List<Object> components = new ArrayList<Object>();
 
-        if (client || tribeNodeClient || disabled) {
+        if (client || disabled) {
             return components;
         }
         final ClusterInfoHolder cih = new ClusterInfoHolder();
@@ -873,11 +860,6 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
 
             settings.add(Setting.simpleString(ConfigConstants.SEARCHGUARD_ROLES_MAPPING_RESOLUTION, Property.NodeScope, Property.Filtered));
             settings.add(Setting.boolSetting(ConfigConstants.SEARCHGUARD_DISABLE_ENVVAR_REPLACEMENT, false, Property.NodeScope, Property.Filtered));
-
-            //settings.add(Setting.boolSetting(ConfigConstants.SEARCHGUARD_DISABLE_TYPE_SECURITY, false, Property.NodeScope, Property.Filtered));
-
-            //TODO remove searchguard.tribe.clustername?
-            //settings.add(Setting.simpleString(ConfigConstants.SEARCHGUARD_TRIBE_CLUSTERNAME, Property.NodeScope, Property.Filtered));
 
             // SG6 - Audit        
             settings.add(Setting.simpleString(ConfigConstants.SEARCHGUARD_AUDIT_TYPE_DEFAULT, Property.NodeScope, Property.Filtered));
@@ -1064,7 +1046,7 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
     @Override
     public void onNodeStarted() {
         log.info("Node started");
-        if(!sslOnly && !client && !disabled && !tribeNodeClient) {
+        if(!sslOnly && !client && !disabled) {
             cr.initOnNodeStart();
         }
         final Set<ModuleInfo> sgModules = ReflectionHelper.getModulesLoaded();
@@ -1078,7 +1060,7 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
     @Override
     public Collection<Class<? extends LifecycleComponent>> getGuiceServiceClasses() {
 
-        if (client || tribeNodeClient || disabled || sslOnly) {
+        if (client || disabled || sslOnly) {
             return Collections.emptyList();
         }
 

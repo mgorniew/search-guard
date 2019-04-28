@@ -134,7 +134,7 @@ public final class ClusterHelper {
             NodeSettings setting = internalMasterNodeSettings.get(i);
             int nodeNum = nodeNumCounter--;
             PluginAwareNode node = new PluginAwareNode(setting.masterNode,
-                    getMinimumNonSgNodeSettingsBuilder(nodeNum, setting.masterNode, setting.dataNode, setting.tribeNode, internalNodeSettings.size(), tcpMasterPortsOnly, tcpPortsAllIt.next(), httpPortsIt.next())
+                    getMinimumNonSgNodeSettingsBuilder(nodeNum, setting.masterNode, setting.dataNode, internalNodeSettings.size(), tcpMasterPortsOnly, tcpPortsAllIt.next(), httpPortsIt.next())
                             .put(nodeSettingsSupplier == null ? Settings.Builder.EMPTY_SETTINGS : nodeSettingsSupplier.get(nodeNum)).build(), setting.getPlugins());
             System.out.println(node.settings());
             
@@ -160,7 +160,7 @@ public final class ClusterHelper {
 			NodeSettings setting = internalNonMasterNodeSettings.get(i);
             int nodeNum = nodeNumCounter--;
 			PluginAwareNode node = new PluginAwareNode(setting.masterNode,
-					getMinimumNonSgNodeSettingsBuilder(nodeNum, setting.masterNode, setting.dataNode, setting.tribeNode, internalNodeSettings.size(), tcpMasterPortsOnly, tcpPortsAllIt.next(), httpPortsIt.next())
+					getMinimumNonSgNodeSettingsBuilder(nodeNum, setting.masterNode, setting.dataNode, internalNodeSettings.size(), tcpMasterPortsOnly, tcpPortsAllIt.next(), httpPortsIt.next())
 							.put(nodeSettingsSupplier == null ? Settings.Builder.EMPTY_SETTINGS : nodeSettingsSupplier.get(nodeNum)).build(), setting.getPlugins());
 			System.out.println(node.settings());
 			
@@ -325,7 +325,7 @@ public final class ClusterHelper {
 
 	// @formatter:off
 	private Settings.Builder getMinimumNonSgNodeSettingsBuilder(final int nodenum, final boolean masterNode,
-			final boolean dataNode, final boolean tribeNode, int nodeCount, SortedSet<Integer> masterTcpPorts, /*SortedSet<Integer> nonMasterTcpPorts,*/ int tcpPort, int httpPort) {
+			final boolean dataNode, int nodeCount, SortedSet<Integer> masterTcpPorts, /*SortedSet<Integer> nonMasterTcpPorts,*/ int tcpPort, int httpPort) {
 	    
 		return Settings.builder()
 		        .put("node.name", "node_"+clustername+ "_num" + nodenum)

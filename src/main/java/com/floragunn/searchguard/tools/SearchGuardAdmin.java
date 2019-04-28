@@ -802,16 +802,7 @@ public class SearchGuardAdmin {
 
     private static boolean checkConfigUpdateResponse(ConfigUpdateResponse response, NodesInfoResponse nir, int expectedConfigCount) {
         
-        int expectedNodeCount = 0;
-        
-        for(NodeInfo ni: nir.getNodes()) {
-            Settings nodeSettings = ni.getSettings();
-          
-            //do not count tribe clients
-            if(nodeSettings.get("tribe.name", null) == null) {
-                expectedNodeCount++;
-            }           
-        }
+        final int expectedNodeCount =  nir.getNodes().size();
 
         if(response.hasFailures()) {
             System.out.println("FAIL: "+response.failures().size()+" nodes reported failures. First failure is "+response.failures().get(0));

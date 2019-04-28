@@ -40,16 +40,16 @@ public enum ClusterConfiguration {
     //HUGE(new NodeSettings(true, false, false), new NodeSettings(true, false, false), new NodeSettings(true, false, false), new NodeSettings(false, true,false), new NodeSettings(false, true, false)),
 	
     //3 nodes (1m, 2d)
-    DEFAULT(new NodeSettings(true, false, false), new NodeSettings(false, true, false), new NodeSettings(false, true, false)),
+    DEFAULT(new NodeSettings(true, false), new NodeSettings(false, true), new NodeSettings(false, true)),
 	
     //1 node (1md)
-	SINGLENODE(new NodeSettings(true, true, false)),
+	SINGLENODE(new NodeSettings(true, true)),
     
 	//4 node (1m, 2d, 1c)
-	CLIENTNODE(new NodeSettings(true, false, false), new NodeSettings(false, true, false), new NodeSettings(false, true, false), new NodeSettings(false, false, false)),
+	CLIENTNODE(new NodeSettings(true, false), new NodeSettings(false, true), new NodeSettings(false, true), new NodeSettings(false, false)),
 
     //3 nodes (1m, 2d) plus additional UserInjectorPlugin
-    USERINJECTOR(new NodeSettings(true, false, false, Lists.newArrayList(UserInjectorPlugin.class)), new NodeSettings(false, true, false, Lists.newArrayList(UserInjectorPlugin.class)), new NodeSettings(false, true, false, Lists.newArrayList(UserInjectorPlugin.class)));
+    USERINJECTOR(new NodeSettings(true, false, Lists.newArrayList(UserInjectorPlugin.class)), new NodeSettings(false, true, Lists.newArrayList(UserInjectorPlugin.class)), new NodeSettings(false, true, Lists.newArrayList(UserInjectorPlugin.class)));
 
 	private List<NodeSettings> nodeSettings = new LinkedList<>();
 	
@@ -88,18 +88,16 @@ public enum ClusterConfiguration {
 	public static class NodeSettings {
 		public boolean masterNode;
 		public boolean dataNode;
-		public boolean tribeNode;
 		public List<Class<? extends Plugin>> plugins = Lists.newArrayList(Netty4Plugin.class, SearchGuardPlugin.class, MatrixAggregationPlugin.class, MustachePlugin.class, ParentJoinPlugin.class, PercolatorPlugin.class, ReindexPlugin.class);
 		
-		public NodeSettings(boolean masterNode, boolean dataNode, boolean tribeNode) {
+		public NodeSettings(boolean masterNode, boolean dataNode) {
 			super();
 			this.masterNode = masterNode;
 			this.dataNode = dataNode;
-			this.tribeNode = tribeNode;
 		}
         
-		public NodeSettings(boolean masterNode, boolean dataNode, boolean tribeNode, List<Class<? extends Plugin>> additionalPlugins) {
-            this(masterNode, dataNode, tribeNode);
+		public NodeSettings(boolean masterNode, boolean dataNode, List<Class<? extends Plugin>> additionalPlugins) {
+            this(masterNode, dataNode);
             this.plugins.addAll(additionalPlugins);
         }
 		
