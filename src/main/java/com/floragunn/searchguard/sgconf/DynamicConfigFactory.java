@@ -9,18 +9,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.threadpool.ThreadPool;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.floragunn.searchguard.DefaultObjectMapper;
 import com.floragunn.searchguard.auth.internal.InternalAuthenticationBackend;
 import com.floragunn.searchguard.configuration.ClusterInfoHolder;
 import com.floragunn.searchguard.configuration.ConfigurationChangeListener;
 import com.floragunn.searchguard.configuration.ConfigurationRepository;
+import com.floragunn.searchguard.configuration.StaticResourceException;
 import com.floragunn.searchguard.sgconf.impl.CType;
 import com.floragunn.searchguard.sgconf.impl.SgDynamicConfiguration;
 import com.floragunn.searchguard.sgconf.impl.v6.ActionGroupsV6;
@@ -50,6 +50,54 @@ public class DynamicConfigFactory implements Initializable, ConfigurationChangeL
     //sg_action_groups.yml may be empty
     //sg_roles.yml may be empty
     //can all be empty -> {}
+    
+    private static final SgDynamicConfiguration<RoleV7> staticRoles;
+    private static final SgDynamicConfiguration<ActionGroupsV7> staticActionGroups;
+    private static final SgDynamicConfiguration<TenantV7> staticTenants;
+    
+    static {
+        try {
+            JsonNode staticRolesJsonNode = DefaultObjectMapper.YAML_MAPPER.readTree(DynamicConfigFactory.class.getResourceAsStream("/static_config/static_roles.yml"));
+            staticRoles = SgDynamicConfiguration.fromNode(staticRolesJsonNode, CType.ROLES, 2, 0, 0);
+   
+            JsonNode staticActionGroupsJsonNode = DefaultObjectMapper.YAML_MAPPER.readTree(DynamicConfigFactory.class.getResourceAsStream("/static_config/static_action_goups.yml"));
+            staticActionGroups = SgDynamicConfiguration.fromNode(staticActionGroupsJsonNode, CType.ACTIONGROUPS, 2, 0, 0);
+      
+            JsonNode staticTenantsJsonNode = DefaultObjectMapper.YAML_MAPPER.readTree(DynamicConfigFactory.class.getResourceAsStream("/static_config/static_tenants.yml"));
+            staticTenants = SgDynamicConfiguration.fromNode(staticTenantsJsonNode, CType.TENANTS, 2, 0, 0);
+        } catch (Exception e) {
+            throw ExceptionsHelper.convertToRuntime(e);
+        }
+    }
+    
+    public static final SgDynamicConfiguration<RoleV7> getStaticRoles() {
+        return staticRoles.deepClone();
+    }
+    
+    public static final SgDynamicConfiguration<ActionGroupsV7> getStaticActionGroups() {
+        return staticActionGroups.deepClone();
+    }
+    
+    public static final SgDynamicConfiguration<TenantV7> getStaticTenants() {
+        return staticTenants.deepClone();
+    }
+    
+    public static final SgDynamicConfiguration<?> addStatics(SgDynamicConfiguration<?> original) {
+        if(original.getCType() == CType.ACTIONGROUPS) {
+            original.add(getStaticActionGroups());
+        }
+        
+        if(original.getCType() == CType.ROLES) {
+            original.add(getStaticRoles());
+        }
+        
+        if(original.getCType() == CType.TENANTS) {
+            original.add(getStaticTenants());
+        }
+        
+        return original;
+    }
+    
     protected final Logger log = LogManager.getLogger(this.getClass());
     private final ConfigurationRepository cr;
     private final AtomicBoolean initialized = new AtomicBoolean();
@@ -95,37 +143,39 @@ public class DynamicConfigFactory implements Initializable, ConfigurationChangeL
         
         
         if(config.getImplementingClass() == ConfigV7.class) {
-            
-            
-            try {
                 //statics
-                JsonNode staticRolesJsonNode = DefaultObjectMapper.YAML_MAPPER.readTree(this.getClass().getResourceAsStream("/static_config/static_roles.yml"));
-                SgDynamicConfiguration<RoleV7> staticRoles = SgDynamicConfiguration.fromNode(staticRolesJsonNode, CType.ROLES, 2, 0, 0);
-                if(!roles.add(staticRoles)) {
-                    throw new RuntimeException("Unable to load static roles");
+                
+                if(roles.containsAny(staticRoles)) {
+                    throw new StaticResourceException("Cannot override static roles");
                 }
+                if(!roles.add(staticRoles)) {
+                    throw new StaticResourceException("Unable to load static roles");
+                }
+
                 log.debug("Static roles loaded ({})", staticRoles.getCEntries().size());
 
-                
-                JsonNode staticActionGroupsJsonNode = DefaultObjectMapper.YAML_MAPPER.readTree(this.getClass().getResourceAsStream("/static_config/static_action_goups.yml"));
-                SgDynamicConfiguration<ActionGroupsV7> staticActionGroups = SgDynamicConfiguration.fromNode(staticActionGroupsJsonNode, CType.ACTIONGROUPS, 2, 0, 0);
-                if(!actionGroups.add(staticActionGroups)) {
-                    throw new RuntimeException("Unable to load static action groups");
+                if(actionGroups.containsAny(staticActionGroups)) {
+                    throw new StaticResourceException("Cannot override static action groups");
                 }
+                if(!actionGroups.add(staticActionGroups)) {
+                    throw new StaticResourceException("Unable to load static action groups");
+                }
+                
+
                 log.debug("Static action groups loaded ({})", staticActionGroups.getCEntries().size());
                 
-                JsonNode staticTenantsJsonNode = DefaultObjectMapper.YAML_MAPPER.readTree(this.getClass().getResourceAsStream("/static_config/static_tenants.yml"));
-                SgDynamicConfiguration<ActionGroupsV7> staticTenants = SgDynamicConfiguration.fromNode(staticTenantsJsonNode, CType.TENANTS, 2, 0, 0);
-                if(!tenants.add(staticTenants)) {
-                    throw new RuntimeException("Unable to load static tenants");
+                if(tenants.containsAny(staticTenants)) {
+                    throw new StaticResourceException("Cannot override static tenants");
                 }
+                if(!tenants.add(staticTenants)) {
+                    throw new StaticResourceException("Unable to load static tenants");
+                }
+                
+
                 log.debug("Static tenants loaded ({})", staticTenants.getCEntries().size());
 
                 log.debug("Static configuration loaded (total roles: {}/total action groups: {}/total tenants: {})", roles.getCEntries().size(), actionGroups.getCEntries().size(), tenants.getCEntries().size());
-                
-            } catch (IOException e) {
-                throw new RuntimeException("Unable to load static config", e);
-            }
+
             
 
             //rebuild v7 Models

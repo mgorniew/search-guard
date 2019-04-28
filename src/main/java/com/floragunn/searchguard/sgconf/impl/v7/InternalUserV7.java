@@ -5,15 +5,19 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.floragunn.searchguard.sgconf.Hashed;
 import com.floragunn.searchguard.sgconf.Hideable;
+import com.floragunn.searchguard.sgconf.StaticDefinable;
 import com.floragunn.searchguard.sgconf.impl.v6.InternalUserV6;
 
-public class InternalUserV7 implements Hideable, Hashed {
+public class InternalUserV7 implements Hideable, Hashed, StaticDefinable {
         
         private String hash;
         private boolean reserved;
         private boolean hidden;
+        @JsonProperty(value = "static")
+        private boolean _static;
         private List<String> backend_roles = Collections.emptyList();
         private Map<String, String> attributes = Collections.emptyMap();
         private String description;
@@ -75,8 +79,8 @@ public class InternalUserV7 implements Hideable, Hashed {
 
         @Override
         public String toString() {
-            return "SgInternalUser [hash=" + hash + ", reserved=" + reserved + ", hidden=" + hidden + ", backend_roles=" + backend_roles + ", attributes="
-                    + attributes + "]";
+            return "InternalUserV7 [hash=" + hash + ", reserved=" + reserved + ", hidden=" + hidden + ", _static=" + _static + ", backend_roles="
+                    + backend_roles + ", attributes=" + attributes + ", description=" + description + "]";
         }
 
         @Override
@@ -100,4 +104,15 @@ public class InternalUserV7 implements Hideable, Hashed {
         public void setReserved(boolean reserved) {
             this.reserved = reserved;
         }
+        
+        @JsonProperty(value = "static")
+        public boolean isStatic() {
+            return _static;
+        }
+        @JsonProperty(value = "static")
+        public void setStatic(boolean _static) {
+            this._static = _static;
+        }
+        
+        
     }

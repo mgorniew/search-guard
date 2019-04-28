@@ -106,7 +106,7 @@ public class ConfigTests {
         
         SgDynamicConfiguration<?> dc = load(file, cType);
         Assert.assertNotNull(dc);
-        Assert.assertTrue(dc.getCEntries().size() > 0);
+        //Assert.assertTrue(dc.getCEntries().size() > 0);
         String jsonSerialize = DefaultObjectMapper.objectMapper.writeValueAsString(dc);
         SgDynamicConfiguration<?> conf = SgDynamicConfiguration.fromJson(jsonSerialize, cType, configVersion, 0, 0);
         SgDynamicConfiguration.fromJson(Strings.toString(conf), cType, configVersion, 0, 0);

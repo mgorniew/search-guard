@@ -3,15 +3,19 @@ package com.floragunn.searchguard.sgconf.impl.v7;
 import java.util.Collections;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.floragunn.searchguard.sgconf.Hideable;
+import com.floragunn.searchguard.sgconf.StaticDefinable;
 import com.floragunn.searchguard.sgconf.impl.v6.ActionGroupsV6;
 
-public class ActionGroupsV7 implements Hideable {
+public class ActionGroupsV7 implements Hideable, StaticDefinable {
 
     
     
     private boolean reserved;
     private boolean hidden;
+    @JsonProperty(value = "static")
+    private boolean _static;
     private List<String> allowed_actions = Collections.emptyList();
     private String type;
     private String description;
@@ -64,10 +68,18 @@ public class ActionGroupsV7 implements Hideable {
     public void setAllowed_actions(List<String> allowed_actions) {
         this.allowed_actions = allowed_actions;
     }
+    @JsonProperty(value = "static")
+    public boolean isStatic() {
+        return _static;
+    }
+    @JsonProperty(value = "static")
+    public void setStatic(boolean _static) {
+        this._static = _static;
+    }
     @Override
     public String toString() {
-        return "ActionGroupsV7 [reserved=" + reserved + ", hidden=" + hidden + ", allowed_actions=" + allowed_actions + ", type=" + type
-                + ", description=" + description + "]";
+        return "ActionGroupsV7 [reserved=" + reserved + ", hidden=" + hidden + ", _static=" + _static + ", allowed_actions=" + allowed_actions
+                + ", type=" + type + ", description=" + description + "]";
     }
     
     

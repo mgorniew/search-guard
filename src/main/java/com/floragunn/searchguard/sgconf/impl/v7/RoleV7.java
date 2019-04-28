@@ -8,13 +8,17 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.floragunn.searchguard.sgconf.Hideable;
+import com.floragunn.searchguard.sgconf.StaticDefinable;
 import com.floragunn.searchguard.sgconf.impl.v6.RoleV6;
 
-public class RoleV7 implements Hideable {
+public class RoleV7 implements Hideable, StaticDefinable {
 
     private boolean reserved;
     private boolean hidden;
+    @JsonProperty(value = "static")
+    private boolean _static;
     private String description;
     private List<String> cluster_permissions = Collections.emptyList();
     private List<Index> index_permissions = Collections.emptyList();
@@ -41,7 +45,7 @@ public class RoleV7 implements Hideable {
         
         if(rwTenants != null && !rwTenants.isEmpty()) {
             Tenant t = new Tenant();
-            t.setAllowed_actions(Collections.singletonList("kibana:saved_objects/*"));
+            t.setAllowed_actions(Collections.singletonList("SGS_KIBANA_ALL_WRITE"));
             t.setTenant_patterns(rwTenants);
             tenant_permissions.add(t);
         }
@@ -51,7 +55,7 @@ public class RoleV7 implements Hideable {
         
         if(roTenants != null && !roTenants.isEmpty()) {
             Tenant t = new Tenant();
-            t.setAllowed_actions(Collections.singletonList("kibana:saved_objects/*/read"));
+            t.setAllowed_actions(Collections.singletonList("SGS_KIBANA_ALL_READ"));
             t.setTenant_patterns(roTenants);
             tenant_permissions.add(t);
         }
@@ -220,7 +224,21 @@ public class RoleV7 implements Hideable {
         this.reserved = reserved;
     }
 
-    
+    @JsonProperty(value = "static")
+    public boolean isStatic() {
+        return _static;
+    }
+    @JsonProperty(value = "static")
+    public void setStatic(boolean _static) {
+        this._static = _static;
+    }
+
+    @Override
+    public String toString() {
+        return "RoleV7 [reserved=" + reserved + ", hidden=" + hidden + ", _static=" + _static + ", description=" + description
+                + ", cluster_permissions=" + cluster_permissions + ", index_permissions=" + index_permissions + ", tenant_permissions="
+                + tenant_permissions + "]";
+    }
     
 
     

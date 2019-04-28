@@ -2,66 +2,45 @@
 _sg_meta:
   type: "rolesmapping"
   config_version: 2
-sg_all_access:
+SGS_ALL_ACCESS:
   reserved: true
   hidden: false
   backend_roles:
   - "admin"
-  hosts: []
-  users: []
-  and_backend_roles: []
   description: "Migrated from v6"
-sg_own_index:
+SGS_OWN_INDEX:
   reserved: false
   hidden: false
-  backend_roles: []
-  hosts: []
   users:
   - "*"
-  and_backend_roles: []
   description: "Migrated from v6"
-sg_logstash:
+SGS_LOGSTASH:
   reserved: false
   hidden: false
   backend_roles:
   - "logstash"
-  hosts: []
-  users: []
-  and_backend_roles: []
   description: "Migrated from v6"
-sg_kibana_user:
+SGS_KIBANA_USER:
   reserved: false
   hidden: false
   backend_roles:
   - "kibanauser"
-  hosts: []
-  users: []
-  and_backend_roles: []
   description: "Migrated from v6"
-sg_readall:
+SGS_READALL:
   reserved: true
   hidden: false
   backend_roles:
   - "readall"
-  hosts: []
-  users: []
-  and_backend_roles: []
   description: "Migrated from v6"
-sg_manage_snapshots:
+SGS_MANAGE_SNAPSHOTS:
   reserved: true
   hidden: false
   backend_roles:
   - "snapshotrestore"
-  hosts: []
-  users: []
-  and_backend_roles: []
   description: "Migrated from v6"
-sg_kibana_server:
+SGS_KIBANA_SERVER:
   reserved: true
   hidden: false
-  backend_roles: []
-  hosts: []
   users:
   - "kibanaserver"
-  and_backend_roles: []
   description: "Migrated from v6"

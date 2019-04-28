@@ -2,100 +2,113 @@
 _sg_meta:
   type: "actiongroups"
   config_version: 2
-KIBANA_ALL:
+SGS_KIBANA_ALL_WRITE:
   reserved: true
-  hidden: true
+  hidden: false
+  static: true
   allowed_actions:
-  - "kibana:saved_objects/*"
+  - "kibana:saved_objects/*/write"
   type: "kibana"
   description: "Statically defined"
-KIBANA_READ:
+SGS_KIBANA_ALL_READ:
   reserved: true
-  hidden: true
+  hidden: false
+  static: true
   allowed_actions:
   - "kibana:saved_objects/*/read"
   type: "kibana"
   description: "Statically defined"
-CLUSTER_ALL:
+SGS_CLUSTER_ALL:
   reserved: true
-  hidden: true
+  hidden: false
+  static: true
   allowed_actions:
   - "cluster:*"
   type: "cluster"
   description: "Statically defined"
-CRUD:
+SGS_CRUD:
   reserved: true
-  hidden: true
+  hidden: false
+  static: true
   allowed_actions:
   - "READ"
   - "WRITE"
   type: "index"
   description: "Statically defined"
-SEARCH:
+SGS_SEARCH:
   reserved: true
-  hidden: true
+  hidden: false
+  static: true
   allowed_actions:
   - "indices:data/read/search*"
   - "indices:data/read/msearch*"
   - "SUGGEST"
   type: "index"
   description: "Statically defined"
-DATA_ACCESS:
+SGS_DATA_ACCESS:
   reserved: true
-  hidden: true
+  hidden: false
+  static: true
   allowed_actions:
   - "indices:data/*"
   - "CRUD"
   type: "index"
   description: "Statically defined"
-CREATE_INDEX:
+SGS_CREATE_INDEX:
   reserved: true
-  hidden: true
+  hidden: false
+  static: true
   allowed_actions:
   - "indices:admin/create"
   - "indices:admin/mapping/put"
   type: "index"
   description: "Statically defined"
-WRITE:
+SGS_WRITE:
   reserved: true
-  hidden: true
+  hidden: false
+  static: true
   allowed_actions:
   - "indices:data/write*"
   - "indices:admin/mapping/put"
   type: "index"
   description: "Statically defined"
-MANAGE_ALIASES:
+SGS_MANAGE_ALIASES:
   reserved: true
-  hidden: true
+  hidden: false
+  static: true
   allowed_actions:
   - "indices:admin/aliases*"
   type: "index"
   description: "Statically defined"
-READ:
+SGS_READ:
   reserved: true
-  hidden: true
+  hidden: false
+  static: true
   allowed_actions:
   - "indices:data/read*"
   - "indices:admin/mappings/fields/get*"
   type: "index"
   description: "Statically defined"
-INDICES_ALL:
+SGS_INDICES_ALL:
   reserved: true
-  hidden: true
+  hidden: false
+  static: true
   allowed_actions:
   - "indices:*"
   type: "index"
   description: "Statically defined"
-DELETE:
+SGS_DELETE:
   reserved: true
-  hidden: true
+  hidden: false
+  static: true
   allowed_actions:
   - "indices:data/write/delete*"
   type: "index"
   description: "Statically defined"
-CLUSTER_COMPOSITE_OPS:
+SGS_CLUSTER_COMPOSITE_OPS:
   reserved: true
-  hidden: true
+  hidden: false
+  static: true
   allowed_actions:
   - "indices:data/write/bulk"
   - "indices:admin/aliases*"
@@ -103,9 +116,10 @@ CLUSTER_COMPOSITE_OPS:
   - "CLUSTER_COMPOSITE_OPS_RO"
   type: "cluster"
   description: "Statically defined"
-CLUSTER_COMPOSITE_OPS_RO:
+SGS_CLUSTER_COMPOSITE_OPS_RO:
   reserved: true
-  hidden: true
+  hidden: false
+  static: true
   allowed_actions:
   - "indices:data/read/mget"
   - "indices:data/read/msearch"
@@ -115,40 +129,45 @@ CLUSTER_COMPOSITE_OPS_RO:
   - "indices:data/read/scroll"
   type: "cluster"
   description: "Statically defined"
-GET:
+SGS_GET:
   reserved: true
-  hidden: true
+  hidden: false
+  static: true
   allowed_actions:
   - "indices:data/read/get*"
   - "indices:data/read/mget*"
   type: "index"
   description: "Statically defined"
-MANAGE:
+SGS_MANAGE:
   reserved: true
-  hidden: true
+  hidden: false
+  static: true
   allowed_actions:
   - "indices:monitor/*"
   - "indices:admin/*"
   type: "index"
   description: "Statically defined"
-CLUSTER_MONITOR:
+SGS_CLUSTER_MONITOR:
   reserved: true
-  hidden: true
+  hidden: false
+  static: true
   allowed_actions:
   - "cluster:monitor/*"
   type: "cluster"
   description: "Statically defined"
-MANAGE_SNAPSHOTS:
+SGS_MANAGE_SNAPSHOTS:
   reserved: true
-  hidden: true
+  hidden: false
+  static: true
   allowed_actions:
   - "cluster:admin/snapshot/*"
   - "cluster:admin/repository/*"
   type: "index"
   description: "Statically defined"
-INDEX:
+SGS_INDEX:
   reserved: true
-  hidden: true
+  hidden: false
+  static: true
   allowed_actions:
   - "indices:data/write/index*"
   - "indices:data/write/update*"
@@ -156,23 +175,26 @@ INDEX:
   - "indices:data/write/bulk*"
   type: "index"
   description: "Statically defined"
-UNLIMITED:
+SGS_UNLIMITED:
   reserved: true
-  hidden: true
+  hidden: false
+  static: true
   allowed_actions:
   - "*"
   type: "index"
   description: "Statically defined"
-INDICES_MONITOR:
+SGS_INDICES_MONITOR:
   reserved: true
-  hidden: true
+  hidden: false
+  static: true
   allowed_actions:
   - "indices:monitor/*"
   type: "index"
   description: "Statically defined"
-SUGGEST:
+SGS_SUGGEST:
   reserved: true
-  hidden: true
+  hidden: false
+  static: true
   allowed_actions:
   - "indices:data/read/suggest*"
   type: "index"

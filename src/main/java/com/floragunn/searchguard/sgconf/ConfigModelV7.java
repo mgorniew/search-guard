@@ -1000,7 +1000,7 @@ public class ConfigModelV7 extends ConfigModel {
                             for (RoleV7.Tenant tenant : tenants) {
                                 
                                 for(String matchingTenant: WildcardMatcher.getMatchAny(tenant.getTenant_patterns(), definedTenants.getCEntries().keySet())) {
-                                    tuples.add(new Tuple<String, Boolean>(matchingTenant, tenant.getAllowed_actions().contains("kibana:saved_objects/*")));
+                                    tuples.add(new Tuple<String, Boolean>(matchingTenant, agr.resolvedActions(tenant.getAllowed_actions()).contains("kibana:saved_objects/*/write")));
                                 }
                             }
                         }
@@ -1060,8 +1060,8 @@ public class ConfigModelV7 extends ConfigModel {
                 }
             });
             
-            if(!result.containsKey("GLOBAL_TENANT") && roles.contains("sg_kibana_user")) {
-                result.put("GLOBAL_TENANT", true);
+            if(!result.containsKey("SGS_GLOBAL_TENANT") && (roles.contains("sg_kibana_user") || roles.contains("SGS_KIBANA_USER"))) {
+                result.put("SGS_GLOBAL_TENANT", true);
             }
 
             return Collections.unmodifiableMap(result);

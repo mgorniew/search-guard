@@ -2,6 +2,7 @@ package com.floragunn.searchguard.sgconf.impl;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -21,6 +22,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.floragunn.searchguard.DefaultObjectMapper;
 import com.floragunn.searchguard.sgconf.Hashed;
 import com.floragunn.searchguard.sgconf.Hideable;
+import com.floragunn.searchguard.sgconf.StaticDefinable;
 import com.floragunn.searchguard.sgconf.impl.v7.RoleV7;
 
 public class SgDynamicConfiguration<T> implements ToXContent {
@@ -114,6 +116,15 @@ public class SgDynamicConfiguration<T> implements ToXContent {
     public void removeHidden() {
         for(Entry<String, T> entry: new HashMap<String, T>(centries).entrySet()) {
             if(entry.getValue() instanceof Hideable && ((Hideable) entry.getValue()).isHidden()) {
+                centries.remove(entry.getKey());
+            }
+        }
+    }
+    
+    @JsonIgnore
+    public void removeStatic() {
+        for(Entry<String, T> entry: new HashMap<String, T>(centries).entrySet()) {
+            if(entry.getValue() instanceof StaticDefinable && ((StaticDefinable) entry.getValue()).isStatic()) {
                 centries.remove(entry.getKey());
             }
         }
@@ -241,5 +252,12 @@ public class SgDynamicConfiguration<T> implements ToXContent {
         this.centries.putAll(other.centries);
         return true;
     }
+    
+    @JsonIgnore
+    @SuppressWarnings({ "rawtypes" })
+    public boolean containsAny(SgDynamicConfiguration other) {
+        return !Collections.disjoint(this.centries.keySet(), other.centries.keySet());
+    }
+
     
 }
