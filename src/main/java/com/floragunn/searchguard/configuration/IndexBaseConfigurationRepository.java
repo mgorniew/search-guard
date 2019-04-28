@@ -233,25 +233,32 @@ public class IndexBaseConfigurationRepository implements ConfigurationRepository
                                     LOGGER.info(
                                             "{} index exist, so we try to load the config from it",
                                             searchguardIndex);
+                                    bgThread.start();
                                 } else {
                                     if (settings.get("tribe.name", null) == null && settings.getByPrefix("tribe").size() > 0) {
                                         LOGGER.info(
                                                 "{} index does not exist yet, but we are a tribe node. So we will load the config anyhow until we got it ...",
                                                 searchguardIndex);
+                                        bgThread.start();
                                     } else {
 
                                         if (settings.getAsBoolean(ConfigConstants.SEARCHGUARD_ALLOW_DEFAULT_INIT_SGINDEX, false)) {
                                             LOGGER.info("{} index does not exist yet, so we create a default config", searchguardIndex);
                                             installDefaultConfig.set(true);
+                                            bgThread.start();
+                                        } else if (settings.getAsBoolean(ConfigConstants.SEARCHGUARD_BACKGROUND_INIT_IF_SGINDEX_NOT_EXIST, true)){
+                                            LOGGER.info(
+                                                    "{} index does not exist yet, use either sgadmin to initialize cluster or wait until cluster is fully formed and up",
+                                                    searchguardIndex);
+                                            bgThread.start();
                                         } else {
                                             LOGGER.info(
-                                                    "{} index does not exist yet, Use either sgadmin to initialize cluster or wait until cluster is fully formed and up",
+                                                    "{} index does not exist yet, use sgadmin to initialize the cluster. We will not perform background initialization",
                                                     searchguardIndex);
                                         }
                                     }
                                 }
                                 
-                                bgThread.start();
                             }
 
                             @Override
