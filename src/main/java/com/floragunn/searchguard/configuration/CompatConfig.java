@@ -40,7 +40,7 @@ public class CompatConfig implements DCFListener {
     }
     
     @Override
-    public void onChanged(ConfigModel cf, DynamicConfigModel dcf, InternalUsersModel cfff) {
+    public void onChanged(ConfigModel cm, DynamicConfigModel dcm, InternalUsersModel ium) {
         this.dcf = dcf;
         log.debug("dynamicSgConfig updated?: {}", (dcf != null));
     }

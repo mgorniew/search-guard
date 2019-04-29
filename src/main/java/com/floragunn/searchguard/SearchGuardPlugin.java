@@ -739,22 +739,14 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
                 localClient, threadPool);
 
         adminDns = new AdminDNs(settings);
-        //final PrincipalExtractor pe = new DefaultPrincipalExtractor();
 
         cr = (ConfigurationRepository) ConfigurationRepository.create(settings, this.configPath, threadPool, localClient, clusterService, auditLog,
                 complianceConfig);
 
         cr.subscribeOnLicenseChange(complianceConfig);
-        //cr.subscribeOnChange(CType.CONFIG, irr);
-        //final InternalAuthenticationBackend iab = new InternalAuthenticationBackend(dcf);
         final XFFResolver xffResolver = new XFFResolver(threadPool);
-        //cr.subscribeOnChange(CType.CONFIG, xffResolver);
         backendRegistry = new BackendRegistry(settings, adminDns, xffResolver, auditLog, threadPool);
-        //cr.subscribeOnChange(CType.CONFIG, backendRegistry);
-        //final ActionGroupHolder ah = new ActionGroupHolder(cr);
-
         final CompatConfig compatConfig = new CompatConfig(environment);
-        //cr.subscribeOnChange(CType.CONFIG, compatConfig);
         
         
         
@@ -786,12 +778,9 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
         components.add(principalExtractor);
 
         components.add(adminDns);
-        //components.add(auditLog);
         components.add(cr);
-        //components.add(iab);
         components.add(xffResolver);
         components.add(backendRegistry);
-        //components.add(ah);
         components.add(evaluator);
         components.add(sgi);
         components.add(dcf);

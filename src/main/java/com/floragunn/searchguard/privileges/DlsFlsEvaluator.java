@@ -21,8 +21,8 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,7 +36,6 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.threadpool.ThreadPool;
 
-import com.floragunn.searchguard.SearchGuardPlugin;
 import com.floragunn.searchguard.resolver.IndexResolverReplacer.Resolved;
 import com.floragunn.searchguard.sgconf.SgRoles;
 import com.floragunn.searchguard.support.Base64Helper;
@@ -175,11 +174,6 @@ public class DlsFlsEvaluator {
                 }
             }
         }
-
-        /*if (requestedResolved == Resolved._EMPTY) {
-            presponse.allowed = true;
-            return presponse.markComplete();
-        }*/
         
         return presponse;
     }

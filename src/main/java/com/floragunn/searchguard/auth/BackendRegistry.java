@@ -190,213 +190,26 @@ public class BackendRegistry implements DCFListener {
     }
 
     @Override
-    public void onChanged(ConfigModel cf, DynamicConfigModel dcf, InternalUsersModel cfff) {
+    public void onChanged(ConfigModel cm, DynamicConfigModel dcm, InternalUsersModel ium) {
         
         invalidateCache();
 
-        transportUsernameAttribute = dcf.getTransportUsernameAttribute();// config.dynamic.transport_userrname_attribute;
-        anonymousAuthEnabled = dcf.isAnonymousAuthenticationEnabled()//config.dynamic.http.anonymous_auth_enabled
+        transportUsernameAttribute = dcm.getTransportUsernameAttribute();// config.dynamic.transport_userrname_attribute;
+        anonymousAuthEnabled = dcm.isAnonymousAuthenticationEnabled()//config.dynamic.http.anonymous_auth_enabled
                 && !esSettings.getAsBoolean(ConfigConstants.SEARCHGUARD_COMPLIANCE_DISABLE_ANONYMOUS_AUTHENTICATION, false);
-
-        //List<Destroyable> originalDestroyableComponents = destroyableComponents;
         
-        restAuthDomains = Collections.unmodifiableSortedSet(dcf.getRestAuthDomains());
-        transportAuthDomains = Collections.unmodifiableSortedSet(dcf.getTransportAuthDomains());
-        restAuthorizers = Collections.unmodifiableSet(dcf.getRestAuthorizers());
-        transportAuthorizers = Collections.unmodifiableSet(dcf.getTransportAuthorizers());
-        //destroyableComponents = Collections.unmodifiableList(destroyableComponents0);
+        restAuthDomains = Collections.unmodifiableSortedSet(dcm.getRestAuthDomains());
+        transportAuthDomains = Collections.unmodifiableSortedSet(dcm.getTransportAuthDomains());
+        restAuthorizers = Collections.unmodifiableSet(dcm.getRestAuthorizers());
+        transportAuthorizers = Collections.unmodifiableSet(dcm.getTransportAuthorizers());
         
-        ipAuthFailureListeners = dcf.getIpAuthFailureListeners();
-        authBackendFailureListeners = dcf.getAuthBackendFailureListeners();
-        ipClientBlockRegistries = dcf.getIpClientBlockRegistries();
-        authBackendClientBlockRegistries = dcf.getAuthBackendClientBlockRegistries();
-        
+        ipAuthFailureListeners = dcm.getIpAuthFailureListeners();
+        authBackendFailureListeners = dcm.getAuthBackendFailureListeners();
+        ipClientBlockRegistries = dcm.getIpClientBlockRegistries();
+        authBackendClientBlockRegistries = dcm.getAuthBackendClientBlockRegistries();
         
         //SG6 no default authc
         initialized = !restAuthDomains.isEmpty() || anonymousAuthEnabled;
-        
-        //TODO SG7 destroy componenets
-        //if(originalDestroyableComponents != null) {
-        //    destroyDestroyables(originalDestroyableComponents);
-        //}
-        
-        //originalDestroyableComponents = null;
-        
-        /*//final ConfigV6 config = CType.getConfig(settings0);
-        //dcf.getDynamicConfigModel().
-        
-=======
-    public void onChange(final Settings settings) {
-
->>>>>>> master
-        final SortedSet<AuthDomain> restAuthDomains0 = new TreeSet<>();
-        final Set<AuthorizationBackend> restAuthorizers0 = new HashSet<>();
-        final SortedSet<AuthDomain> transportAuthDomains0 = new TreeSet<>();
-        final Set<AuthorizationBackend> transportAuthorizers0 = new HashSet<>();
-        final List<Destroyable> destroyableComponents0 = new LinkedList<>();
-        final List<AuthFailureListener> ipAuthFailureListeners0 = new ArrayList<>();
-        final Multimap<String, AuthFailureListener> authBackendFailureListeners0 = ArrayListMultimap.create();
-        final List<ClientBlockRegistry<InetAddress>> ipClientBlockRegistries0 = new ArrayList<>();
-        final Multimap<String, ClientBlockRegistry<String>> authBackendClientBlockRegistries0 = ArrayListMultimap.create();
-
-        //final Authz authzDyn = config.dynamic.authz;
-        final Authz authzDyn = dcf.get
-
-        for (final Entry<String, AuthzDomain> ad : authzDyn.getDomains().entrySet()) {
-            final boolean enabled = ad.getValue().enabled;
-            final boolean httpEnabled = enabled && ad.getValue().http_enabled;
-            final boolean transportEnabled = enabled && ad.getValue().transport_enabled;
-
-            if (httpEnabled || transportEnabled) {
-                try {
-
-                    final String authzBackendClazz = ad.getValue().authorization_backend.type;
-                    final AuthorizationBackend authorizationBackend;
-
-                    if (authzBackendClazz.equals(InternalAuthenticationBackend.class.getName()) //NOSONAR
-                            || authzBackendClazz.equals("internal") || authzBackendClazz.equals("intern")) {
-                        authorizationBackend = iab;
-                        ReflectionHelper.addLoadedModule(InternalAuthenticationBackend.class);
-                    } else {
-<<<<<<< HEAD
-                        authorizationBackend = newInstance(
-                                authzBackendClazz,"z",
-                                Settings.builder()
-                                .put(esSettings)
-                                //.putProperties(ads.getAsStringMap(DotPath.of("authorization_backend.config")), DynamicConfiguration.checkKeyFunction()).build(), configPath);
-                                .put(Settings.builder().loadFromSource(ad.getValue().authorization_backend.configAsJson(), XContentType.JSON).build()).build()
-                                , configPath);
-=======
-                        authorizationBackend = newInstance(authzBackendClazz, "z",
-                                Settings.builder().put(esSettings).put(ads.getAsSettings("authorization_backend.config")).build(), configPath);
->>>>>>> master
-                    }
-
-                    if (httpEnabled) {
-                        restAuthorizers0.add(authorizationBackend);
-                    }
-
-                    if (transportEnabled) {
-                        transportAuthorizers0.add(authorizationBackend);
-                    }
-
-                    if (authorizationBackend instanceof Destroyable) {
-                        destroyableComponents0.add((Destroyable) authorizationBackend);
-                    }
-                } catch (final Exception e) {
-                    log.error("Unable to initialize AuthorizationBackend {} due to {}", ad, e.toString(), e);
-                }
-            }
-        }
-
-        final Authc authcDyn = config.dynamic.authc;
-
-        for (final Entry<String, AuthcDomain> ad : authcDyn.getDomains().entrySet()) {
-            final boolean enabled = ad.getValue().enabled;
-            final boolean httpEnabled = enabled && ad.getValue().http_enabled;
-            final boolean transportEnabled = enabled && ad.getValue().transport_enabled;
-
-            if (httpEnabled || transportEnabled) {
-                try {
-                    AuthenticationBackend authenticationBackend;
-<<<<<<< HEAD
-                    final String authBackendClazz = ad.getValue().authentication_backend.type;
-                    if(authBackendClazz.equals(InternalAuthenticationBackend.class.getName()) //NOSONAR
-                            || authBackendClazz.equals("internal")
-                            || authBackendClazz.equals("intern")) {
-                        authenticationBackend = iab;
-                        ReflectionHelper.addLoadedModule(InternalAuthenticationBackend.class);
-                    } else {
-                        authenticationBackend = newInstance(
-                                authBackendClazz,"c",
-                                Settings.builder()
-                                .put(esSettings)
-                                //.putProperties(ads.getAsStringMap(DotPath.of("authentication_backend.config")), DynamicConfiguration.checkKeyFunction()).build()
-                                .put(Settings.builder().loadFromSource(ad.getValue().authentication_backend.configAsJson(), XContentType.JSON).build()).build()
-                                , configPath);
-                    }
-
-                    String httpAuthenticatorType = ad.getValue().http_authenticator.type; //no default
-                    HTTPAuthenticator httpAuthenticator = httpAuthenticatorType==null?null:  (HTTPAuthenticator) newInstance(httpAuthenticatorType,"h",
-                            Settings.builder().put(esSettings)
-                            //.putProperties(ads.getAsStringMap(DotPath.of("http_authenticator.config")), DynamicConfiguration.checkKeyFunction()).build(), 
-                            .put(Settings.builder().loadFromSource(ad.getValue().http_authenticator.configAsJson(), XContentType.JSON).build()).build()
-
-                            , configPath);
-=======
-                    final String authBackendClazz = ads.get("authentication_backend.type", InternalAuthenticationBackend.class.getName());
-                    if (authBackendClazz.equals(InternalAuthenticationBackend.class.getName()) //NOSONAR
-                            || authBackendClazz.equals("internal") || authBackendClazz.equals("intern")) {
-                        authenticationBackend = iab;
-                        ReflectionHelper.addLoadedModule(InternalAuthenticationBackend.class);
-                    } else {
-                        authenticationBackend = newInstance(authBackendClazz, "c",
-                                Settings.builder().put(esSettings).put(ads.getAsSettings("authentication_backend.config")).build(), configPath);
-                    }
-
-                    String httpAuthenticatorType = ads.get("http_authenticator.type"); //no default
-                    HTTPAuthenticator httpAuthenticator = httpAuthenticatorType == null ? null
-                            : (HTTPAuthenticator) newInstance(httpAuthenticatorType, "h",
-                                    Settings.builder().put(esSettings).put(ads.getAsSettings("http_authenticator.config")).build(), configPath);
->>>>>>> master
-
-                    final AuthDomain _ad = new AuthDomain(authenticationBackend, httpAuthenticator,
-                            ad.getValue().http_authenticator.challenge, ad.getValue().order);
-
-                    if (httpEnabled && _ad.getHttpAuthenticator() != null) {
-                        restAuthDomains0.add(_ad);
-                    }
-
-                    if (transportEnabled) {
-                        transportAuthDomains0.add(_ad);
-                    }
-
-                    if (httpAuthenticator instanceof Destroyable) {
-                        destroyableComponents0.add((Destroyable) httpAuthenticator);
-                    }
-
-                    if (authenticationBackend instanceof Destroyable) {
-                        destroyableComponents0.add((Destroyable) authenticationBackend);
-                    }
-
-                } catch (final Exception e) {
-                    log.error("Unable to initialize auth domain {} due to {}", ad, e.toString(), e);
-                }
-
-            }
-        }
-
-        createAuthFailureListeners(settings.getGroups("searchguard.dynamic.auth_failure_listeners"), ipAuthFailureListeners0,
-                authBackendFailureListeners0, ipClientBlockRegistries0, authBackendClientBlockRegistries0, destroyableComponents0);
-
-        invalidateCache();
-
-        transportUsernameAttribute = config.dynamic.transport_userrname_attribute;
-        anonymousAuthEnabled = config.dynamic.http.anonymous_auth_enabled
-                && !esSettings.getAsBoolean(ConfigConstants.SEARCHGUARD_COMPLIANCE_DISABLE_ANONYMOUS_AUTHENTICATION, false);
-
-        List<Destroyable> originalDestroyableComponents = destroyableComponents;
-
-        restAuthDomains = Collections.unmodifiableSortedSet(restAuthDomains0);
-        transportAuthDomains = Collections.unmodifiableSortedSet(transportAuthDomains0);
-        restAuthorizers = Collections.unmodifiableSet(restAuthorizers0);
-        transportAuthorizers = Collections.unmodifiableSet(transportAuthorizers0);
-        destroyableComponents = Collections.unmodifiableList(destroyableComponents0);
-        ipAuthFailureListeners = Collections.unmodifiableList(ipAuthFailureListeners0);
-        ipClientBlockRegistries = Collections.unmodifiableList(ipClientBlockRegistries0);
-        authBackendClientBlockRegistries = Multimaps.unmodifiableMultimap(authBackendClientBlockRegistries0);
-        authBackendFailureListeners = Multimaps.unmodifiableMultimap(authBackendFailureListeners0);
-
-        //SG6 no default authc
-        initialized = !restAuthDomains.isEmpty() || anonymousAuthEnabled;
-
-        if (originalDestroyableComponents != null) {
-            destroyDestroyables(originalDestroyableComponents);
-        }
-<<<<<<< HEAD
-        
-        originalDestroyableComponents = null;*/
-
     }
 
     
@@ -955,48 +768,7 @@ public class BackendRegistry implements DCFListener {
         }
 
     }
-/*<<<<<<< HEAD
-    
-=======
 
-    private <T> T newInstance(final String clazzOrShortcut, String type, final Settings settings, final Path configPath) {
-
-        String clazz = clazzOrShortcut;
-        boolean isEnterprise = false;
-
-        if (authImplMap.containsKey(clazz + "_" + type)) {
-            clazz = authImplMap.get(clazz + "_" + type);
-        } else {
-            isEnterprise = true;
-        }
-
-        if (ReflectionHelper.isEnterpriseAAAModule(clazz)) {
-            isEnterprise = true;
-        }
-
-        return ReflectionHelper.instantiateAAA(clazz, settings, configPath, isEnterprise);
-    }
-
-    private String translateShortcutToClassName(final String clazzOrShortcut, final String type) {
-
-        if (authImplMap.containsKey(clazzOrShortcut + "_" + type)) {
-            return authImplMap.get(clazzOrShortcut + "_" + type);
-        } else {
-            return clazzOrShortcut;
-        }
-    }
-
-    private void destroyDestroyables(List<Destroyable> destroyableComponents) {
-        for (Destroyable destroyable : destroyableComponents) {
-            try {
-                destroyable.destroy();
-            } catch (Exception e) {
-                log.error("Error while destroying " + destroyable, e);
-            }
-        }
-    }
-
->>>>>>> master*/
     private User resolveTransportUsernameAttribute(User pkiUser) {
         //#547
         if (transportUsernameAttribute != null && !transportUsernameAttribute.isEmpty()) {

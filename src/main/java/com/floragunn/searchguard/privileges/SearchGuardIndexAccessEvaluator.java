@@ -52,7 +52,6 @@ public class SearchGuardIndexAccessEvaluator {
         sgIndexDeniedActionPatternsList.add("indices:admin/delete*");
         sgIndexDeniedActionPatternsList.add("indices:admin/mapping/delete*");
         sgIndexDeniedActionPatternsList.add("indices:admin/mapping/put*");
-        //sgIndexDeniedActionPatternsList.add("indices:admin/template/*");
         sgIndexDeniedActionPatternsList.add("indices:admin/freeze*");
         sgIndexDeniedActionPatternsList.add("indices:admin/settings/update*");
         sgIndexDeniedActionPatternsList.add("indices:admin/aliases");
@@ -76,7 +75,6 @@ public class SearchGuardIndexAccessEvaluator {
             return presponse.markComplete();
         }
 
-        //TODO: newpeval: check if isAll() is all (contains("_all" or "*"))
         if (requestedResolved.isLocalAll()
                 && WildcardMatcher.matchAny(sgDeniedActionPatterns, action)) {
             auditLog.logSgIndexAttempt(request, action, task);
@@ -85,7 +83,6 @@ public class SearchGuardIndexAccessEvaluator {
             return presponse.markComplete();
         }
 
-      //TODO: newpeval: check if isAll() is all (contains("_all" or "*"))
         if(requestedResolved.getAllIndices().contains(searchguardIndex) || requestedResolved.isLocalAll()) {
 
             if(request instanceof SearchRequest) {

@@ -105,14 +105,7 @@ public class ConfigurationRepository {
         
         configCache = CacheBuilder
                       .newBuilder()
-                      .build(/*new CacheLoader<CType, SgDynamicConfiguration<?>>() {
-
-                        @Override
-                        public SgDynamicConfiguration<?> load(CType key) throws Exception {
-                            return getConfigurationsFromIndex(Collections.singleton(key), false).get(key);
-                        }
-                          
-                      }*/);
+                      .build();
         
         bgThread = new Thread(new Runnable() {
 
@@ -263,15 +256,11 @@ public class ConfigurationRepository {
      * @return can also return empty in case it was never loaded 
      */
     public SgDynamicConfiguration<?> getConfiguration(CType configurationType) {
-        //try {
         SgDynamicConfiguration<?> conf=  configCache.getIfPresent(configurationType);
         if(conf != null) {
             return conf.deepClone();
         }
         return SgDynamicConfiguration.empty();
-        //} catch (ExecutionException e) {
-        //    throw ExceptionsHelper.convertToElastic(e);
-        //}
     }
     
     private final Lock LOCK = new ReentrantLock();
