@@ -167,7 +167,9 @@ public class ConfigurationRepository {
                     LOGGER.debug("Node started, try to initialize it. Wait for at least yellow cluster state....");
                     ClusterHealthResponse response = null;
                     try {
-                        response = client.admin().cluster().health(new ClusterHealthRequest(searchguardIndex).waitForYellowStatus()).actionGet();
+                        response = client.admin().cluster().health(new ClusterHealthRequest(searchguardIndex)
+                                .waitForActiveShards(1)
+                                .waitForYellowStatus()).actionGet();
                     } catch (Exception e1) {
                         LOGGER.debug("Catched a {} but we just try again ...", e1.toString());
                     }
