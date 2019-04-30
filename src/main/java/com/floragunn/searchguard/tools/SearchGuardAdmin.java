@@ -534,7 +534,7 @@ public class SearchGuardAdmin {
 
             if(updateSettings != null) { 
                 Settings indexSettings = Settings.builder().put("index.number_of_replicas", updateSettings).build();                
-                ConfigUpdateResponse res = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{"config","roles","rolesmapping","internalusers","actiongroups"})).actionGet();                
+                ConfigUpdateResponse res = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(getTypes(false))).actionGet();                
                 if(res.hasFailures()) {
                     System.out.println("ERR: Unabe to reload config due to "+res.failures());
                 }
@@ -545,7 +545,7 @@ public class SearchGuardAdmin {
             }
             
             if(reload) { 
-                ConfigUpdateResponse res = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{"config","roles","rolesmapping","internalusers","actiongroups"})).actionGet();                
+                ConfigUpdateResponse res = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(getTypes(false))).actionGet();                
                 if(res.hasFailures()) {
                     System.out.println("ERR: Unabe to reload config due to "+res.failures());
                     return -1;
@@ -574,7 +574,7 @@ public class SearchGuardAdmin {
                 Settings indexSettings = Settings.builder()
                         .put("index.auto_expand_replicas", replicaAutoExpand?"0-all":"false")
                         .build();                
-                ConfigUpdateResponse res = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{"config","roles","rolesmapping","internalusers","actiongroups"})).actionGet();                
+                ConfigUpdateResponse res = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(getTypes(false))).actionGet();                
                 if(res.hasFailures()) {
                     System.out.println("ERR: Unabe to reload config due to "+res.failures());
                 }
@@ -1208,9 +1208,9 @@ public class SearchGuardAdmin {
             return -1;
         }
         
-        ConfigUpdateResponse cur = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(CType.lcStringValues().toArray(new String[0]))).actionGet();
+        ConfigUpdateResponse cur = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(getTypes(legacy))).actionGet();
 
-        success = checkConfigUpdateResponse(cur, nodesInfo, 6) && success;
+        success = checkConfigUpdateResponse(cur, nodesInfo, getTypes(legacy).length) && success;
 
         System.out.println("Done with "+(success?"success":"failures"));
         return (success?0:-1);
@@ -1318,5 +1318,12 @@ public class SearchGuardAdmin {
             System.out.println("ERR: Seems "+file+" is not in SG "+version+" format: "+e);
             return false;
         }
+    }
+    
+    private static String[] getTypes(boolean legacy) {
+        if(legacy) {
+            return new String[]{"config","roles","rolesmapping","internalusers","actiongroups"};
+        }
+        return CType.lcStringValues().toArray(new String[0]);
     }
 }
