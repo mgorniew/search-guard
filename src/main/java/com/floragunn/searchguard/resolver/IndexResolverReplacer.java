@@ -33,11 +33,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.DocWriteRequest;
 import org.elasticsearch.action.IndicesRequest;
@@ -76,7 +76,6 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.reindex.ReindexRequest;
@@ -87,13 +86,10 @@ import org.elasticsearch.transport.TransportRequest;
 
 import com.floragunn.searchguard.SearchGuardPlugin;
 import com.floragunn.searchguard.configuration.ClusterInfoHolder;
-import com.floragunn.searchguard.configuration.ConfigurationChangeListener;
 import com.floragunn.searchguard.sgconf.ConfigModel;
+import com.floragunn.searchguard.sgconf.DynamicConfigFactory.DCFListener;
 import com.floragunn.searchguard.sgconf.DynamicConfigModel;
 import com.floragunn.searchguard.sgconf.InternalUsersModel;
-import com.floragunn.searchguard.sgconf.DynamicConfigFactory.DCFListener;
-import com.floragunn.searchguard.sgconf.impl.CType;
-import com.floragunn.searchguard.sgconf.impl.SgDynamicConfiguration;
 import com.floragunn.searchguard.support.SnapshotRestoreHelper;
 import com.floragunn.searchguard.support.WildcardMatcher;
 import com.google.common.collect.Sets;
@@ -160,37 +156,47 @@ public final class IndexResolverReplacer implements DCFListener {
 
     private Resolved resolveIndexPatterns(final IndicesOptions indicesOptions, final Object request, final String... requestedPatterns0) {
 
-        if(log.isTraceEnabled()) {
-            log.trace("resolve requestedPatterns: "+Arrays.toString(requestedPatterns0));
+        if (log.isTraceEnabled()) {
+            log.trace("resolve requestedPatterns: " + Arrays.toString(requestedPatterns0));
         }
-        
-        if(isAllWithNoRemote(requestedPatterns0)) {
+
+        if (isAllWithNoRemote(requestedPatterns0)) {
+            if (log.isTraceEnabled()) {
+                log.trace(Arrays.toString(requestedPatterns0) + " is an ALL pattern without any remote indices");
+            }
             return Resolved._LOCAL_ALL;
         }
-        
+
         Set<String> remoteIndices;
         final List<String> localRequestedPatterns = new ArrayList<>(Arrays.asList(requestedPatterns0));
-        
+
         final RemoteClusterService remoteClusterService = SearchGuardPlugin.GuiceHolder.getRemoteClusterService();
-        
-        if(remoteClusterService.isCrossClusterSearchEnabled() && request != null && (request instanceof FieldCapabilitiesRequest || request instanceof SearchRequest)) {
+
+        if (remoteClusterService.isCrossClusterSearchEnabled() && request != null
+                && (request instanceof FieldCapabilitiesRequest || request instanceof SearchRequest)) {
             remoteIndices = new HashSet<>();
-            final Map<String, OriginalIndices> remoteClusterIndices = SearchGuardPlugin.GuiceHolder.getRemoteClusterService().groupIndices(
-                    indicesOptions, requestedPatterns0, idx -> resolver.hasIndexOrAlias(idx, clusterService.state()));
-            final Set<String> remoteClusters = remoteClusterIndices.keySet().stream().filter(k->!RemoteClusterService.LOCAL_CLUSTER_GROUP_KEY.equals(k)).collect(Collectors.toSet());
-            for(String remoteCluster: remoteClusters) {
-                for(String remoteIndex: remoteClusterIndices.get(remoteCluster).indices()) {
+            final Map<String, OriginalIndices> remoteClusterIndices = SearchGuardPlugin.GuiceHolder.getRemoteClusterService()
+                    .groupIndices(indicesOptions, requestedPatterns0, idx -> resolver.hasIndexOrAlias(idx, clusterService.state()));
+            final Set<String> remoteClusters = remoteClusterIndices.keySet().stream()
+                    .filter(k -> !RemoteClusterService.LOCAL_CLUSTER_GROUP_KEY.equals(k)).collect(Collectors.toSet());
+            for (String remoteCluster : remoteClusters) {
+                for (String remoteIndex : remoteClusterIndices.get(remoteCluster).indices()) {
                     remoteIndices.add(RemoteClusterService.buildRemoteIndexName(remoteCluster, remoteIndex));
                 }
             }
-            
+
             final Iterator<String> iterator = localRequestedPatterns.iterator();
-            while(iterator.hasNext()) {
+            while (iterator.hasNext()) {
                 final String[] split = iterator.next().split(String.valueOf(RemoteClusterService.REMOTE_CLUSTER_INDEX_SEPARATOR), 2);
-                if(split.length > 1 && WildcardMatcher.matchAny(split[0], remoteClusters)) {
+                if (split.length > 1 && WildcardMatcher.matchAny(split[0], remoteClusters)) {
                     iterator.remove();
                 }
             }
+
+            if (log.isTraceEnabled()) {
+                log.trace("CCS is enabled, we found this local patterns " + localRequestedPatterns + " and this remote patterns: " + remoteIndices);
+            }
+
         } else {
             remoteIndices = Collections.emptySet();
         }
@@ -198,94 +204,81 @@ public final class IndexResolverReplacer implements DCFListener {
         final Set<String> matchingAliases;
         final Set<String> matchingIndices;
         final Set<String> matchingAllIndices;
-        
-       if(isLocalAll(requestedPatterns0)) {
-           matchingAliases = Resolved.All_SET;
-           matchingIndices = Resolved.All_SET;
-           matchingAllIndices = Resolved.All_SET;
-           
-       } 
-       
-       else if (!remoteIndices.isEmpty() && localRequestedPatterns.isEmpty()){
-           return Resolved._EMPTY;
-       }
-       
-       else {
 
-           ClusterState state = clusterService.state();
-    
-           final SortedMap<String, AliasOrIndex> lookup = state.metaData().getAliasAndIndexLookup();
-           final Set<String> aliases = lookup.entrySet().stream().filter(e->e.getValue().isAlias()).map(e->e.getKey()).collect(Collectors.toSet());
-    
-           matchingAliases = new HashSet<>(localRequestedPatterns.size()*10);
-           matchingIndices = new HashSet<>(localRequestedPatterns.size()*10);
-           matchingAllIndices = new HashSet<>(localRequestedPatterns.size()*10);
-    
-           //fill matchingAliases
-           for (String localRequestedPattern: localRequestedPatterns) {
-               final String requestedPattern = resolver.resolveDateMathExpression(localRequestedPattern);
-               final List<String> _aliases = WildcardMatcher.getMatchAny(requestedPattern, aliases);
-               matchingAliases.addAll(_aliases);
-           }
-    
-    
-           //-alias not possible
-    
-            {
-                //final String requestedPattern = resolver.resolveDateMathExpression(requestedPatterns[i]);
-                //final List<String> _aliases = WildcardMatcher.getMatchAny(requestedPattern, aliases);
-                //matchingAliases.addAll(_aliases);
-    
-                List<String> _indices;
-                try {
-                    _indices = new ArrayList<>(Arrays.asList(resolver.concreteIndexNames(state, indicesOptions, localRequestedPatterns.toArray(new String[0]))));
-                    if (log.isDebugEnabled()) {
-                        log.debug("Resolved pattern {} to {}", localRequestedPatterns, _indices);
-                    }
-                } catch (IndexNotFoundException e1) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("No such indices for pattern {}, use raw value", localRequestedPatterns);
-                    }
-    
-                    _indices = new ArrayList<>(localRequestedPatterns.size());
-    
-                    for (String requestedPattern: localRequestedPatterns) {
-                        _indices.add(resolver.resolveDateMathExpression(requestedPattern));
-                    }
-    
-                    /*if(requestedPatterns.length == 1) {
-                        _indices = Collections.singletonList(resolver.resolveDateMathExpression(requestedPatterns[0]));
-                    } else {
-                        log.warn("Multiple ({}) index patterns {} cannot be resolved, assume _all", requestedPatterns.length, requestedPatterns);
-                        //_indices = Collections.singletonList("*");
-                        _indices = Arrays.asList(requestedPatterns); //date math not handled
-                    }*/
-    
+        if (isLocalAll(requestedPatterns0)) {
+            if (log.isTraceEnabled()) {
+                log.trace(Arrays.toString(requestedPatterns0) + " is an LOCAL ALL pattern");
+            }
+            matchingAliases = Resolved.All_SET;
+            matchingIndices = Resolved.All_SET;
+            matchingAllIndices = Resolved.All_SET;
+
+        } else if (!remoteIndices.isEmpty() && localRequestedPatterns.isEmpty()) {
+            if (log.isTraceEnabled()) {
+                log.trace(Arrays.toString(requestedPatterns0) + " is an LOCAL EMPTY request");
+            }
+            return new Resolved.Builder().addOriginalRequested(Arrays.asList(requestedPatterns0)).addRemoteIndices(remoteIndices).build();
+        } else {
+
+            ClusterState state = clusterService.state();
+
+            final SortedMap<String, AliasOrIndex> lookup = state.metaData().getAliasAndIndexLookup();
+            final Set<String> aliases = lookup.entrySet().stream().filter(e -> e.getValue().isAlias()).map(e -> e.getKey())
+                    .collect(Collectors.toSet());
+
+            matchingAliases = new HashSet<>(localRequestedPatterns.size() * 10);
+            matchingIndices = new HashSet<>(localRequestedPatterns.size() * 10);
+            matchingAllIndices = new HashSet<>(localRequestedPatterns.size() * 10);
+
+            //fill matchingAliases
+            for (String localRequestedPattern : localRequestedPatterns) {
+                final String requestedPattern = resolver.resolveDateMathExpression(localRequestedPattern);
+                final List<String> _aliases = WildcardMatcher.getMatchAny(requestedPattern, aliases);
+                matchingAliases.addAll(_aliases);
+            }
+
+            List<String> _indices;
+            try {
+                _indices = new ArrayList<>(
+                        Arrays.asList(resolver.concreteIndexNames(state, indicesOptions, localRequestedPatterns.toArray(new String[0]))));
+                if (log.isDebugEnabled()) {
+                    log.debug("Resolved pattern {} to {}", localRequestedPatterns, _indices);
                 }
-    
-                final List<String> _aliases = WildcardMatcher.getMatchAny(localRequestedPatterns.toArray(new String[0]), aliases);
-    
-                matchingAllIndices.addAll(_indices);
-    
-               if(_aliases.isEmpty()) {
-                   matchingIndices.addAll(_indices); //date math resolved?
-               } else {
-    
-                   if(!_indices.isEmpty()) {
-    
-                       for(String al:_aliases) {
-                           Set<String> doubleIndices = lookup.get(al).getIndices().stream().map(a->a.getIndex().getName()).collect(Collectors.toSet());
-                           _indices.removeAll(doubleIndices);
-                       }
-    
-                       matchingIndices.addAll(_indices);
-                   }
-               }
-           }
-       }
+            } catch (IndexNotFoundException e1) {
+                if (log.isDebugEnabled()) {
+                    log.debug("No such indices for pattern {}, use raw value", localRequestedPatterns);
+                }
 
-        return new Resolved.Builder(matchingAliases, matchingIndices, matchingAllIndices, 
-                null, requestedPatterns0, remoteIndices)/*.addTypes(resolveTypes(request))*/.build();
+                _indices = new ArrayList<>(localRequestedPatterns.size());
+
+                for (String requestedPattern : localRequestedPatterns) {
+                    _indices.add(resolver.resolveDateMathExpression(requestedPattern));
+                }
+            }
+
+            final List<String> _aliases = WildcardMatcher.getMatchAny(localRequestedPatterns.toArray(new String[0]), aliases);
+
+            matchingAllIndices.addAll(_indices);
+
+            if (_aliases.isEmpty()) {
+                matchingIndices.addAll(_indices); //date math resolved?
+            } else {
+
+                if (!_indices.isEmpty()) {
+
+                    for (String al : _aliases) {
+                        Set<String> doubleIndices = lookup.get(al).getIndices().stream().map(a -> a.getIndex().getName()).collect(Collectors.toSet());
+                        _indices.removeAll(doubleIndices);
+                    }
+
+                    matchingIndices.addAll(_indices);
+                }
+            }
+
+        }
+
+        return new Resolved.Builder(matchingAliases, matchingIndices, matchingAllIndices, null, requestedPatterns0, remoteIndices)
+                /*.addTypes(resolveTypes(request))*/.build();
 
     }
 
@@ -377,49 +370,6 @@ public final class IndexResolverReplacer implements DCFListener {
         return Collections.unmodifiableSet(requestTypes);
     }
 
-    /*public boolean exclude(final TransportRequest request, String... exclude) {
-        return getOrReplaceAllIndices(request, new IndicesProvider() {
-
-            @Override
-            public String[] provide(final String[] original, final Object request, final boolean supportsReplace) {
-                if(supportsReplace) {
-                    
-                    final List<String> result = new ArrayList<String>(Arrays.asList(original));
-                    
-//                    if(isAll(original)) {
-//                        result = new ArrayList<String>(Collections.singletonList("*"));
-//                    } else {
-//                        result = new ArrayList<String>(Arrays.asList(original));
-//                    }
-                    
-                    
-                    
-                    final Set<String> preliminary = new HashSet<>(resolveIndexPatterns(result.toArray(new String[0])).allIndices);      
-                    
-                    if(log.isTraceEnabled()) {
-                        log.trace("resolved original {}, excludes {}",preliminary, Arrays.toString(exclude));
-                    }
-                    
-                    WildcardMatcher.wildcardRetainInSet(preliminary, exclude);      
-                    
-                    if(log.isTraceEnabled()) {
-                        log.trace("modified original {}",preliminary);
-                    }
-                    
-                    result.addAll(preliminary.stream().map(a->"-"+a).collect(Collectors.toList()));
-
-                    if(log.isTraceEnabled()) {
-                        log.trace("exclude for {}: replaced {} with {}", request.getClass().getSimpleName(), Arrays.toString(original) ,result);
-                    }
-                    
-                    return result.toArray(new String[0]);
-                } else {
-                    return NOOP;
-                }
-            }
-        }, false);
-    }*/
-
     //dnfof
     public boolean replace(final TransportRequest request, boolean retainMode, String... replacements) {
         return getOrReplaceAllIndices(request, new IndicesProvider() {
@@ -486,7 +436,6 @@ public final class IndexResolverReplacer implements DCFListener {
         private static final Set<String> All_SET = Collections.singleton("*");
         private static final long serialVersionUID = 1L;
         public final static Resolved _LOCAL_ALL = new Resolved(All_SET, All_SET, All_SET, All_SET, Collections.emptySet(), Collections.emptySet());
-        private final static Resolved _EMPTY = new Resolved(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
         private final Set<String> aliases;
         private final Set<String> indices;
         private final Set<String> allIndices;
@@ -668,6 +617,20 @@ public final class IndexResolverReplacer implements DCFListener {
                 //addTypes(r.types);
                 return this;
             }
+            
+            public Builder addOriginalRequested(List<String> originalRequested) {
+                if(originalRequested != null) {
+                    this.originalRequested.addAll(originalRequested);
+                }
+                return this;
+            }
+            
+            public Builder addRemoteIndices(Set<String> remoteIndices) {
+                if(remoteIndices != null) {
+                    this.remoteIndices.addAll(remoteIndices);
+                }
+                return this;
+            }
 
             public Resolved build() {
 //                if(types.isEmpty()) {
@@ -701,15 +664,20 @@ public final class IndexResolverReplacer implements DCFListener {
     }
 
     private List<String> renamedIndices(final RestoreSnapshotRequest request, final List<String> filteredIndices) {
-        final List<String> renamedIndices = new ArrayList<>();
-        for (final String index : filteredIndices) {
-            String renamedIndex = index;
-            if (request.renameReplacement() != null && request.renamePattern() != null) {
-                renamedIndex = index.replaceAll(request.renamePattern(), request.renameReplacement());
+        try {
+            final List<String> renamedIndices = new ArrayList<>();
+            for (final String index : filteredIndices) {
+                String renamedIndex = index;
+                if (request.renameReplacement() != null && request.renamePattern() != null) {
+                    renamedIndex = index.replaceAll(request.renamePattern(), request.renameReplacement());
+                }
+                renamedIndices.add(renamedIndex);
             }
-            renamedIndices.add(renamedIndex);
+            return renamedIndices;
+        } catch (PatternSyntaxException e) {
+            log.error("Unable to parse the regular expression denoted in 'rename_pattern'. Please correct the pattern an try again.");
+            throw e;
         }
-        return renamedIndices;
     }
 
 
@@ -951,7 +919,7 @@ public final class IndexResolverReplacer implements DCFListener {
     }
 
     @Override
-    public void onChanged(ConfigModel cf, DynamicConfigModel dcf, InternalUsersModel cfff) {
-        respectRequestIndicesOptions = dcf.isRespectRequestIndicesEnabled();//.dynamic.respect_request_indices_options;
+    public void onChanged(ConfigModel cm, DynamicConfigModel dcm, InternalUsersModel ium) {
+        respectRequestIndicesOptions = dcm.isRespectRequestIndicesEnabled();
     }
 }

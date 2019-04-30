@@ -30,7 +30,7 @@ public abstract class SgRoles {
     public abstract Tuple<Map<String, Set<String>>, Map<String, Set<String>>> getDlsFls(User user, IndexNameExpressionResolver resolver,
             ClusterService clusterService);
 
-    public abstract Set<String> getAllPermittedIndices(User user, String[] readActions, IndexNameExpressionResolver resolver, ClusterService clusterService);
+    public abstract Set<String> getAllPermittedIndicesForKibana(Resolved resolved, User user, String[] actions, IndexNameExpressionResolver resolver, ClusterService cs);
 
     public abstract SgRoles filter(Set<String> roles);
 

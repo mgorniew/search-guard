@@ -22,6 +22,7 @@ import java.security.PrivilegedExceptionAction;
 import org.elasticsearch.SpecialPermission;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
@@ -37,9 +38,32 @@ public class DefaultObjectMapper {
     
     static {
         objectMapper.setSerializationInclusion(Include.NON_NULL);
+        //objectMapper.enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
+        objectMapper.enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
         defaulOmittingObjectMapper.setSerializationInclusion(Include.NON_DEFAULT);
+        defaulOmittingObjectMapper.enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
     }
 
+    public static <T> T readTree(JsonNode node, Class<T> clazz) throws IOException {
+
+        final SecurityManager sm = System.getSecurityManager();
+
+        if (sm != null) {
+            sm.checkPermission(new SpecialPermission());
+        }
+
+        try {
+            return AccessController.doPrivileged(new PrivilegedExceptionAction<T>() {
+                @Override
+                public T run() throws Exception {
+                    return objectMapper.treeToValue(node, clazz);
+                }
+            });
+        } catch (final PrivilegedActionException e) {
+            throw (IOException) e.getCause();
+        }
+    }
+    
     public static <T> T readValue(String string, Class<T> clazz) throws IOException {
 
         final SecurityManager sm = System.getSecurityManager();

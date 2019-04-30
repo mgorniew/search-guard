@@ -33,7 +33,7 @@ rm -f netty-tcnative-$NETTY_NATIVE_VERSION-$NETTY_NATIVE_CLASSIFIER.jar
 
 chmod +x elasticsearch-$ES_VERSION/plugins/search-guard-7/tools/install_demo_configuration.sh
 ./elasticsearch-$ES_VERSION/plugins/search-guard-7/tools/install_demo_configuration.sh -y -i
-elasticsearch-$ES_VERSION/bin/elasticsearch -p /tmp/elasticsearch-smoke-pid &
+elasticsearch-$ES_VERSION/bin/elasticsearch -p es-smoketest-pid &
 
 while ! nc -z 127.0.0.1 9200; do
   sleep 0.1 # wait for 1/10 of the second before check again
@@ -45,6 +45,7 @@ RES="$(curl -Ss --insecure -XGET -u admin:admin 'https://127.0.0.1:9200/_searchg
 
 if [ -z "$RES" ]; then
   echo "failed"
+  kill -SIGTERM $(cat elasticsearch-$ES_VERSION/es-smoketest-pid)
   exit -1
 else
   echo "$RES"
@@ -52,4 +53,4 @@ else
 fi
 
 ./sgadmin_demo.sh
-kill -SIGTERM $(cat /tmp/elasticsearch-smoke-pid)
+kill -SIGTERM $(cat elasticsearch-$ES_VERSION/es-smoketest-pid)

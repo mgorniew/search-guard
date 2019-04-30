@@ -37,6 +37,7 @@ import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest.AliasActions;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexAction;
+import org.elasticsearch.action.admin.indices.mapping.get.GetFieldMappingsRequest;
 import org.elasticsearch.action.bulk.BulkAction;
 import org.elasticsearch.action.bulk.BulkItemRequest;
 import org.elasticsearch.action.bulk.BulkShardRequest;
@@ -45,7 +46,9 @@ import org.elasticsearch.action.get.MultiGetAction;
 import org.elasticsearch.action.index.IndexAction;
 import org.elasticsearch.action.search.MultiSearchAction;
 import org.elasticsearch.action.search.SearchAction;
+import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchScrollAction;
+import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.termvectors.MultiTermVectorsAction;
 import org.elasticsearch.action.update.UpdateAction;
 import org.elasticsearch.cluster.metadata.AliasMetaData;
@@ -84,14 +87,12 @@ public class PrivilegesEvaluator implements DCFListener {
 
     private final AuditLog auditLog;
     private ThreadContext threadContext;
-    //private final ConfigurationRepository configurationRepository;
 
     private PrivilegesInterceptor privilegesInterceptor;
 
     private final boolean checkSnapshotRestoreWritePrivileges;
 
     private final ClusterInfoHolder clusterInfoHolder;
-    //private final boolean typeSecurityDisabled = false;
     private ConfigModel configModel;
     private final IndexResolverReplacer irr;
     private final SnapshotRestoreEvaluator snapshotRestoreEvaluator;
@@ -108,7 +109,6 @@ public class PrivilegesEvaluator implements DCFListener {
             final IndexResolverReplacer irr, boolean enterpriseModulesEnabled) {
 
         super();
-        //this.configurationRepository = configurationRepository;
         this.clusterService = clusterService;
         this.resolver = resolver;
         this.auditLog = auditLog;
@@ -120,35 +120,20 @@ public class PrivilegesEvaluator implements DCFListener {
                 ConfigConstants.SG_DEFAULT_CHECK_SNAPSHOT_RESTORE_WRITE_PRIVILEGES);
 
         this.clusterInfoHolder = clusterInfoHolder;
-        //this.typeSecurityDisabled = settings.getAsBoolean(ConfigConstants.SEARCHGUARD_DISABLE_TYPE_SECURITY, false);
-        //configModel = new ConfigModel(dynamicConfigFactory);
-        //configurationRepository.subscribeOnChange(CType.ROLESMAPPING, this);
         this.irr = irr;
         snapshotRestoreEvaluator = new SnapshotRestoreEvaluator(settings, auditLog);
         sgIndexAccessEvaluator = new SearchGuardIndexAccessEvaluator(settings, auditLog);
         dlsFlsEvaluator = new DlsFlsEvaluator(settings, threadPool);
         termsAggregationEvaluator = new TermsAggregationEvaluator();
-        //configurationRepository.subscribeOnChange(CType.ROLES, tenantHolder);
         this.enterpriseModulesEnabled = enterpriseModulesEnabled;
-        //dynamicConfigFactory.registerDCFListener(this);
     }
-
-//    private SgDynamicConfiguration<RoleV6> getRolesSettings() {
-//        return (SgDynamicConfiguration<RoleV6>) configurationRepository.getConfiguration(CType.ROLES);
-//    }
-
-   
 
     
     @Override
-    public void onChanged(ConfigModel cf, DynamicConfigModel dcf, InternalUsersModel cfff) {
-        this.dcm = dcf;
-        this.configModel = cf;
+    public void onChanged(ConfigModel cm, DynamicConfigModel dcm, InternalUsersModel ium) {
+        this.dcm = dcm;
+        this.configModel = cm;
     }
-
-//    private ConfigV6 getConfigSettings() {
-//        return CType.getConfig(configurationRepository.getConfiguration(CType.CONFIG));
-//    }
 
     private SgRoles getSgRoles(Set<String> roles) {
         return configModel.getSgRoles().filter(roles);
@@ -203,15 +188,11 @@ public class PrivilegesEvaluator implements DCFListener {
             return presponse;
         }
 
-        final boolean dnfofEnabled =
-                dcm.isDnfofEnabled();//getConfigSettings().dynamic.kibana.do_not_fail_on_forbidden
-                //|| getConfigSettings().dynamic.do_not_fail_on_forbidden;
+        final boolean dnfofEnabled = dcm.isDnfofEnabled();
         
         if(log.isTraceEnabled()) {
             log.trace("dnfof enabled? {}", dnfofEnabled);
         }
-        
-        //final ConfigV6 config = getConfigSettings();
         
         if (isClusterPerm(action0)) {
             if (!sgRoles.impliesClusterPermissionPermission(action0)) {
@@ -282,7 +263,7 @@ public class PrivilegesEvaluator implements DCFListener {
         }
 
         // term aggregations
-        if (termsAggregationEvaluator.evaluate(request, clusterService, user, sgRoles, resolver, presponse).isComplete()) {
+        if (termsAggregationEvaluator.evaluate(requestedResolved, request, clusterService, user, sgRoles, resolver, presponse).isComplete()) {
             return presponse;
         }
 
@@ -338,6 +319,34 @@ public class PrivilegesEvaluator implements DCFListener {
             Set<String> reduced = sgRoles.reduce(requestedResolved, user, allIndexPermsRequiredA, resolver, clusterService);
 
             if (reduced.isEmpty()) {
+                
+                if(dcm.isDnfofForEmptyResultsEnabled()) {
+                    //ITT-1886
+                    if(request instanceof SearchRequest) {
+                        ((SearchRequest) request).indices(new String[0]);
+                        ((SearchRequest) request).indicesOptions(IndicesOptions.fromOptions(true, true, false, false));
+                        presponse.missingPrivileges.clear();
+                        presponse.allowed = true;
+                        return presponse;
+                    }
+    
+                    if(request instanceof ClusterSearchShardsRequest) {
+                        ((ClusterSearchShardsRequest) request).indices(new String[0]);
+                        ((ClusterSearchShardsRequest) request).indicesOptions(IndicesOptions.fromOptions(true, true, false, false));
+                        presponse.missingPrivileges.clear();
+                        presponse.allowed = true;
+                        return presponse;
+                    }
+                    
+                    if(request instanceof GetFieldMappingsRequest) {
+                        ((GetFieldMappingsRequest) request).indices(new String[0]);
+                        ((GetFieldMappingsRequest) request).indicesOptions(IndicesOptions.fromOptions(true, true, false, false));
+                        presponse.missingPrivileges.clear();
+                        presponse.allowed = true;
+                        return presponse;
+                    }
+                }
+
                 presponse.allowed = false;
                 return presponse;
             }
@@ -384,212 +393,17 @@ public class PrivilegesEvaluator implements DCFListener {
 
     }
 
-
-//        final SgDynamicConfiguration<RoleMappings> rolesMapping = getRolesMappingSettings();
-//        final Set<String> sgRoles = new TreeSet<String>();
-
     public Set<String> mapSgRoles(final User user, final TransportAddress caller) {
         return this.configModel.mapSgRoles(user, caller);
     }
-
-
-    /*public Set<String> mapSgRoles__old(final User user, final TransportAddress caller) {
-    
-        if(user == null) {
-            return Collections.emptySet();
-        }
-    
-        final Settings rolesMapping = configurationRepository.getConfiguration(ConfigConstants.CONFIGNAME_ROLES_MAPPING);
-        final Set<String> sgRoles = new TreeSet<String>();
-        final String[] userRoles = user.getRoles().toArray(new String[0]);
-    
-        if(rolesMappingResolution == ConfigConstants.RolesMappingResolution.BOTH
-                || rolesMappingResolution == ConfigConstants.RolesMappingResolution.BACKENDROLES_ONLY) {
-            if(log.isDebugEnabled()) {
-                log.debug("Pass backendroles from {}", user);
-            }
-            sgRoles.addAll(user.getRoles());
-        }
-        
-    
-        if(rolesMapping != null && ((rolesMappingResolution == ConfigConstants.RolesMappingResolution.BOTH
-                || rolesMappingResolution == ConfigConstants.RolesMappingResolution.MAPPING_ONLY))) {
-<<<<<<< HEAD
-            for (final Entry<String, RoleMappings> roleMap : rolesMapping.getCEntries().entrySet()) {
-                //final DynamicConfiguration roleMapSettings = rolesMapping.getByPrefix(DotPath.of(roleMap));
-
-                if (WildcardMatcher.allPatternsMatched(roleMap.getValue().getAndBackendroles().toArray(new String[0]), user.getRoles().toArray(new String[0]))) {
-                    sgRoles.add(roleMap.getKey());
-                    continue;
-                }
-
-                if (WildcardMatcher.matchAny(roleMap.getValue().getBackendroles().toArray(new String[0]), user.getRoles().toArray(new String[0]))) {
-                    sgRoles.add(roleMap.getKey());
-                    continue;
-                }
-
-                if (WildcardMatcher.matchAny(roleMap.getValue().getUsers(), user.getName())) {
-                    sgRoles.add(roleMap.getKey());
-=======
-            for (final String roleMap : rolesMapping.names()) {
-                
-                final Settings roleMapSettings = rolesMapping.getByPrefix(roleMap);
-    
-                if (WildcardMatcher.allPatternsMatched(roleMapSettings.getAsList(".and_backendroles", Collections.emptyList()).toArray(new String[0]), userRoles)) {
-                    sgRoles.add(roleMap);
-                    continue;
-                }
-    
-                if (WildcardMatcher.matchAny(roleMapSettings.getAsList(".backendroles", Collections.emptyList()).toArray(new String[0]), userRoles)) {
-                    sgRoles.add(roleMap);
-                    continue;
-                }
-    
-                if (WildcardMatcher.matchAny(roleMapSettings.getAsList(".users"), user.getName())) {
-                    sgRoles.add(roleMap);
->>>>>>> master
-                    continue;
-                }
-                
-                if(caller != null && log.isTraceEnabled()) {
-                    log.trace("caller (getAddress()) is {}", caller.getAddress());
-                    log.trace("caller unresolved? {}", caller.address().isUnresolved());
-                    log.trace("caller inner? {}", caller.address().getAddress()==null?"<unresolved>":caller.address().getAddress().toString());
-                    log.trace("caller (getHostString()) is {}", caller.address().getHostString());
-                    log.trace("caller (getHostName(), dns) is {}", caller.address().getHostName()); //reverse lookup
-                }
-                
-                if(caller != null) {
-                    //IPV4 or IPv6 (compressed and without scope identifiers)
-                    final String ipAddress = caller.getAddress();
-                    if (WildcardMatcher.matchAny(roleMap.getValue().getHosts(), ipAddress)) {
-                        sgRoles.add(roleMap.getKey());
-                        continue;
-                    }
-    
-                    final String hostResolverMode = getConfigSettings().dynamic.hosts_resolver_mode;
-                    
-                    if(caller.address() != null && (hostResolverMode.equalsIgnoreCase("ip-hostname") || hostResolverMode.equalsIgnoreCase("ip-hostname-lookup"))){
-                        final String hostName = caller.address().getHostString();
-        
-                        if (WildcardMatcher.matchAny(roleMap.getValue().getHosts(), hostName)) {
-                            sgRoles.add(roleMap.getKey());
-                            continue;
-                        }
-                    }
-                    
-                    if(caller.address() != null && hostResolverMode.equalsIgnoreCase("ip-hostname-lookup")){
-    
-                        final String resolvedHostName = caller.address().getHostName();
-             
-                        if (WildcardMatcher.matchAny(roleMap.getValue().getHosts(), resolvedHostName)) {
-                            sgRoles.add(roleMap.getKey());
-                            continue;
-                        }
-                    }
-                }
-                
-                
-            }
-        }
-        
-        
-    
-        return Collections.unmodifiableSet(sgRoles);
-    
-    }*/
 
     public Map<String, Boolean> mapTenants(final User user, Set<String> roles) {
         return this.configModel.mapTenants(user, roles);
     }
 
-    /*public Map<String, Boolean> mapTenants00(final User user, Set<String> roles) {
-    
-        
-        if(user == null) {
-            return Collections.emptyMap();
-        }
-    
-        final Map<String, Boolean> result = new HashMap<>();
-        result.put(user.getName(), true);
-<<<<<<< HEAD
-
-        for(String sgRole: mapSgRoles(user, caller)) {
-            Role role = getRolesSettings().getCEntry(sgRole);
-           
-
-            if(role != null) {
-                
-                for(Entry<String, String> tenant: role.getTenants().entrySet()) {
-
-                    if(tenant.getKey().equals(user.getName())) {
-                        continue;
-                    }
-
-                    if("RW".equalsIgnoreCase(tenant.getValue())) {
-                        result.put(tenant.getKey(), true);
-=======
-    
-        for(String sgRole: roles) {
-            Settings tenants = getRolesSettings().getByPrefix(sgRole+".tenants.");
-    
-            if(tenants != null) {
-                for(String tenant: tenants.names()) {
-    
-                    if(tenant.equals(user.getName())) {
-                        continue;
-                    }
-    
-                    if("RW".equalsIgnoreCase(tenants.get(tenant, "RO"))) {
-                        result.put(tenant, true);
->>>>>>> master
-                    } else {
-                        if(!result.containsKey(tenant.getKey())) { //RW outperforms RO
-                            result.put(tenant.getKey(), false);
-                        }
-                    }
-                }
-            }
-    
-        }
-    
-        return Collections.unmodifiableMap(result);
-    }*/
-
     public Set<String> getAllConfiguredTenantNames() {
         return configModel.getAllConfiguredTenantNames();
     }
-    
-    /*public Set<String> getAllConfiguredTenantNames() {
-//<<<<<<< HEAD
-    	//this one here!!
-    	final Set<String> configuredTenants = new HashSet<>();
-    	for(Entry<String, RoleV6> sgRole: getRolesSettings().getCEntries().entrySet()) {
-    	    Map<String, String> tenants = sgRole.getValue().getTenants();
-
-            if(tenants != null) {
-                configuredTenants.addAll(tenants.keySet());
-/*=======
-
-        final Settings roles = getRolesSettings();
-
-        if (roles == null || roles.isEmpty()) {
-            return Collections.emptySet();
-        }
-
-        final Set<String> configuredTenants = new HashSet<>();
-        for (String sgRole : roles.names()) {
-            Settings tenants = roles.getByPrefix(sgRole + ".tenants.");
-
-            if (tenants != null) {
-                configuredTenants.addAll(tenants.names());
->>>>>>> master
-            }
-
-        }
-
-        return Collections.unmodifiableSet(configuredTenants);
-    }*/
 
     public boolean multitenancyEnabled() {
         return privilegesInterceptor.getClass() != PrivilegesInterceptor.class

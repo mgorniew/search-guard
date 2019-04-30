@@ -291,8 +291,7 @@ public class SearchGuardRequestHandler<T extends TransportRequest> extends Searc
         boolean isInterClusterRequest = requestEvalProvider.isInterClusterRequest(request, localCerts, peerCerts, principal);
 
         if (isInterClusterRequest) {
-            boolean fromTn = Boolean.parseBoolean(getThreadContext().getHeader("_sg_header_tn"));
-            if(fromTn || cs.getClusterName().value().equals(getThreadContext().getHeader("_sg_remotecn"))) {
+            if(cs.getClusterName().value().equals(getThreadContext().getHeader("_sg_remotecn"))) {
 
                 if (log.isTraceEnabled() && !action.startsWith("internal:")) {
                     log.trace("Is inter cluster request ({}/{}/{})", action, request.getClass(), request.remoteAddress());

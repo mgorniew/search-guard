@@ -39,37 +39,34 @@ public class SearchGuardIndexAccessEvaluator {
     
     private final String searchguardIndex;
     private final AuditLog auditLog;
-    private final String[] sgDeniedActionPatternsAll;
-    private final String[] sgDeniedActionPatternsSnapshotRestoreAllowed;
-
-    private final boolean restoreSgIndexEnabled;
+    private final String[] sgDeniedActionPatterns;
     
     public SearchGuardIndexAccessEvaluator(final Settings settings, AuditLog auditLog) {
         this.searchguardIndex = settings.get(ConfigConstants.SEARCHGUARD_CONFIG_INDEX_NAME, ConfigConstants.SG_DEFAULT_CONFIG_INDEX);
         this.auditLog = auditLog;
         
-        final List<String> sgIndexdeniedActionPatternsListAll = new ArrayList<String>();
-        sgIndexdeniedActionPatternsListAll.add("indices:data/write*");
-        sgIndexdeniedActionPatternsListAll.add("indices:admin/close");
-        sgIndexdeniedActionPatternsListAll.add("indices:admin/delete");
-        sgIndexdeniedActionPatternsListAll.add("cluster:admin/snapshot/restore");
-
-        sgDeniedActionPatternsAll = sgIndexdeniedActionPatternsListAll.toArray(new String[0]);
-
-        final List<String> sgIndexdeniedActionPatternsListSnapshotRestoreAllowed = new ArrayList<String>();
-        sgIndexdeniedActionPatternsListAll.add("indices:data/write*");
-        sgIndexdeniedActionPatternsListAll.add("indices:admin/delete");
-              
-        sgDeniedActionPatternsSnapshotRestoreAllowed = sgIndexdeniedActionPatternsListSnapshotRestoreAllowed.toArray(new String[0]);
+        final boolean restoreSgIndexEnabled = settings.getAsBoolean(ConfigConstants.SEARCHGUARD_UNSUPPORTED_RESTORE_SGINDEX_ENABLED, false);
         
-        this.restoreSgIndexEnabled = settings.getAsBoolean(ConfigConstants.SEARCHGUARD_UNSUPPORTED_RESTORE_SGINDEX_ENABLED, false);
+        final List<String> sgIndexDeniedActionPatternsList = new ArrayList<String>();
+        sgIndexDeniedActionPatternsList.add("indices:data/write*");
+        sgIndexDeniedActionPatternsList.add("indices:admin/delete*");
+        sgIndexDeniedActionPatternsList.add("indices:admin/mapping/delete*");
+        sgIndexDeniedActionPatternsList.add("indices:admin/mapping/put*");
+        sgIndexDeniedActionPatternsList.add("indices:admin/freeze*");
+        sgIndexDeniedActionPatternsList.add("indices:admin/settings/update*");
+        sgIndexDeniedActionPatternsList.add("indices:admin/aliases");
+
+        final List<String> sgIndexDeniedActionPatternsListNoSnapshot = new ArrayList<String>();
+        sgIndexDeniedActionPatternsListNoSnapshot.addAll(sgIndexDeniedActionPatternsList);
+        sgIndexDeniedActionPatternsListNoSnapshot.add("indices:admin/close*");
+        sgIndexDeniedActionPatternsListNoSnapshot.add("cluster:admin/snapshot/restore*");
+
+        sgDeniedActionPatterns = (restoreSgIndexEnabled?sgIndexDeniedActionPatternsList:sgIndexDeniedActionPatternsListNoSnapshot).toArray(new String[0]);
     }
     
     public PrivilegesEvaluatorResponse evaluate(final ActionRequest request, final Task task, final String action, final Resolved requestedResolved,
             final PrivilegesEvaluatorResponse presponse)  {
-        
-        final String[] sgDeniedActionPatterns = this.restoreSgIndexEnabled? sgDeniedActionPatternsSnapshotRestoreAllowed : sgDeniedActionPatternsAll;
-        
+                
         if (requestedResolved.getAllIndices().contains(searchguardIndex)
                 && WildcardMatcher.matchAny(sgDeniedActionPatterns, action)) {
             auditLog.logSgIndexAttempt(request, action, task);
@@ -78,7 +75,6 @@ public class SearchGuardIndexAccessEvaluator {
             return presponse.markComplete();
         }
 
-        //TODO: newpeval: check if isAll() is all (contains("_all" or "*"))
         if (requestedResolved.isLocalAll()
                 && WildcardMatcher.matchAny(sgDeniedActionPatterns, action)) {
             auditLog.logSgIndexAttempt(request, action, task);
@@ -87,7 +83,6 @@ public class SearchGuardIndexAccessEvaluator {
             return presponse.markComplete();
         }
 
-      //TODO: newpeval: check if isAll() is all (contains("_all" or "*"))
         if(requestedResolved.getAllIndices().contains(searchguardIndex) || requestedResolved.isLocalAll()) {
 
             if(request instanceof SearchRequest) {

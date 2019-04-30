@@ -24,7 +24,6 @@ import java.util.List;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.common.settings.Settings;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
@@ -38,7 +37,6 @@ import com.floragunn.searchguard.tools.SearchGuardAdmin;
 public class SgAdminTests extends SingleClusterTest {
     
     @Test
-    @Ignore
     public void testSgAdmin() throws Exception {
         setup(Settings.EMPTY, null, Settings.EMPTY, false);
         
@@ -59,16 +57,16 @@ public class SgAdminTests extends SingleClusterTest {
         
         
         int returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
-        Assert.assertNotEquals(0, returnCode);
+        Assert.assertEquals(0, returnCode);
         
         RestHelper rh = nonSslRestHelper();
         HttpResponse res;
         
-        Assert.assertEquals(HttpStatus.SC_SERVICE_UNAVAILABLE, (res = rh.executeGetRequest("_searchguard/health?pretty")).getStatusCode());
+        Assert.assertEquals(HttpStatus.SC_OK, (res = rh.executeGetRequest("_searchguard/health?pretty")).getStatusCode());
     }
     
     @Test
-    public void testSgAdminV7Update() throws Exception {
+    public void testSgAdminV6Update() throws Exception {
         setup(Settings.EMPTY, null, Settings.EMPTY, false);
         
         final String prefix = getResourceFolder()==null?"":getResourceFolder()+"/";
@@ -83,7 +81,7 @@ public class SgAdminTests extends SingleClusterTest {
         argsAsList.add("-cn");
         argsAsList.add(clusterInfo.clustername);
         argsAsList.add("-cd");
-        argsAsList.add(new File("./conf_v7_dev/v7").getAbsolutePath());
+        argsAsList.add(new File("./legacy/sgconfig_v6").getAbsolutePath());
         argsAsList.add("-nhnv");
         
         
@@ -122,6 +120,114 @@ public class SgAdminTests extends SingleClusterTest {
         
         int returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
         Assert.assertEquals(0, returnCode);
+        
+        RestHelper rh = nonSslRestHelper();
+        HttpResponse res;
+        
+        Assert.assertEquals(HttpStatus.SC_OK, (res = rh.executeGetRequest("_searchguard/health?pretty")).getStatusCode());
+        System.out.println(res.getBody());
+        assertContains(res, "*UP*");
+        assertContains(res, "*strict*");
+        assertNotContains(res, "*DOWN*");
+    }
+    
+    @Test
+    public void testSgAdminSingularV7Updates() throws Exception {
+        setup(Settings.EMPTY, new DynamicSgConfig(), Settings.EMPTY, true);
+        
+        final String prefix = getResourceFolder()==null?"":getResourceFolder()+"/";
+        
+        List<String> argsAsList = new ArrayList<>();
+        argsAsList.add("-ts");
+        argsAsList.add(FileHelper.getAbsoluteFilePathFromClassPath(prefix+"truststore.jks").toFile().getAbsolutePath());
+        argsAsList.add("-ks");
+        argsAsList.add(FileHelper.getAbsoluteFilePathFromClassPath(prefix+"kirk-keystore.jks").toFile().getAbsolutePath());
+        argsAsList.add("-p");
+        argsAsList.add(String.valueOf(clusterInfo.nodePort));
+        argsAsList.add("-cn");
+        argsAsList.add(clusterInfo.clustername);
+        argsAsList.add("-f");
+        argsAsList.add(new File("./sgconfig/sg_config.yml").getAbsolutePath());
+        argsAsList.add("-t");
+        argsAsList.add("config");
+        argsAsList.add("-nhnv");
+        
+        
+        int returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
+        Assert.assertEquals(0, returnCode);
+        
+        argsAsList = new ArrayList<>();
+        argsAsList.add("-ts");
+        argsAsList.add(FileHelper.getAbsoluteFilePathFromClassPath(prefix+"truststore.jks").toFile().getAbsolutePath());
+        argsAsList.add("-ks");
+        argsAsList.add(FileHelper.getAbsoluteFilePathFromClassPath(prefix+"kirk-keystore.jks").toFile().getAbsolutePath());
+        argsAsList.add("-p");
+        argsAsList.add(String.valueOf(clusterInfo.nodePort));
+        argsAsList.add("-cn");
+        argsAsList.add(clusterInfo.clustername);
+        argsAsList.add("-f");
+        argsAsList.add(new File("./sgconfig/sg_roles_mapping.yml").getAbsolutePath());
+        argsAsList.add("-t");
+        argsAsList.add("rolesmapping");
+        argsAsList.add("-nhnv");
+        
+        
+        returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
+        Assert.assertEquals(0, returnCode);
+        
+        argsAsList = new ArrayList<>();
+        argsAsList.add("-ts");
+        argsAsList.add(FileHelper.getAbsoluteFilePathFromClassPath(prefix+"truststore.jks").toFile().getAbsolutePath());
+        argsAsList.add("-ks");
+        argsAsList.add(FileHelper.getAbsoluteFilePathFromClassPath(prefix+"kirk-keystore.jks").toFile().getAbsolutePath());
+        argsAsList.add("-p");
+        argsAsList.add(String.valueOf(clusterInfo.nodePort));
+        argsAsList.add("-cn");
+        argsAsList.add(clusterInfo.clustername);
+        argsAsList.add("-f");
+        argsAsList.add(new File("./sgconfig/sg_tenants.yml").getAbsolutePath());
+        argsAsList.add("-t");
+        argsAsList.add("tenants");
+        argsAsList.add("-nhnv");
+        
+        
+        returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
+        Assert.assertEquals(0, returnCode);
+        
+        RestHelper rh = nonSslRestHelper();
+        HttpResponse res;
+        
+        Assert.assertEquals(HttpStatus.SC_OK, (res = rh.executeGetRequest("_searchguard/health?pretty")).getStatusCode());
+        System.out.println(res.getBody());
+        assertContains(res, "*UP*");
+        assertContains(res, "*strict*");
+        assertNotContains(res, "*DOWN*");
+    }
+    
+    @Test
+    public void testSgAdminSingularV6Updates() throws Exception {
+        setup(Settings.EMPTY, new DynamicSgConfig(), Settings.EMPTY, true);
+        
+        final String prefix = getResourceFolder()==null?"":getResourceFolder()+"/";
+        
+        List<String> argsAsList = new ArrayList<>();
+        argsAsList.add("-ts");
+        argsAsList.add(FileHelper.getAbsoluteFilePathFromClassPath(prefix+"truststore.jks").toFile().getAbsolutePath());
+        argsAsList.add("-ks");
+        argsAsList.add(FileHelper.getAbsoluteFilePathFromClassPath(prefix+"kirk-keystore.jks").toFile().getAbsolutePath());
+        argsAsList.add("-p");
+        argsAsList.add(String.valueOf(clusterInfo.nodePort));
+        argsAsList.add("-cn");
+        argsAsList.add(clusterInfo.clustername);
+        argsAsList.add("-f");
+        argsAsList.add(new File("./legacy/sgconfig_v6/sg_config.yml").getAbsolutePath());
+        argsAsList.add("-t");
+        argsAsList.add("config");
+        argsAsList.add("-nhnv");
+        
+        int returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
+        Assert.assertNotEquals(0, returnCode);
+
         
         RestHelper rh = nonSslRestHelper();
         HttpResponse res;
@@ -183,8 +289,8 @@ public class SgAdminTests extends SingleClusterTest {
         rh.trustHTTPServerCertificate = true;
         rh.sendHTTPClientCertificate = true;
         rh.keystore = "kirk-keystore.jks";
-        System.out.println(rh.executePutRequest("searchguard/sg/roles", FileHelper.loadFile("sg_roles_invalidxcontent.yml")).getBody());;
-        Assert.assertEquals(HttpStatus.SC_OK, rh.executePutRequest("searchguard/sg/roles", "{\"roles\":\"dummy\"}").getStatusCode());
+        System.out.println(rh.executePutRequest("searchguard/"+getType()+"/roles", FileHelper.loadFile("sg_roles_invalidxcontent.yml")).getBody());;
+        Assert.assertEquals(HttpStatus.SC_OK, rh.executePutRequest("searchguard/"+getType()+"/roles", "{\"roles\":\"dummy\"}").getStatusCode());
         
         
         final String prefix = getResourceFolder()==null?"":getResourceFolder()+"/";
@@ -214,109 +320,65 @@ public class SgAdminTests extends SingleClusterTest {
     }
     
     @Test
-    @Ignore
-    public void testSgMigrate() throws Exception {        
-        final Settings settings = Settings.builder()
-                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_CLIENTAUTH_MODE, "REQUIRE")
-                .put("searchguard.ssl.http.enabled",true)
-                .put("searchguard.ssl.http.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("node-0-keystore.jks"))
-                .put("searchguard.ssl.http.truststore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("truststore.jks"))
-                .build();
-        setup(Settings.EMPTY, new DynamicSgConfig(), settings, true);
-        final RestHelper rh = restHelper(); //ssl resthelper
-
-        rh.enableHTTPClientSSL = true;
-        rh.trustHTTPServerCertificate = true;
-        rh.sendHTTPClientCertificate = true;
-        rh.keystore = "kirk-keystore.jks";
-        
-        final String prefix = getResourceFolder()==null?"":getResourceFolder()+"/";
-        
+    public void testSgAdminValidateConfig() throws Exception {                
         List<String> argsAsList = new ArrayList<>();
-        argsAsList.add("-ts");
-        argsAsList.add(FileHelper.getAbsoluteFilePathFromClassPath(prefix+"truststore.jks").toFile().getAbsolutePath());
-        argsAsList.add("-ks");
-        argsAsList.add(FileHelper.getAbsoluteFilePathFromClassPath(prefix+"kirk-keystore.jks").toFile().getAbsolutePath());
-        argsAsList.add("-p");
-        argsAsList.add(String.valueOf(clusterInfo.nodePort));
-        argsAsList.add("-cn");
-        argsAsList.add(clusterInfo.clustername);
-        argsAsList.add("-migrate");
-        argsAsList.add("data/_migration");
-        argsAsList.add("-nhnv");
-        
-        
-        int returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
-        Assert.assertEquals(0, returnCode);
-        
-        HttpResponse res;
-        
-        Assert.assertEquals(HttpStatus.SC_OK, (res = rh.executeGetRequest("_searchguard/health?pretty")).getStatusCode());
-        assertContains(res, "*UP*");
-        assertContains(res, "*strict*");
-        assertNotContains(res, "*DOWN*");
-        
-        returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
-        Assert.assertNotEquals(0, returnCode);
-    }
-    
-    @Test
-    @Ignore
-    public void testSgMigrate2() throws Exception {        
-        final Settings settings = Settings.builder()
-                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_CLIENTAUTH_MODE, "REQUIRE")
-                .put("searchguard.ssl.http.enabled",true)
-                .put("searchguard.ssl.http.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("node-0-keystore.jks"))
-                .put("searchguard.ssl.http.truststore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("truststore.jks"))
-                .build();
-        setup(Settings.EMPTY, new DynamicSgConfig(), settings, true);
-        final RestHelper rh = restHelper(); //ssl resthelper
-
-        rh.enableHTTPClientSSL = true;
-        rh.trustHTTPServerCertificate = true;
-        rh.sendHTTPClientCertificate = true;
-        rh.keystore = "kirk-keystore.jks";
-        
-        final String prefix = getResourceFolder()==null?"":getResourceFolder()+"/";
-        
-        List<String> argsAsList = new ArrayList<>();
-        argsAsList = new ArrayList<>();
-        argsAsList.add("-ts");
-        argsAsList.add(FileHelper.getAbsoluteFilePathFromClassPath(prefix+"truststore.jks").toFile().getAbsolutePath());
-        argsAsList.add("-ks");
-        argsAsList.add(FileHelper.getAbsoluteFilePathFromClassPath(prefix+"kirk-keystore.jks").toFile().getAbsolutePath());
-        argsAsList.add("-p");
-        argsAsList.add(String.valueOf(clusterInfo.nodePort));
-        argsAsList.add("-cn");
-        argsAsList.add(clusterInfo.clustername);
         argsAsList.add("-cd");
-        argsAsList.add(new File("./sgconfig").getAbsolutePath()+"/v7");
-        argsAsList.add("-nhnv");
-
+        argsAsList.add(new File("./sgconfig").getAbsolutePath());
+        argsAsList.add("-vc");
+        
         int returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
-        Assert.assertNotEquals(0, returnCode);
+        Assert.assertEquals(0, returnCode);
         
-        argsAsList.add("-ts");
-        argsAsList.add(FileHelper.getAbsoluteFilePathFromClassPath(prefix+"truststore.jks").toFile().getAbsolutePath());
-        argsAsList.add("-ks");
-        argsAsList.add(FileHelper.getAbsoluteFilePathFromClassPath(prefix+"kirk-keystore.jks").toFile().getAbsolutePath());
-        argsAsList.add("-p");
-        argsAsList.add(String.valueOf(clusterInfo.nodePort));
-        argsAsList.add("-cn");
-        argsAsList.add(clusterInfo.clustername);
-        argsAsList.add("-migrate");
-        argsAsList.add("data/_migration");
-        argsAsList.add("-nhnv");
-        
+        argsAsList = new ArrayList<>();
+        argsAsList.add("-f");
+        argsAsList.add(new File("./sgconfig/sg_roles.yml").getAbsolutePath());
+        argsAsList.add("-vc");
         
         returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
         Assert.assertEquals(0, returnCode);
         
-        HttpResponse res;
+        argsAsList = new ArrayList<>();
+        argsAsList.add("-f");
+        argsAsList.add(new File("./sgconfig/sg_roles.yml").getAbsolutePath());
+        argsAsList.add("-vc");
+        argsAsList.add("-t");
+        argsAsList.add("config");
         
-        Assert.assertEquals(HttpStatus.SC_OK, (res = rh.executeGetRequest("_searchguard/health?pretty")).getStatusCode());
-        assertContains(res, "*UP*");
-        assertContains(res, "*strict*");
-        assertNotContains(res, "*DOWN*");
+        returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
+        Assert.assertNotEquals(0, returnCode);
+        
+        argsAsList = new ArrayList<>();
+        argsAsList.add("-ks");
+        argsAsList.add(new File("./sgconfig").getAbsolutePath());
+        argsAsList.add("-vc");
+        
+        returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
+        Assert.assertNotEquals(0, returnCode);
+        
+        argsAsList = new ArrayList<>();
+        argsAsList.add("-cd");
+        argsAsList.add(new File("./legacy/sgconfig_v6").getAbsolutePath());
+        argsAsList.add("-vc");
+        
+        returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
+        Assert.assertNotEquals(0, returnCode);
+        
+        argsAsList = new ArrayList<>();
+        argsAsList.add("-cd");
+        argsAsList.add(new File("./legacy/sgconfig_v6").getAbsolutePath());
+        argsAsList.add("-vc");
+        argsAsList.add("6");
+        
+        returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
+        Assert.assertEquals(0, returnCode);
+        
+        argsAsList = new ArrayList<>();
+        argsAsList.add("-cd");
+        argsAsList.add(new File("./sgconfig").getAbsolutePath());
+        argsAsList.add("-vc");
+        argsAsList.add("8");
+        
+        returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
+        Assert.assertNotEquals(0, returnCode);
     }
 }

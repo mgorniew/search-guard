@@ -31,6 +31,7 @@ public class ConfigV7 {
         dynamic.respect_request_indices_options = c6.dynamic.respect_request_indices_options;
         dynamic.license = c6.dynamic.license;
         dynamic.do_not_fail_on_forbidden = c6.dynamic.do_not_fail_on_forbidden || c6.dynamic.kibana.do_not_fail_on_forbidden;
+        dynamic.do_not_fail_on_forbidden_empty = c6.dynamic.do_not_fail_on_forbidden_empty;
         dynamic.multi_rolespan_enabled = c6.dynamic.multi_rolespan_enabled;
         dynamic.hosts_resolver_mode = c6.dynamic.hosts_resolver_mode;
         dynamic.transport_userrname_attribute = c6.dynamic.transport_userrname_attribute;
@@ -64,6 +65,11 @@ public class ConfigV7 {
         dynamic.authz.domains.putAll(c6.dynamic.authz.getDomains().entrySet().stream().collect(Collectors.toMap(
                 entry -> entry.getKey(), 
                 entry -> new AuthzDomain(entry.getValue()))));
+        
+        dynamic.auth_failure_listeners = new AuthFailureListeners();
+        dynamic.auth_failure_listeners.listeners.putAll(c6.dynamic.auth_failure_listeners.getListeners().entrySet().stream().collect(Collectors.toMap(
+                entry -> entry.getKey(), 
+                entry -> new AuthFailureListener(entry.getValue()))));
     }
 
     @Override
@@ -83,10 +89,12 @@ public class ConfigV7 {
         public Http http = new Http();
         public Authc authc = new Authc();
         public Authz authz = new Authz();
+        public AuthFailureListeners auth_failure_listeners = new AuthFailureListeners();
         public boolean do_not_fail_on_forbidden;
-        public boolean multi_rolespan_enabled;
+        public boolean multi_rolespan_enabled = true;
         public String hosts_resolver_mode = "ip-only";
         public String transport_userrname_attribute;
+        public boolean do_not_fail_on_forbidden_empty;
     
         @Override
         public String toString() {
@@ -120,8 +128,61 @@ public class ConfigV7 {
         
     }
     
+    public static class AuthFailureListeners {
+        @JsonIgnore
+        private final Map<String, AuthFailureListener> listeners = new HashMap<>();
+
+        @JsonAnySetter
+        void setListeners(String key, AuthFailureListener value) {
+            listeners.put(key, value);
+        }
+
+        @JsonAnyGetter
+        public Map<String, AuthFailureListener> getListeners() {
+            return listeners;
+        }
+
+        
+    }
+    
+    public static class AuthFailureListener {
+        public String type;
+        public String authentication_backend;
+        public int allowed_tries = 10;
+        public int time_window_seconds = 60 * 60;
+        public int block_expiry_seconds = 60 * 10;
+        public int max_blocked_clients = 100_000;
+        public int max_tracked_clients = 100_000;
+        
+        
+        
+        public AuthFailureListener() {
+            super();
+        }
+
+        public AuthFailureListener(com.floragunn.searchguard.sgconf.impl.v6.ConfigV6.AuthFailureListener v6) {
+            super();
+            this.type = v6.type;
+            this.authentication_backend = v6.authentication_backend;
+            this.allowed_tries = v6.allowed_tries;
+            this.time_window_seconds = v6.time_window_seconds;
+            this.block_expiry_seconds = v6.block_expiry_seconds;
+            this.max_blocked_clients = v6.max_blocked_clients;
+            this.max_tracked_clients = v6.max_tracked_clients;
+        }
+        
+        @JsonIgnore
+        public String asJson() {
+            try {
+                return DefaultObjectMapper.writeValueAsString(this, false);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+    
     public static class Xff {
-        public boolean enabled = true;
+        public boolean enabled = false;
         public String internalProxies = Pattern.compile(
                 "10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|" +
                         "192\\.168\\.\\d{1,3}\\.\\d{1,3}|" +

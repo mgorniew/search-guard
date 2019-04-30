@@ -8,18 +8,28 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.floragunn.searchguard.sgconf.impl.v6.ActionGroupsV6;
+import com.floragunn.searchguard.sgconf.impl.v6.ConfigV6;
+import com.floragunn.searchguard.sgconf.impl.v6.InternalUserV6;
 import com.floragunn.searchguard.sgconf.impl.v6.RoleMappingsV6;
 import com.floragunn.searchguard.sgconf.impl.v6.RoleV6;
+import com.floragunn.searchguard.sgconf.impl.v7.ActionGroupsV7;
+import com.floragunn.searchguard.sgconf.impl.v7.ConfigV7;
+import com.floragunn.searchguard.sgconf.impl.v7.InternalUserV7;
+import com.floragunn.searchguard.sgconf.impl.v7.RoleMappingsV7;
+import com.floragunn.searchguard.sgconf.impl.v7.RoleV7;
+import com.floragunn.searchguard.sgconf.impl.v7.TenantV7;
 
 public enum CType {
 
-    INTERNALUSERS(toMap(1, com.floragunn.searchguard.sgconf.impl.v6.InternalUserV6.class, 2,
-            com.floragunn.searchguard.sgconf.impl.v7.InternalUserV7.class)),
-    ACTIONGROUPS(toMap(0, List.class, 1, com.floragunn.searchguard.sgconf.impl.v6.ActionGroupsV6.class, 2,
-            com.floragunn.searchguard.sgconf.impl.v7.ActionGroupsV7.class)),
-    CONFIG(toMap(1, com.floragunn.searchguard.sgconf.impl.v6.ConfigV6.class, 2, com.floragunn.searchguard.sgconf.impl.v7.ConfigV7.class)),
-    ROLES(toMap(1, RoleV6.class, 2, com.floragunn.searchguard.sgconf.impl.v7.RoleV7.class)), ROLESMAPPING(toMap(1, RoleMappingsV6.class)),
-    TENANTS(toMap(2, com.floragunn.searchguard.sgconf.impl.v7.TenantV7.class));
+    INTERNALUSERS(toMap(1, InternalUserV6.class, 2,
+            InternalUserV7.class)),
+    ACTIONGROUPS(toMap(0, List.class, 1, ActionGroupsV6.class, 2,
+            ActionGroupsV7.class)),
+    CONFIG(toMap(1, ConfigV6.class, 2, ConfigV7.class)),
+    ROLES(toMap(1, RoleV6.class, 2, RoleV7.class)), 
+    ROLESMAPPING(toMap(1, RoleMappingsV6.class, 2, RoleMappingsV7.class)),
+    TENANTS(toMap(2, TenantV7.class));
 
     private Map<Integer, Class<?>> implementations;
 

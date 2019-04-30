@@ -31,6 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Currency;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -91,6 +92,8 @@ import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.PluginInfo;
 import org.elasticsearch.transport.Netty4Plugin;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.floragunn.searchguard.DefaultObjectMapper;
 import com.floragunn.searchguard.SearchGuardPlugin;
 import com.floragunn.searchguard.action.configupdate.ConfigUpdateAction;
@@ -106,9 +109,11 @@ import com.floragunn.searchguard.action.whoami.WhoAmIResponse;
 import com.floragunn.searchguard.sgconf.Migration;
 import com.floragunn.searchguard.sgconf.impl.CType;
 import com.floragunn.searchguard.sgconf.impl.SgDynamicConfiguration;
+import com.floragunn.searchguard.sgconf.impl.v6.RoleMappingsV6;
 import com.floragunn.searchguard.sgconf.impl.v7.ActionGroupsV7;
 import com.floragunn.searchguard.sgconf.impl.v7.ConfigV7;
 import com.floragunn.searchguard.sgconf.impl.v7.InternalUserV7;
+import com.floragunn.searchguard.sgconf.impl.v7.RoleMappingsV7;
 import com.floragunn.searchguard.sgconf.impl.v7.RoleV7;
 import com.floragunn.searchguard.sgconf.impl.v7.TenantV7;
 import com.floragunn.searchguard.ssl.util.ExceptionUtils;
@@ -116,11 +121,14 @@ import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
 import com.floragunn.searchguard.support.ConfigConstants;
 import com.floragunn.searchguard.support.ConfigHelper;
 import com.floragunn.searchguard.support.SearchGuardDeprecationHandler;
+import com.floragunn.searchguard.support.SgJsonNode;
+import com.floragunn.searchguard.support.SgUtils;
+import com.google.common.io.CharStreams;
 import com.google.common.io.Files;
 
 public class SearchGuardAdmin {
 
-    private static final boolean CREATE_AS_LEGACY = SearchGuardPlugin.FORCE_CONFIG_V6 || Boolean.parseBoolean(System.getenv("TESTARG_migration_sgadmin_create_as_legacy"));
+    private static final boolean CREATE_AS_LEGACY = Boolean.parseBoolean(System.getenv("TESTARG_migration_sgadmin_create_as_legacy"));
     private static final boolean ALLOW_MIXED = Boolean.parseBoolean(System.getenv("SG_ADMIN_ALLOW_MIXED_CLUSTER"));
     private static final String SG_TS_PASS = "SG_TS_PASS";
     private static final String SG_KS_PASS = "SG_KS_PASS";
@@ -227,9 +235,12 @@ public class SearchGuardAdmin {
 
         options.addOption(Option.builder("backup").hasArg().argName("folder").desc("Backup configuration to folder").build());
 
-        if(!SearchGuardPlugin.FORCE_CONFIG_V6) {
-            options.addOption(Option.builder("migrate").hasArg().argName("folder").desc("Migrate and use folder to store migrated files").build());
-        }
+        options.addOption(Option.builder("migrate").hasArg().argName("folder").desc("Migrate and use folder to store migrated files").build());
+        
+        options.addOption(Option.builder("rev").longOpt("resolve-env-vars").desc("Resolve/Substitute env vars in config with their value before uploading").build());
+
+        options.addOption(Option.builder("vc").numberOfArgs(1).optionalArg(true).argName("version").longOpt("validate-configs").desc("Validate config for version 6 or 7 (default 7)").build());
+
         
         //when adding new options also adjust validate(CommandLine line)
         
@@ -276,6 +287,8 @@ public class SearchGuardAdmin {
         String explicitReplicas = null;
         String backup = null;
         String migrate = null;
+        final boolean resolveEnvVars;
+        Integer validateConfig = null;
         
         CommandLineParser parser = new DefaultParser();
         try {
@@ -363,12 +376,28 @@ public class SearchGuardAdmin {
             backup = line.getOptionValue("backup");
             
             migrate = line.getOptionValue("migrate");
+            
+            resolveEnvVars = line.hasOption("rev");
+            
+            validateConfig = !line.hasOption("vc")?null:Integer.parseInt(line.getOptionValue("vc", "7"));
+            
+            if(validateConfig != null && validateConfig.intValue() != 6 && validateConfig.intValue() != 7) {
+                throw new ParseException("version must be 6 or 7");
+            }
+            
         }
         catch( ParseException exp ) {
             System.out.println("ERR: Parsing failed.  Reason: " + exp.getMessage());
             formatter.printHelp("sgadmin.sh", options, true);
-            return 0;
+            return -1;
         }
+        
+        
+        if(validateConfig != null) {
+            System.out.println("Validate configuration");
+            return validateConfig(cd, file, type, validateConfig.intValue());
+        }
+        
         
         if(port < 9300) {
             System.out.println("WARNING: Seems you want connect to the Elasticsearch HTTP port."+System.lineSeparator()
@@ -508,11 +537,14 @@ public class SearchGuardAdmin {
 
             if(updateSettings != null) { 
                 Settings indexSettings = Settings.builder().put("index.number_of_replicas", updateSettings).build();                
-                tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{"config","roles","rolesmapping","internalusers","actiongroups"})).actionGet();                
+                ConfigUpdateResponse res = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{"config","roles","rolesmapping","internalusers","actiongroups"})).actionGet();                
+                if(res.hasFailures()) {
+                    System.out.println("ERR: Unabe to reload config due to "+res.failures());
+                }
                 final AcknowledgedResponse response = tc.admin().indices().updateSettings((new UpdateSettingsRequest(index).settings(indexSettings))).actionGet();
                 System.out.println("Reload config on all nodes");
                 System.out.println("Update number of replicas to "+(updateSettings) +" with result: "+response.isAcknowledged());
-                return (response.isAcknowledged()?0:-1);
+                return ((response.isAcknowledged() && !res.hasFailures())?0:-1);
             }
             
             if(reload) { 
@@ -545,11 +577,14 @@ public class SearchGuardAdmin {
                 Settings indexSettings = Settings.builder()
                         .put("index.auto_expand_replicas", replicaAutoExpand?"0-all":"false")
                         .build();                
-                tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{"config","roles","rolesmapping","internalusers","actiongroups"})).actionGet();                
+                ConfigUpdateResponse res = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{"config","roles","rolesmapping","internalusers","actiongroups"})).actionGet();                
+                if(res.hasFailures()) {
+                    System.out.println("ERR: Unabe to reload config due to "+res.failures());
+                }
                 final AcknowledgedResponse response = tc.admin().indices().updateSettings((new UpdateSettingsRequest(index).settings(indexSettings))).actionGet();
                 System.out.println("Reload config on all nodes");
                 System.out.println("Auto-expand replicas "+(replicaAutoExpand?"enabled":"disabled"));
-                return (response.isAcknowledged()?0:-1);
+                return ((response.isAcknowledged() && !res.hasFailures())?0:-1);
             }   
             
             if(enableShardAllocation) { 
@@ -707,6 +742,9 @@ public class SearchGuardAdmin {
                 success = retrieveFile(tc, cd+"sg_roles_mapping_"+date+".yml", index, "rolesmapping", legacy) && success;
                 success = retrieveFile(tc, cd+"sg_internal_users_"+date+".yml", index, "internalusers", legacy) && success;
                 success = retrieveFile(tc, cd+"sg_action_groups_"+date+".yml", index, "actiongroups", legacy) && success;
+                if(!legacy) {
+                    success = retrieveFile(tc, cd+"sg_tenants_"+date+".yml", index, "tenants", legacy) && success;
+                }
                 return (success?0:-1);
             }
             
@@ -719,17 +757,22 @@ public class SearchGuardAdmin {
                     System.out.println("ERR: Seems cluster is already migrated");
                     return -1;
                 }
-                return migrate(tc, index, new File(migrate), nodesInfo);
+                return migrate(tc, index, new File(migrate), nodesInfo, resolveEnvVars);
             }
             
             boolean isCdAbs = new File(cd).isAbsolute();
-             
+
             System.out.println("Populate config from "+(isCdAbs?cd:new File(".", cd).getCanonicalPath()));
             
             if(file != null) {
-                if(type == null) {
-                    System.out.println("ERR: type missing");
-                    return (-1);
+                if(type != null) {
+                    System.out.println("Force type: "+type);
+                } else {
+                    type = readTypeFromFile(new File(file));
+                    if(type == null) {
+                        System.out.println("ERR: Unable to read type from file");
+                        return (-1);
+                    }
                 }
                 
                 if(!CType.lcStringValues().contains(type)) {
@@ -737,13 +780,14 @@ public class SearchGuardAdmin {
                     return (-1);
                 }
                 
-                boolean success = uploadFile(tc, file, index, type, legacy);
-                ConfigUpdateResponse cur = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{type})).actionGet();
+                boolean success = uploadFile(tc, file, index, type, legacy, resolveEnvVars);
                 
                 if(!success) {
                     System.out.println("ERR: cannot upload configuration, see errors above");
                     return -1;
                 }
+                
+                ConfigUpdateResponse cur = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{type})).actionGet();
                 
                 success = checkConfigUpdateResponse(cur, nodesInfo, 1) && success;
                 
@@ -751,25 +795,19 @@ public class SearchGuardAdmin {
                 return (success?0:-1);
             }
             
-            
-            return upload(tc, index, cd, legacy, nodesInfo);
+            return upload(tc, index, cd, legacy, nodesInfo, resolveEnvVars);
         }
         // TODO audit changes to searchguard index
     }
 
     private static boolean checkConfigUpdateResponse(ConfigUpdateResponse response, NodesInfoResponse nir, int expectedConfigCount) {
         
-        int expectedNodeCount = 0;
-        
-        for(NodeInfo ni: nir.getNodes()) {
-            Settings nodeSettings = ni.getSettings();
-          
-            //do not count tribe clients
-            if(nodeSettings.get("tribe.name", null) == null) {
-                expectedNodeCount++;
-            }           
-        }
+        final int expectedNodeCount =  nir.getNodes().size();
 
+        if(response.hasFailures()) {
+            System.out.println("FAIL: "+response.failures().size()+" nodes reported failures. First failure is "+response.failures().get(0));
+        }
+        
         boolean success = response.getNodes().size() == expectedNodeCount;
         if(!success) {
             System.out.println("FAIL: Expected "+expectedNodeCount+" nodes to return response, but got "+response.getNodes().size());
@@ -784,11 +822,11 @@ public class SearchGuardAdmin {
             
             success = success && successNode;
         }
-        
-        return success;
+
+        return success && !response.hasFailures();
     }
     
-    private static boolean uploadFile(final Client tc, final String filepath, final String index, final String _id, final boolean legacy) {
+    private static boolean uploadFile(final Client tc, final String filepath, final String index, final String _id, final boolean legacy, boolean resolveEnvVars) {
         
         String type = "_doc";
         String id = _id;
@@ -816,9 +854,10 @@ public class SearchGuardAdmin {
         System.out.println("Will update '"+type+"/" + id + "' with " + filepath+" "+(legacy?"(legacy mode)":""));
         
         try (Reader reader = new FileReader(filepath)) {
+            final String content = CharStreams.toString(reader);
             final String res = tc
                     .index(new IndexRequest(index).type(type).id(id).setRefreshPolicy(RefreshPolicy.IMMEDIATE)
-                            .source(_id, readXContent(reader, XContentType.YAML))).actionGet().getId();
+                            .source(_id, readXContent(resolveEnvVars?SgUtils.replaceEnvVars(content, Settings.EMPTY):content, XContentType.YAML))).actionGet().getId();
 
             if (id.equals(res)) {
                 System.out.println("   SUCC: Configuration for '" + _id + "' created or updated");
@@ -887,11 +926,11 @@ public class SearchGuardAdmin {
         return false;
     }
 
-    private static BytesReference readXContent(final Reader reader, final XContentType xContentType) throws IOException {
+    private static BytesReference readXContent(final String content, final XContentType xContentType) throws IOException {
         BytesReference retVal;
         XContentParser parser = null;
         try {
-            parser = XContentFactory.xContent(xContentType).createParser(NamedXContentRegistry.EMPTY, SearchGuardDeprecationHandler.INSTANCE, reader);
+            parser = XContentFactory.xContent(xContentType).createParser(NamedXContentRegistry.EMPTY, SearchGuardDeprecationHandler.INSTANCE, content);
             parser.nextToken();
             final XContentBuilder builder = XContentFactory.jsonBuilder();
             builder.copyCurrentStructure(parser);
@@ -1046,12 +1085,16 @@ public class SearchGuardAdmin {
         if(line.hasOption("cn") && line.hasOption("icl")) {
             throw new ParseException("Only set one of -cn or -icl");
         }
+        
+        if(line.hasOption("vc") && !line.hasOption("cd") && !line.hasOption("f")) {
+            throw new ParseException("Specify at least -cd or -f together with vc");
+        }
 
-        if(!line.hasOption("ks") && !line.hasOption("cert") /*&& !line.hasOption("simple-auth")*/) {
+        if(!line.hasOption("vc") && !line.hasOption("ks") && !line.hasOption("cert") /*&& !line.hasOption("simple-auth")*/) {
             throw new ParseException("Specify at least -ks or -cert");
         }
         
-        if(!line.hasOption("ts") && !line.hasOption("cacert") /*&& !line.hasOption("simple-auth")*/) {
+        if(!line.hasOption("vc") && !line.hasOption("ts") && !line.hasOption("cacert") /*&& !line.hasOption("simple-auth")*/) {
             throw new ParseException("Specify at least -ts or -cacert");
         }
         
@@ -1144,9 +1187,7 @@ public class SearchGuardAdmin {
         boolean success = retrieveFile(tc, backupDir.getAbsolutePath()+"/sg_config.yml", index, "config", legacy);
         success = retrieveFile(tc, backupDir.getAbsolutePath()+"/sg_roles.yml", index, "roles", legacy) && success;
         
-        if(legacy) {
-            success = retrieveFile(tc, backupDir.getAbsolutePath()+"/sg_roles_mapping.yml", index, "rolesmapping", legacy) && success;
-        }
+        success = retrieveFile(tc, backupDir.getAbsolutePath()+"/sg_roles_mapping.yml", index, "rolesmapping", legacy) && success;
         success = retrieveFile(tc, backupDir.getAbsolutePath()+"/sg_internal_users.yml", index, "internalusers", legacy) && success;
         success = retrieveFile(tc, backupDir.getAbsolutePath()+"/sg_action_groups.yml", index, "actiongroups", legacy) && success;
         
@@ -1157,19 +1198,17 @@ public class SearchGuardAdmin {
         return success?0:-1;
     }
     
-    private static int upload(TransportClient tc, String index, String cd, boolean legacy, NodesInfoResponse nodesInfo) {
-        boolean success = uploadFile(tc, cd+"sg_config.yml", index, "config", legacy);
-        success = uploadFile(tc, cd+"sg_roles.yml", index, "roles", legacy) && success;
-        if(legacy) {
-            success = uploadFile(tc, cd+"sg_roles_mapping.yml", index, "rolesmapping", legacy) && success;
-        }
+    private static int upload(TransportClient tc, String index, String cd, boolean legacy, NodesInfoResponse nodesInfo, boolean resolveEnvVars) {
+        boolean success = uploadFile(tc, cd+"sg_config.yml", index, "config", legacy, resolveEnvVars);
+        success = uploadFile(tc, cd+"sg_roles.yml", index, "roles", legacy, resolveEnvVars) && success;
+        success = uploadFile(tc, cd+"sg_roles_mapping.yml", index, "rolesmapping", legacy, resolveEnvVars) && success;
         
-        success = uploadFile(tc, cd+"sg_internal_users.yml", index, "internalusers", legacy) && success;
-        success = uploadFile(tc, cd+"sg_action_groups.yml", index, "actiongroups", legacy) && success;
+        success = uploadFile(tc, cd+"sg_internal_users.yml", index, "internalusers", legacy, resolveEnvVars) && success;
+        success = uploadFile(tc, cd+"sg_action_groups.yml", index, "actiongroups", legacy, resolveEnvVars) && success;
 
         
         if(!legacy) {
-            success = uploadFile(tc, cd+"sg_tenants.yml", index, "tenants", legacy) && success;
+            success = uploadFile(tc, cd+"sg_tenants.yml", index, "tenants", legacy, resolveEnvVars) && success;
         }
         
         if(!success) {
@@ -1185,7 +1224,7 @@ public class SearchGuardAdmin {
         return (success?0:-1);
     }
     
-    private static int migrate(TransportClient tc, String index, File backupDir, NodesInfoResponse nodesInfo) {
+    private static int migrate(TransportClient tc, String index, File backupDir, NodesInfoResponse nodesInfo, boolean resolveEnvVars) {
         
         System.out.println("== Migration started ==");
         System.out.println("=======================");
@@ -1207,16 +1246,16 @@ public class SearchGuardAdmin {
             SgDynamicConfiguration<ActionGroupsV7> actionGroupsV7 = Migration.migrateActionGroups(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(new File(backupDir,"sg_action_groups.yml")), CType.ACTIONGROUPS, 1, 0, 0));
             SgDynamicConfiguration<ConfigV7> configV7 = Migration.migrateConfig(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(new File(backupDir,"sg_config.yml")), CType.CONFIG, 1, 0, 0));
             SgDynamicConfiguration<InternalUserV7> internalUsersV7 = Migration.migrateInternalUsers(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(new File(backupDir,"sg_internal_users.yml")), CType.INTERNALUSERS, 1, 0, 0));
-            Tuple<SgDynamicConfiguration<RoleV7>, SgDynamicConfiguration<TenantV7>> rolesTenantsV7 = Migration.migrateRoles(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(new File(backupDir,"sg_roles.yml")), CType.ROLES, 1, 0, 0),
-                    SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(new File(backupDir,"sg_roles_mapping.yml")), CType.ROLESMAPPING, 1, 0, 0)
-                    );
-            
+            SgDynamicConfiguration<RoleMappingsV6> rolesmappingV6 = SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(new File(backupDir,"sg_roles_mapping.yml")), CType.ROLESMAPPING, 1, 0, 0);
+            Tuple<SgDynamicConfiguration<RoleV7>, SgDynamicConfiguration<TenantV7>> rolesTenantsV7 = Migration.migrateRoles(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(new File(backupDir,"sg_roles.yml")), CType.ROLES, 1, 0, 0), rolesmappingV6);
+            SgDynamicConfiguration<RoleMappingsV7> rolesmappingV7 = Migration.migrateRoleMappings(rolesmappingV6);
             
             DefaultObjectMapper.YAML_MAPPER.writeValue(new File(v7Dir, "/sg_action_groups.yml"), actionGroupsV7);
             DefaultObjectMapper.YAML_MAPPER.writeValue(new File(v7Dir, "/sg_config.yml"), configV7);
             DefaultObjectMapper.YAML_MAPPER.writeValue(new File(v7Dir, "/sg_internal_users.yml"), internalUsersV7);
             DefaultObjectMapper.YAML_MAPPER.writeValue(new File(v7Dir, "/sg_roles.yml"), rolesTenantsV7.v1());
             DefaultObjectMapper.YAML_MAPPER.writeValue(new File(v7Dir, "/sg_tenants.yml"), rolesTenantsV7.v2());
+            DefaultObjectMapper.YAML_MAPPER.writeValue(new File(v7Dir, "/sg_roles_mapping.yml"), rolesmappingV7);
         } catch (Exception e) {
             System.out.println("ERR: Unable to migrate config files due to "+e);
             e.printStackTrace();
@@ -1231,7 +1270,7 @@ public class SearchGuardAdmin {
         
         System.out.println("-> Upload new configuration into Elasticsearch cluster");
         
-        int uploadResult = upload(tc, index, v7Dir.getAbsolutePath()+"/", false, nodesInfo);
+        int uploadResult = upload(tc, index, v7Dir.getAbsolutePath()+"/", false, nodesInfo, resolveEnvVars);
         
         if(uploadResult == 0) {
             System.out.println("  done");
@@ -1242,5 +1281,50 @@ public class SearchGuardAdmin {
         return uploadResult;
     }
     
+    private static String readTypeFromFile(File file) throws IOException {
+        if(!file.exists() || !file.isFile()) {
+            System.out.println("ERR: No such file "+file.getAbsolutePath());
+            return null;
+        }
+        final JsonNode jsonNode = DefaultObjectMapper.YAML_MAPPER.readTree(file);
+        return new SgJsonNode(jsonNode).get("_sg_meta").get("type").asString();
+    }
+
+    private static int validateConfig(String cd, String file, String type, int version) {
+        if (file != null) {
+            try {
+                ConfigHelper.fromYamlFile(file, CType.fromString(type==null?readTypeFromFile(new File(file)):type), version==7?2:1, 0, 0);
+                return 0;
+            } catch (Exception e) {
+                System.out.println("ERR: Seems "+file+" is not in SG "+version+" format: "+e);
+                return -1;
+            }
+        } else if(cd != null) {
+            boolean success = validateConfigFile(cd+"sg_action_groups.yml", CType.ACTIONGROUPS, version);
+            success = validateConfigFile(cd+"sg_internal_users.yml", CType.INTERNALUSERS, version) && success;
+            success = validateConfigFile(cd+"sg_roles.yml", CType.ROLES, version) && success;
+            success = validateConfigFile(cd+"sg_roles_mapping.yml", CType.ROLESMAPPING, version) && success;
+            success = validateConfigFile(cd+"sg_config.yml", CType.CONFIG, version) && success;
+            
+            if(new File(cd+"sg_tenants.yml").exists() && version != 6) {
+                success = validateConfigFile(cd+"sg_tenants.yml", CType.TENANTS, version) && success;
+            }
+            
+            return success?0:-1;
+
+        }
+        
+        return -1;
+    }
     
+    private static boolean validateConfigFile(String file, CType cType, int version) {
+        try {
+            ConfigHelper.fromYamlFile(file, cType, version==7?2:1, 0, 0);
+            System.out.println(file+" OK" );
+            return true;
+        } catch (Exception e) {
+            System.out.println("ERR: Seems "+file+" is not in SG "+version+" format: "+e);
+            return false;
+        }
+    }
 }

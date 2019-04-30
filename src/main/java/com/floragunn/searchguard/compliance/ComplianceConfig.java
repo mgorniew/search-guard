@@ -302,11 +302,6 @@ public class ComplianceConfig implements LicenseChangeListener {
         
         final Resolved resolved = irr.resolveRequest(request);
         final Set<String> allIndices = resolved.getAllIndices();
-        
-        //assert allIndices.size() == 1:"only one index here, not "+allIndices;
-        //assert allIndices.contains("_all"):"no _all in "+allIndices;
-        //assert allIndices.contains("*"):"no * in "+allIndices;
-        //assert allIndices.contains(""):"no EMPTY in "+allIndices;
 
         return WildcardMatcher.matchAny(immutableIndicesPatterns, allIndices);
     }

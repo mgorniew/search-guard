@@ -5,23 +5,27 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.floragunn.searchguard.sgconf.Hashed;
 import com.floragunn.searchguard.sgconf.Hideable;
+import com.floragunn.searchguard.sgconf.StaticDefinable;
 import com.floragunn.searchguard.sgconf.impl.v6.InternalUserV6;
 
-public class InternalUserV7 implements Hideable, Hashed {
+public class InternalUserV7 implements Hideable, Hashed, StaticDefinable {
         
         private String hash;
-        private boolean readonly;
+        private boolean reserved;
         private boolean hidden;
+        @JsonProperty(value = "static")
+        private boolean _static;
         private List<String> backend_roles = Collections.emptyList();
         private Map<String, String> attributes = Collections.emptyMap();
         private String description;
 
-        private InternalUserV7(String hash, boolean readonly, boolean hidden, List<String> backend_roles, Map<String, String> attributes) {
+        private InternalUserV7(String hash, boolean reserved, boolean hidden, List<String> backend_roles, Map<String, String> attributes) {
             super();
             this.hash = hash;
-            this.readonly = readonly;
+            this.reserved = reserved;
             this.hidden = hidden;
             this.backend_roles = backend_roles;
             this.attributes = attributes;
@@ -34,7 +38,7 @@ public class InternalUserV7 implements Hideable, Hashed {
         
         public InternalUserV7(InternalUserV6 u6) {
             hash = u6.getHash();
-            readonly = u6.isReadonly();
+            reserved = u6.isReserved();
             hidden = u6.isHidden();
             backend_roles = u6.getRoles();
             attributes = u6.getAttributes();
@@ -47,12 +51,9 @@ public class InternalUserV7 implements Hideable, Hashed {
         public void setHash(String hash) {
             this.hash = hash;
         }
-        public boolean isReadonly() {
-            return readonly;
-        }
-        public void setReadonly(boolean readonly) {
-            this.readonly = readonly;
-        }
+
+        
+        
         public boolean isHidden() {
             return hidden;
         }
@@ -78,8 +79,8 @@ public class InternalUserV7 implements Hideable, Hashed {
 
         @Override
         public String toString() {
-            return "SgInternalUser [hash=" + hash + ", readonly=" + readonly + ", hidden=" + hidden + ", backend_roles=" + backend_roles + ", attributes="
-                    + attributes + "]";
+            return "InternalUserV7 [hash=" + hash + ", reserved=" + reserved + ", hidden=" + hidden + ", _static=" + _static + ", backend_roles="
+                    + backend_roles + ", attributes=" + attributes + ", description=" + description + "]";
         }
 
         @Override
@@ -95,7 +96,23 @@ public class InternalUserV7 implements Hideable, Hashed {
         public void setDescription(String description) {
             this.description = description;
         }
-        
-        
 
+        public boolean isReserved() {
+            return reserved;
+        }
+
+        public void setReserved(boolean reserved) {
+            this.reserved = reserved;
+        }
+        
+        @JsonProperty(value = "static")
+        public boolean isStatic() {
+            return _static;
+        }
+        @JsonProperty(value = "static")
+        public void setStatic(boolean _static) {
+            this._static = _static;
+        }
+        
+        
     }

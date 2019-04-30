@@ -1,34 +1,22 @@
 package com.floragunn.searchguard.sgconf.impl.v7;
 
-import java.util.Collections;
-import java.util.List;
-
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.floragunn.searchguard.sgconf.Hideable;
+import com.floragunn.searchguard.sgconf.StaticDefinable;
 
-public class TenantV7 implements Hideable {
+public class TenantV7 implements Hideable, StaticDefinable {
 
-    private boolean readonly;
+    private boolean reserved;
     private boolean hidden;
-    private List<String> applications = Collections.emptyList();
+    @JsonProperty(value = "static")
+    private boolean _static;
     private String description;
     
-    public boolean isReadonly() {
-        return readonly;
-    }
-    public void setReadonly(boolean readonly) {
-        this.readonly = readonly;
-    }
     public boolean isHidden() {
         return hidden;
     }
     public void setHidden(boolean hidden) {
         this.hidden = hidden;
-    }
-    public List<String> getApplications() {
-        return applications;
-    }
-    public void setApplications(List<String> applications) {
-        this.applications = applications;
     }
     public String getDescription() {
         return description;
@@ -36,4 +24,26 @@ public class TenantV7 implements Hideable {
     public void setDescription(String description) {
         this.description = description;
     }
+    public boolean isReserved() {
+        return reserved;
+    }
+    public void setReserved(boolean reserved) {
+        this.reserved = reserved;
+    }
+    
+    
+    @JsonProperty(value = "static")
+    public boolean isStatic() {
+        return _static;
+    }
+    @JsonProperty(value = "static")
+    public void setStatic(boolean _static) {
+        this._static = _static;
+    }
+    @Override
+    public String toString() {
+        return "TenantV7 [reserved=" + reserved + ", hidden=" + hidden + ", _static=" + _static + ", description=" + description + "]";
+    }
+    
+    
 }

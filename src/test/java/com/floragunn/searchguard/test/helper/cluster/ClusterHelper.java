@@ -43,7 +43,6 @@ import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.cluster.node.DiscoveryNode.Role;
-import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
@@ -51,7 +50,6 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.PluginAwareNode;
 
-import com.floragunn.searchguard.SearchGuardPlugin;
 import com.floragunn.searchguard.test.NodeSettingsSupplier;
 import com.floragunn.searchguard.test.helper.cluster.ClusterConfiguration.NodeSettings;
 import com.floragunn.searchguard.test.helper.network.SocketUtils;
@@ -60,12 +58,7 @@ public final class ClusterHelper {
 
     static {
         System.setProperty("es.enforce.bootstrap.checks", "true");
-        
-        if(SearchGuardPlugin.FORCE_CONFIG_V6) {
-            System.setProperty("sg.default_init.dir", new File("./sgconfig").getAbsolutePath());
-        } else {
-            System.setProperty("sg.default_init.dir", new File("./sgconfig/v7").getAbsolutePath());
-        }
+        System.setProperty("sg.default_init.dir", new File("./sgconfig").getAbsolutePath());
     }
     
 	protected final Logger log = LogManager.getLogger(ClusterHelper.class);
@@ -141,7 +134,7 @@ public final class ClusterHelper {
             NodeSettings setting = internalMasterNodeSettings.get(i);
             int nodeNum = nodeNumCounter--;
             PluginAwareNode node = new PluginAwareNode(setting.masterNode,
-                    getMinimumNonSgNodeSettingsBuilder(nodeNum, setting.masterNode, setting.dataNode, setting.tribeNode, internalNodeSettings.size(), tcpMasterPortsOnly, tcpPortsAllIt.next(), httpPortsIt.next())
+                    getMinimumNonSgNodeSettingsBuilder(nodeNum, setting.masterNode, setting.dataNode, internalNodeSettings.size(), tcpMasterPortsOnly, tcpPortsAllIt.next(), httpPortsIt.next())
                             .put(nodeSettingsSupplier == null ? Settings.Builder.EMPTY_SETTINGS : nodeSettingsSupplier.get(nodeNum)).build(), setting.getPlugins());
             System.out.println(node.settings());
             
@@ -167,7 +160,7 @@ public final class ClusterHelper {
 			NodeSettings setting = internalNonMasterNodeSettings.get(i);
             int nodeNum = nodeNumCounter--;
 			PluginAwareNode node = new PluginAwareNode(setting.masterNode,
-					getMinimumNonSgNodeSettingsBuilder(nodeNum, setting.masterNode, setting.dataNode, setting.tribeNode, internalNodeSettings.size(), tcpMasterPortsOnly, tcpPortsAllIt.next(), httpPortsIt.next())
+					getMinimumNonSgNodeSettingsBuilder(nodeNum, setting.masterNode, setting.dataNode, internalNodeSettings.size(), tcpMasterPortsOnly, tcpPortsAllIt.next(), httpPortsIt.next())
 							.put(nodeSettingsSupplier == null ? Settings.Builder.EMPTY_SETTINGS : nodeSettingsSupplier.get(nodeNum)).build(), setting.getPlugins());
 			System.out.println(node.settings());
 			
@@ -200,6 +193,7 @@ public final class ClusterHelper {
 		ClusterInfo cInfo = waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(timeout), nodes == null?esNodes.size():nodes.intValue());
 		cInfo.numNodes = internalNodeSettings.size();
 		cInfo.clustername = clustername;
+		cInfo.tcpMasterPortsOnly = tcpMasterPortsOnly.stream().map(s->"127.0.0.1:"+s).collect(Collectors.toList());
 		
 		final String defaultTemplate = "{\n" + 
 		        "          \"index_patterns\": [\"*\"],\n" + 
@@ -331,7 +325,7 @@ public final class ClusterHelper {
 
 	// @formatter:off
 	private Settings.Builder getMinimumNonSgNodeSettingsBuilder(final int nodenum, final boolean masterNode,
-			final boolean dataNode, final boolean tribeNode, int nodeCount, SortedSet<Integer> masterTcpPorts, /*SortedSet<Integer> nonMasterTcpPorts,*/ int tcpPort, int httpPort) {
+			final boolean dataNode, int nodeCount, SortedSet<Integer> masterTcpPorts, /*SortedSet<Integer> nonMasterTcpPorts,*/ int tcpPort, int httpPort) {
 	    
 		return Settings.builder()
 		        .put("node.name", "node_"+clustername+ "_num" + nodenum)

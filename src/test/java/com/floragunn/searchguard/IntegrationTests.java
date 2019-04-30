@@ -309,6 +309,7 @@ public class IntegrationTests extends SingleClusterTest {
             tc.index(new IndexRequest("shakespeare").type("type").id("1").setRefreshPolicy(RefreshPolicy.IMMEDIATE).source("{\"content\":1}", XContentType.JSON)).actionGet();
                       
             ConfigUpdateResponse cur = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{"config","roles","rolesmapping","internalusers","actiongroups"})).actionGet();
+            Assert.assertFalse(cur.hasFailures());
             Assert.assertEquals(clusterInfo.numNodes, cur.getNodes().size());
         }
     
@@ -387,9 +388,10 @@ public class IntegrationTests extends SingleClusterTest {
         Assert.assertFalse(res.getBody().contains("\"content\":2"));
         
         try (TransportClient tc = getInternalTransportClient()) {                                       
-            tc.index(new IndexRequest("searchguard").type("sg").id("config").setRefreshPolicy(RefreshPolicy.IMMEDIATE).source("config", FileHelper.readYamlContent("sg_config_multirolespan.yml"))).actionGet();
+            tc.index(new IndexRequest("searchguard").type(getType()).id("config").setRefreshPolicy(RefreshPolicy.IMMEDIATE).source("config", FileHelper.readYamlContent("sg_config_multirolespan.yml"))).actionGet();
    
             ConfigUpdateResponse cur = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{"config"})).actionGet();
+            Assert.assertFalse(cur.hasFailures());
             Assert.assertEquals(clusterInfo.numNodes, cur.getNodes().size());
         }
         
@@ -818,6 +820,43 @@ public class IntegrationTests extends SingleClusterTest {
         System.out.println("#### */_mapping/field/*");
         Assert.assertEquals(HttpStatus.SC_OK, (resc=rh.executeGetRequest("*/_mapping/field/*", encodeBasicHeader("nagilum", "nagilum"))).getStatusCode());
         System.out.println(resc.getBody());
+    }
+    
+    @Test
+    public void testSgIndexSecurity() throws Exception {
+        setup();
+        final RestHelper rh = nonSslRestHelper();
+
+        HttpResponse res = rh.executePutRequest("searchguard/_mapping?pretty", "{\"properties\": {\"name\":{\"type\":\"text\"}}}",
+                encodeBasicHeader("nagilum", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, res.getStatusCode());
+        res = rh.executePutRequest("*earc*gua*/_mapping?pretty", "{\"properties\": {\"name\":{\"type\":\"text\"}}}",
+                encodeBasicHeader("nagilum", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, res.getStatusCode());
+        res = rh.executePutRequest("*/_mapping?pretty", "{\"properties\": {\"name\":{\"type\":\"text\"}}}",
+                encodeBasicHeader("nagilum", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, res.getStatusCode());
+        res = rh.executePutRequest("_all/_mapping?pretty", "{\"properties\": {\"name\":{\"type\":\"text\"}}}",
+                encodeBasicHeader("nagilum", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, res.getStatusCode());
+        res = rh.executePostRequest("searchguard/_close", "",
+                encodeBasicHeader("nagilum", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, res.getStatusCode());
+        res = rh.executeDeleteRequest("searchguard",
+                encodeBasicHeader("nagilum", "nagilum"));
+        res = rh.executeDeleteRequest("_all",
+                encodeBasicHeader("nagilum", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, res.getStatusCode());
+        res = rh.executePutRequest("searchguard/_settings", "{\"index\" : {\"number_of_replicas\" : 2}}",
+                encodeBasicHeader("nagilum", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, res.getStatusCode());
+        res = rh.executePutRequest("searchgu*/_settings", "{\"index\" : {\"number_of_replicas\" : 2}}",
+                encodeBasicHeader("nagilum", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, res.getStatusCode());
+//        res = rh.executePostRequest("searchguard/_freeze", "",
+//                encodeBasicHeader("nagilum", "nagilum"));
+//        Assert.assertTrue(res.getStatusCode() >= 400);
+
     }
 
 }

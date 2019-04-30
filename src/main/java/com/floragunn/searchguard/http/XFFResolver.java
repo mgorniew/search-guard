@@ -82,14 +82,14 @@ public class XFFResolver implements DCFListener {
     }
 
     @Override
-    public void onChanged(ConfigModel cf, DynamicConfigModel dcf, InternalUsersModel cfff) {
-        enabled = dcf.isXffEnabled();//config.dynamic.http.xff.enabled;
+    public void onChanged(ConfigModel cm, DynamicConfigModel dcm, InternalUsersModel ium) {
+        enabled = dcm.isXffEnabled();
         if(enabled) {
             detector = new RemoteIpDetector();
-            detector.setInternalProxies(dcf.getInternalProxies());//config.dynamic.http.xff.internalProxies);
-            detector.setProxiesHeader(dcf.getProxiesHeader());
-            detector.setRemoteIpHeader(dcf.getRemoteIpHeader());
-            detector.setTrustedProxies(dcf.getTrustedProxies());
+            detector.setInternalProxies(dcm.getInternalProxies());
+            detector.setProxiesHeader(dcm.getProxiesHeader());
+            detector.setRemoteIpHeader(dcm.getRemoteIpHeader());
+            detector.setTrustedProxies(dcm.getTrustedProxies());
         } else {
             detector = null;
         }

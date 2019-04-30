@@ -21,6 +21,7 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -51,12 +52,23 @@ public class InternalAuthenticationBackend implements AuthenticationBackend, Aut
         final boolean exists = internalUsersModel.exists(user.getName());
         
         if(exists) {
-            user.addRoles(internalUsersModel.getBackenRoles(user.getName())); //impersonation???
+            user.addRoles(internalUsersModel.getBackenRoles(user.getName()));
+            //FIX https://github.com/opendistro-for-elasticsearch/security/pull/23
+            //Credits to @turettn
+            final Map<String, String> customAttributes = internalUsersModel.getAttributes(user.getName());
+            Map<String, String> attributeMap = new HashMap<>();
+
+            if(customAttributes != null) {
+                for(Entry<String, String> attributeEntry: customAttributes.entrySet()) {
+                    attributeMap.put("attr.internal."+attributeEntry.getKey(), attributeEntry.getValue());
+                }
+            }
+
+            user.addAttributes(attributeMap);
             return true;
         }
-        
-        return false;
 
+        return false;
     }
     
     @Override

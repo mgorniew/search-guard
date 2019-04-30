@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -55,7 +57,6 @@ import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.engine.VersionConflictEngineException;
 import org.elasticsearch.threadpool.ThreadPool;
 
-import com.floragunn.searchguard.SearchGuardPlugin;
 import com.floragunn.searchguard.auditlog.AuditLog;
 import com.floragunn.searchguard.compliance.ComplianceConfig;
 import com.floragunn.searchguard.sgconf.DynamicConfigFactory;
@@ -85,7 +86,7 @@ public class ConfigurationRepository {
     private final ThreadPool threadPool;
     private volatile SearchGuardLicense effectiveLicense;
     private DynamicConfigFactory dynamicConfigFactory;
-    private final int configVersion = SearchGuardPlugin.FORCE_CONFIG_V6?1:2;
+    private final int configVersion = 2;
     private final Thread bgThread;
     private final AtomicBoolean installDefaultConfig = new AtomicBoolean();
 
@@ -104,26 +105,20 @@ public class ConfigurationRepository {
         
         configCache = CacheBuilder
                       .newBuilder()
-                      .build(/*new CacheLoader<CType, SgDynamicConfiguration<?>>() {
-
-                        @Override
-                        public SgDynamicConfiguration<?> load(CType key) throws Exception {
-                            return getConfigurationsFromIndex(Collections.singleton(key), false).get(key);
-                        }
-                          
-                      }*/);
+                      .build();
         
         bgThread = new Thread(new Runnable() {
 
             @Override
             public void run() {
                 try {
+                    LOGGER.info("Background init thread started. Install default config?: "+installDefaultConfig.get());
+
 
                     if(installDefaultConfig.get()) {
                         
                         try {
                             String lookupDir = System.getProperty("sg.default_init.dir");
-                            //for conf v7 its maybe /search-guard-7/sgconfig/v7/
                             final String cd = lookupDir != null? (lookupDir+"/") : new Environment(settings, configPath).pluginsFile().toAbsolutePath().toString()+"/search-guard-7/sgconfig/";
                             File confFile = new File(cd+"sg_config.yml");
                             if(confFile.exists()) {
@@ -165,7 +160,9 @@ public class ConfigurationRepository {
                     LOGGER.debug("Node started, try to initialize it. Wait for at least yellow cluster state....");
                     ClusterHealthResponse response = null;
                     try {
-                        response = client.admin().cluster().health(new ClusterHealthRequest(searchguardIndex).waitForYellowStatus()).actionGet();
+                        response = client.admin().cluster().health(new ClusterHealthRequest(searchguardIndex)
+                                .waitForActiveShards(1)
+                                .waitForYellowStatus()).actionGet();
                     } catch (Exception e1) {
                         LOGGER.debug("Catched a {} but we just try again ...", e1.toString());
                     }
@@ -186,7 +183,7 @@ public class ConfigurationRepository {
                         continue;
                     }
 
-                    while(true) {
+                    while(!dynamicConfigFactory.isInitialized()) {
                         try {
                             LOGGER.debug("Try to load config ...");
                             reloadConfiguration(Arrays.asList(CType.values()));
@@ -227,8 +224,12 @@ public class ConfigurationRepository {
                     LOGGER.info("{} index does not exist yet, so we create a default config", searchguardIndex);
                     installDefaultConfig.set(true);
                     bgThread.start();
-                } else {
+                } else if (settings.getAsBoolean(ConfigConstants.SEARCHGUARD_BACKGROUND_INIT_IF_SGINDEX_NOT_EXIST, true)){
                     LOGGER.info("{} index does not exist yet, so no need to load config on node startup. Use sgadmin to initialize cluster",
+                            searchguardIndex);
+                    bgThread.start();
+                } else {
+                    LOGGER.info("{} index does not exist yet, use sgadmin to initialize the cluster. We will not perform background initialization",
                             searchguardIndex);
                 }
             }
@@ -255,18 +256,34 @@ public class ConfigurationRepository {
      * @return can also return empty in case it was never loaded 
      */
     public SgDynamicConfiguration<?> getConfiguration(CType configurationType) {
-        //try {
         SgDynamicConfiguration<?> conf=  configCache.getIfPresent(configurationType);
         if(conf != null) {
             return conf.deepClone();
         }
         return SgDynamicConfiguration.empty();
-        //} catch (ExecutionException e) {
-        //    throw ExceptionsHelper.convertToElastic(e);
-        //}
+    }
+    
+    private final Lock LOCK = new ReentrantLock();
+
+    public void reloadConfiguration(Collection<CType> configTypes) throws ConfigUpdateAlreadyInProgressException {
+        try {
+            if (LOCK.tryLock(60, TimeUnit.SECONDS)) {
+                try {
+                    reloadConfiguration0(configTypes);
+                } finally {
+                    LOCK.unlock();
+                }
+            } else {
+                throw new ConfigUpdateAlreadyInProgressException("A config update is already imn progress");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ConfigUpdateAlreadyInProgressException("Interrupted config update");
+        }
     }
 
-    public void reloadConfiguration(Collection<CType> configTypes) {
+
+   private void reloadConfiguration0(Collection<CType> configTypes) {
         final Map<CType, SgDynamicConfiguration<?>> loaded = getConfigurationsFromIndex(configTypes, false);
         configCache.putAll(loaded);
         notifyAboutChanges(loaded);
