@@ -31,7 +31,6 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Currency;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -50,7 +49,6 @@ import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
-import org.elasticsearch.action.admin.cluster.node.info.NodeInfo;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.action.admin.cluster.node.stats.NodesStatsRequest;
@@ -92,7 +90,6 @@ import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.PluginInfo;
 import org.elasticsearch.transport.Netty4Plugin;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.floragunn.searchguard.DefaultObjectMapper;
 import com.floragunn.searchguard.SearchGuardPlugin;
@@ -128,7 +125,7 @@ import com.google.common.io.Files;
 
 public class SearchGuardAdmin {
 
-    private static final boolean CREATE_AS_LEGACY = Boolean.parseBoolean(System.getenv("TESTARG_migration_sgadmin_create_as_legacy"));
+    private static final boolean CREATE_AS_LEGACY = Boolean.parseBoolean(System.getenv("SG_ADMIN_CREATE_AS_LEGACY"));
     private static final boolean ALLOW_MIXED = Boolean.parseBoolean(System.getenv("SG_ADMIN_ALLOW_MIXED_CLUSTER"));
     private static final String SG_TS_PASS = "SG_TS_PASS";
     private static final String SG_KS_PASS = "SG_KS_PASS";
@@ -1124,11 +1121,6 @@ public class SearchGuardAdmin {
            
         } else {
             System.out.println("Elasticsearch Version: "+minVersion.toString());
-            
-            if(minVersion.before(Version.V_7_0_0)) {
-                System.out.println("ERR: Can use this version of sgadmin not for ES 6 clusters");
-                return -1;
-            }
         }
         
         if(nir.getNodes().size() > 0) {
