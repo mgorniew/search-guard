@@ -182,7 +182,7 @@ public class ConfigV7 {
     }
     
     public static class Xff {
-        public boolean enabled = true;
+        public boolean enabled = false;
         public String internalProxies = Pattern.compile(
                 "10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|" +
                         "192\\.168\\.\\d{1,3}\\.\\d{1,3}|" +
