@@ -24,6 +24,9 @@ jobs:
       - run:
           command: |
             set -x
+            
+            mvn clean install javadoc:javadoc javadoc:test-javadoc
+            
             cd src/test/java         
             TESTFILES="$(circleci tests glob **/*.java | circleci tests split --split-by=timings | tr -s '\n' ',')"
             echo "$TESTFILES"
