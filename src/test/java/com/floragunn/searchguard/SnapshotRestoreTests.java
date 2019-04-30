@@ -61,7 +61,6 @@ public class SnapshotRestoreTests extends SingleClusterTest {
     
         final Settings settings = Settings.builder()
                 .putList("path.repo", repositoryPath.getRoot().getAbsolutePath())
-                .put("searchguard.enable_snapshot_restore_privilege", true)
                 .put("searchguard.check_snapshot_restore_write_privileges", false)
                 .put("searchguard.unsupported.restore.sgindex.enabled", true)
                 .build();
@@ -124,7 +123,6 @@ public class SnapshotRestoreTests extends SingleClusterTest {
     
         final Settings settings = Settings.builder()
                 .putList("path.repo", repositoryPath.getRoot().getAbsolutePath())
-                .put("searchguard.enable_snapshot_restore_privilege", true)
                 .put("searchguard.check_snapshot_restore_write_privileges", false)
                 .build();
     
@@ -178,8 +176,6 @@ public class SnapshotRestoreTests extends SingleClusterTest {
     
         final Settings settings = Settings.builder()
                 .putList("path.repo", repositoryPath.getRoot().getAbsolutePath())
-                .put("searchguard.enable_snapshot_restore_privilege", true)
-                .put("searchguard.check_snapshot_restore_write_privileges", true)
                 .build();
     
         setup(settings, currentClusterConfig);
@@ -246,8 +242,6 @@ public class SnapshotRestoreTests extends SingleClusterTest {
     
         final Settings settings = Settings.builder()
                 .putList("path.repo", repositoryPath.getRoot().getAbsolutePath())
-                .put("searchguard.enable_snapshot_restore_privilege", true)
-                .put("searchguard.check_snapshot_restore_write_privileges", true)
                 .build();
     
         setup(Settings.EMPTY, new DynamicSgConfig().setSgActionGroups("sg_action_groups_packaged.yml"), settings, true, currentClusterConfig);
@@ -295,4 +289,56 @@ public class SnapshotRestoreTests extends SingleClusterTest {
         Assert.assertEquals(HttpStatus.SC_FORBIDDEN, rh.executePostRequest("_snapshot/bckrepo/"+putSnapshot.hashCode()+"/_restore?wait_for_completion=true&pretty","{ \"include_global_state\": true, \"rename_pattern\": \"(.+)\", \"rename_replacement\": \"restored_index_$1\" }", encodeBasicHeader("snapresuser", "nagilum")).getStatusCode());
     }
 
+    @Test
+    public void testNoSnapshotRestore() throws Exception {
+    
+        final Settings settings = Settings.builder()
+                .putList("path.repo", repositoryPath.getRoot().getAbsolutePath())
+                .put("searchguard.enable_snapshot_restore_privilege", false)
+                .build();
+    
+        setup(Settings.EMPTY, new DynamicSgConfig().setSgActionGroups("sg_action_groups_packaged.yml"), settings, true, currentClusterConfig);
+    
+        try (TransportClient tc = getInternalTransportClient()) {    
+            tc.index(new IndexRequest("testsnap1").type("kolinahr").setRefreshPolicy(RefreshPolicy.IMMEDIATE).source("{\"content\":1}", XContentType.JSON)).actionGet();
+            tc.index(new IndexRequest("testsnap2").type("kolinahr").setRefreshPolicy(RefreshPolicy.IMMEDIATE).source("{\"content\":1}", XContentType.JSON)).actionGet();
+            tc.index(new IndexRequest("testsnap3").type("kolinahr").setRefreshPolicy(RefreshPolicy.IMMEDIATE).source("{\"content\":1}", XContentType.JSON)).actionGet();
+            tc.index(new IndexRequest("testsnap4").type("kolinahr").setRefreshPolicy(RefreshPolicy.IMMEDIATE).source("{\"content\":1}", XContentType.JSON)).actionGet();
+            tc.index(new IndexRequest("testsnap5").type("kolinahr").setRefreshPolicy(RefreshPolicy.IMMEDIATE).source("{\"content\":1}", XContentType.JSON)).actionGet();
+            tc.index(new IndexRequest("testsnap6").type("kolinahr").setRefreshPolicy(RefreshPolicy.IMMEDIATE).source("{\"content\":1}", XContentType.JSON)).actionGet();
+            
+            tc.admin().cluster().putRepository(new PutRepositoryRequest("bckrepo").type("fs").settings(Settings.builder().put("location", repositoryPath.getRoot().getAbsolutePath() + "/bckrepo"))).actionGet();
+        }
+    
+        RestHelper rh = nonSslRestHelper();        
+        String putSnapshot =
+        "{"+
+          "\"indices\": \"testsnap1\","+
+          "\"ignore_unavailable\": false,"+
+          "\"include_global_state\": false"+
+        "}";
+        
+        Assert.assertEquals(HttpStatus.SC_OK, rh.executePutRequest("_snapshot/bckrepo/"+putSnapshot.hashCode()+"?wait_for_completion=true&pretty", putSnapshot, encodeBasicHeader("snapresuser", "nagilum")).getStatusCode()); 
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, rh.executePostRequest("_snapshot/bckrepo/"+putSnapshot.hashCode()+"/_restore?wait_for_completion=true&pretty","{ \"rename_pattern\": \"(.+)\", \"rename_replacement\": \"restored_index_$1\" }", encodeBasicHeader("snapresuser", "nagilum")).getStatusCode());
+        
+        putSnapshot =
+        "{"+
+          "\"indices\": \"searchguard\","+
+          "\"ignore_unavailable\": false,"+
+          "\"include_global_state\": false"+
+        "}";
+                
+        Assert.assertEquals(HttpStatus.SC_OK, rh.executePutRequest("_snapshot/bckrepo/"+putSnapshot.hashCode()+"?wait_for_completion=true&pretty", putSnapshot, encodeBasicHeader("snapresuser", "nagilum")).getStatusCode()); 
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, rh.executePostRequest("_snapshot/bckrepo/"+putSnapshot.hashCode()+"/_restore?wait_for_completion=true&pretty","{ \"rename_pattern\": \"(.+)\", \"rename_replacement\": \"restored_index_$1\" }", encodeBasicHeader("snapresuser", "nagilum")).getStatusCode());
+              
+        putSnapshot =
+        "{"+
+          "\"indices\": \"testsnap2\","+
+          "\"ignore_unavailable\": false,"+
+          "\"include_global_state\": true"+
+        "}";
+                        
+        Assert.assertEquals(HttpStatus.SC_OK, rh.executePutRequest("_snapshot/bckrepo/"+putSnapshot.hashCode()+"?wait_for_completion=true&pretty", putSnapshot, encodeBasicHeader("snapresuser", "nagilum")).getStatusCode()); 
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, rh.executePostRequest("_snapshot/bckrepo/"+putSnapshot.hashCode()+"/_restore?wait_for_completion=true&pretty","{ \"include_global_state\": true, \"rename_pattern\": \"(.+)\", \"rename_replacement\": \"restored_index_$1\" }", encodeBasicHeader("snapresuser", "nagilum")).getStatusCode());
+    }
 }
