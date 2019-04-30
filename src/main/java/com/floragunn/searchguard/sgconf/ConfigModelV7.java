@@ -1060,7 +1060,12 @@ public class ConfigModelV7 extends ConfigModel {
                 }
             });
             
-            if(!result.containsKey("SGS_GLOBAL_TENANT") && (roles.contains("sg_kibana_user") || roles.contains("SGS_KIBANA_USER"))) {
+            if(!result.containsKey("SGS_GLOBAL_TENANT") && (
+                    roles.contains("sg_kibana_user") 
+                    || roles.contains("SGS_KIBANA_USER")
+                    || roles.contains("sg_all_access")
+                    || roles.contains("SGS_ALL_ACCESS")
+                    )) {
                 result.put("SGS_GLOBAL_TENANT", true);
             }
 
