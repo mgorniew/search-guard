@@ -264,7 +264,7 @@ public final class SearchGuardLicense implements Writeable {
 
         if(!valid) {
             prodUsage = "No, because the license is not valid.";
-            action = "Purchase a license. Visit docs.search-guard.com/v6/search-guard-enterprise-edition or write to <sales@floragunn.com>";
+            action = "Purchase a license. Visit docs.search-guard.com/latest/search-guard-enterprise-edition or write to <sales@floragunn.com>";
         } else {
         	switch (type) {
         		case ACADEMIC:

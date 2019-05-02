@@ -75,7 +75,7 @@ public class InternalAuthenticationBackend implements AuthenticationBackend, Aut
     public User authenticate(final AuthCredentials credentials) {
 
         if (internalUsersModel == null) {
-            throw new ElasticsearchSecurityException("Internal authentication backend not configured. May be Search Guard is not initialized. See http://docs.search-guard.com/v6/sgadmin");
+            throw new ElasticsearchSecurityException("Internal authentication backend not configured. May be Search Guard is not initialized. See https://docs.search-guard.com/latest/sgadmin");
         }
                 
         if(!internalUsersModel.exists(credentials.getUsername())) {
@@ -124,7 +124,7 @@ public class InternalAuthenticationBackend implements AuthenticationBackend, Aut
     public void fillRoles(User user, AuthCredentials credentials) throws ElasticsearchSecurityException {
         
         if (internalUsersModel == null) {
-            throw new ElasticsearchSecurityException("Internal authentication backend not configured. May be Search Guard is not initialized. See http://docs.search-guard.com/v6/sgadmin");
+            throw new ElasticsearchSecurityException("Internal authentication backend not configured. May be Search Guard is not initialized. See https://docs.search-guard.com/latest/sgadmin");
 
         }
 
