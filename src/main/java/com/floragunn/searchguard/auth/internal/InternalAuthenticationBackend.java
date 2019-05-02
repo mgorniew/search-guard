@@ -26,9 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.bouncycastle.crypto.generators.OpenBSDBCrypt;
 import org.elasticsearch.ElasticsearchSecurityException;
 
+import com.floragunn.searchguard.FipsManager;
 import com.floragunn.searchguard.auth.AuthenticationBackend;
 import com.floragunn.searchguard.auth.AuthorizationBackend;
 import com.floragunn.searchguard.sgconf.ConfigModel;
@@ -96,7 +96,7 @@ public class InternalAuthenticationBackend implements AuthenticationBackend, Aut
         Arrays.fill(password, (byte)0);
        
         try {
-            if (OpenBSDBCrypt.checkPassword(internalUsersModel.getHash(credentials.getUsername()), array)) {
+            if (FipsManager.checkPassword(internalUsersModel.getHash(credentials.getUsername()), array)) {
                 final List<String> roles = internalUsersModel.getBackenRoles(credentials.getUsername());
                 final Map<String, String> customAttributes = internalUsersModel.getAttributes(credentials.getUsername());
                 if(customAttributes != null) {

@@ -20,7 +20,7 @@ package com.floragunn.searchguard.ssl;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.file.Paths;
-import java.security.KeyStore;
+
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.Arrays;

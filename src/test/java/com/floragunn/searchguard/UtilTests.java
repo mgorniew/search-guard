@@ -23,7 +23,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Map;
 
-import org.bouncycastle.crypto.generators.OpenBSDBCrypt;
 import org.elasticsearch.common.settings.Settings;
 import org.junit.Assert;
 import org.junit.Test;
@@ -96,7 +95,7 @@ public class UtilTests {
         Assert.assertEquals("abv${env.MYENV}xyz", SgUtils.replaceEnvVars("abv${env.MYENV}xyz",settings));
         Assert.assertEquals("abv${envbc.MYENV}xyz", SgUtils.replaceEnvVars("abv${envbc.MYENV}xyz",settings));
         Assert.assertEquals("abvtTtxyz", SgUtils.replaceEnvVars("abv${env.MYENV:-tTt}xyz",settings));
-        Assert.assertTrue(OpenBSDBCrypt.checkPassword(SgUtils.replaceEnvVars("${envbc.MYENV:-tTt}",settings), "tTt".toCharArray()));
+        Assert.assertTrue(FipsManager.checkPassword(SgUtils.replaceEnvVars("${envbc.MYENV:-tTt}",settings), "tTt".toCharArray()));
         Assert.assertEquals("abvtTtxyzxxx", SgUtils.replaceEnvVars("abv${env.MYENV:-tTt}xyz${env.MYENV:-xxx}",settings));
         Assert.assertTrue(SgUtils.replaceEnvVars("abv${env.MYENV:-tTt}xyz${envbc.MYENV:-xxx}",settings).startsWith("abvtTtxyz$2y$"));
         Assert.assertEquals("abv${env.MYENV:tTt}xyz", SgUtils.replaceEnvVars("abv${env.MYENV:tTt}xyz",settings));
@@ -118,7 +117,7 @@ public class UtilTests {
             Assert.assertEquals("abv"+val+"xyz", SgUtils.replaceEnvVars("abv${env."+k+":-k182765ggh}xyz",settings));
             Assert.assertEquals("abv"+val+"xyzabv"+val+"xyz", SgUtils.replaceEnvVars("abv${env."+k+"}xyzabv${env."+k+"}xyz",settings));
             Assert.assertEquals("abv"+val+"xyz", SgUtils.replaceEnvVars("abv${env."+k+":-k182765ggh}xyz",settings));
-            Assert.assertTrue(OpenBSDBCrypt.checkPassword(SgUtils.replaceEnvVars("${envbc."+k+"}",settings), val.toCharArray()));
+            Assert.assertTrue(FipsManager.checkPassword(SgUtils.replaceEnvVars("${envbc."+k+"}",settings), val.toCharArray()));
             checked = true;
         }
         

@@ -24,9 +24,7 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
 import java.security.AccessController;
-import java.security.MessageDigest;
 import java.security.PrivilegedAction;
-import java.security.Security;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -45,10 +43,8 @@ import java.util.stream.Stream;
 
 import org.apache.lucene.search.QueryCachingPolicy;
 import org.apache.lucene.search.Weight;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchSecurityException;
-import org.elasticsearch.SpecialPermission;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
@@ -162,6 +158,7 @@ import com.google.common.collect.Lists;
 
 public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements ClusterPlugin, MapperPlugin {
 
+    public static final boolean FIPS_ENABLED = true;
     private static final String KEYWORD = ".keyword";
     private final boolean dlsFlsAvailable;
     private final Constructor<?> dlsFlsConstructor;
@@ -249,7 +246,7 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
         demoCertHashes.add("3e839e2b059036a99ee4f742814995f2fb0ced7e9d68a47851f43a3c630b5324");
         demoCertHashes.add("9b13661c073d864c28ad7b13eda67dcb6cbc2f04d116adc7c817c20b4c7ed361");
 
-        final SecurityManager sm = System.getSecurityManager();
+        /*final SecurityManager sm = System.getSecurityManager();
 
         if (sm != null) {
             sm.checkPermission(new SpecialPermission());
@@ -263,7 +260,7 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
                 }
                 return null;
             }
-        });
+        });*/
 
         enterpriseModulesEnabled = settings.getAsBoolean(ConfigConstants.SEARCHGUARD_ENTERPRISE_MODULES_ENABLED, true);
         ReflectionHelper.init(enterpriseModulesEnabled);
@@ -358,8 +355,7 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
         }
 
         try {
-            MessageDigest digester = MessageDigest.getInstance("SHA256");
-            final String hash = org.bouncycastle.util.encoders.Hex.toHexString(digester.digest(Files.readAllBytes(p)));
+            final String hash = FipsManager.sha256Hash(Files.readAllBytes(p));
             log.debug(hash + " :: " + p);
             return hash;
         } catch (Exception e) {

@@ -28,7 +28,8 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.bouncycastle.crypto.generators.OpenBSDBCrypt;
+
+import com.floragunn.searchguard.FipsManager;
 
 public class Hasher {
 
@@ -69,7 +70,7 @@ public class Hasher {
     public static String hash(final char[] clearTextPassword) {
         final byte[] salt = new byte[16];
         new SecureRandom().nextBytes(salt);
-        final String hash = OpenBSDBCrypt.generate((Objects.requireNonNull(clearTextPassword)), salt, 12);
+        final String hash = FipsManager.generateHash((Objects.requireNonNull(clearTextPassword)), salt, 12);
         Arrays.fill(salt, (byte)0);
         Arrays.fill(clearTextPassword, '\0');
         return hash;

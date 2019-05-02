@@ -51,8 +51,8 @@ import org.bouncycastle.openpgp.PGPPublicKeyRingCollection;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
-import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
-import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
+import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 
 import com.google.common.io.BaseEncoding;
 
@@ -88,7 +88,7 @@ public class LicenseHelper {
                 bout.write((byte) ch);
             }
 
-            final KeyFingerPrintCalculator c = new BcKeyFingerprintCalculator();
+            final KeyFingerPrintCalculator c = new JcaKeyFingerprintCalculator();
 
             final PGPObjectFactory factory = new PGPObjectFactory(in, c);
             final PGPSignatureList sigL = (PGPSignatureList) factory.nextObject();
@@ -106,7 +106,7 @@ public class LicenseHelper {
                 throw new PGPException("license signature key mismatch");
             }
 
-            sig.init(new BcPGPContentVerifierBuilderProvider(), publicKey);
+            sig.init(new JcaPGPContentVerifierBuilderProvider(), publicKey);
 
             final ByteArrayOutputStream lineOut = new ByteArrayOutputStream();
             final InputStream sigIn = new ByteArrayInputStream(bout.toByteArray());
