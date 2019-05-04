@@ -13,7 +13,7 @@
   <parent>
     <groupId>com.floragunn</groupId>
     <artifactId>search-guard-parent</artifactId>
-    <version>7.35.0-SNAPSHOT</version>
+    <version>7.35.1</version>
   </parent>
 
   <artifactId>search-guard-7</artifactId>
@@ -35,7 +35,7 @@
 
   <properties>
     <enterprise-modules.version>7.x-enterprise-HEAD-SNAPSHOT</enterprise-modules.version>
-    <elasticsearch.version>7.0.0</elasticsearch.version>
+    <elasticsearch.version>7.0.1</elasticsearch.version>
     
     <!-- deps -->
     <netty-native.version>2.0.20.Final</netty-native.version>
