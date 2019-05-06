@@ -70,7 +70,7 @@ public class SlowIntegrationTests extends SingleClusterTest {
         log.debug("Start node client");
         
         try (Node node = new PluginAwareNode(false, tcSettings, Netty4Plugin.class, SearchGuardPlugin.class).start()) {
-            Thread.sleep(50);
+            Assert.assertFalse(node.client().admin().cluster().health(new ClusterHealthRequest().waitForNodes(String.valueOf(clusterInfo.numNodes+1))).actionGet().isTimedOut());
             Assert.assertEquals(clusterInfo.numNodes+1, node.client().admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet().getNodes().size());    
         }
     }
@@ -100,7 +100,7 @@ public class SlowIntegrationTests extends SingleClusterTest {
         log.debug("Start node client");
 
         try (Node node = new PluginAwareNode(false, tcSettings, Netty4Plugin.class, SearchGuardPlugin.class).start()) {
-            Thread.sleep(50);
+            Thread.sleep(10000);
             Assert.assertEquals(1, node.client().admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet().getNodes().size());
         } catch (Exception e) {
             Assert.fail(e.toString());
@@ -132,8 +132,10 @@ public class SlowIntegrationTests extends SingleClusterTest {
         log.debug("Start node client");
         
         try (Node node = new PluginAwareNode(false, tcSettings, Netty4Plugin.class, SearchGuardPlugin.class).start()) {
-            Thread.sleep(50);
+            Thread.sleep(10000);
             Assert.assertEquals(1, node.client().admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet().getNodes().size());    
+        } catch (Exception e) {
+            Assert.fail(e.toString());
         }
     }
 
