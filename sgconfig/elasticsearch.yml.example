@@ -1,10 +1,9 @@
 ############## Search Guard 7 configuration ###############
 
-###########################################################
 # Add the following settings to your standard elasticsearch.yml 
-# alongside with the Search Guard TLS settings.
-# Settings must always be the same on all nodes in the cluster.
-
+# Settings must always be the same on all nodes in the cluster (there are a few exceptions though).
+# This is not a complete list of all configuration otions.
+# Please refer to https://docs.search-guard.com for more details and advanced configuration options.
 
 #############################################################################################
 # Transport layer SSL                                                                       #
@@ -180,13 +179,13 @@ searchguard.roles_mapping_resolution: MAPPING_ONLY
 ############## REST Management API configuration settings ##############
 # Enable or disable role based access to the REST management API
 # Default is that no role is allowed to access the REST management API.
-#searchguard.restapi.roles_enabled: ["sg_all_access","sg_xyz_role"]
+#searchguard.restapi.roles_enabled: ["SGS_ALL_ACCESS","sg_xyz_role"]
 
 # Disable particular endpoints and their HTTP methods for roles. 
 # By default all endpoints/methods are allowed.
 #searchguard.restapi.endpoints_disabled.<role>.<endpoint>: <array of http methods>
 # Example:
-#searchguard.restapi.endpoints_disabled.sg_all_access.ACTIONGROUPS: ["PUT","POST","DELETE"]
+#searchguard.restapi.endpoints_disabled.SGS_ALL_ACCESS.ACTIONGROUPS: ["PUT","POST","DELETE"]
 #searchguard.restapi.endpoints_disabled.sg_xyz_role.LICENSE: ["DELETE"]
 
 # The following endpoints exist:
@@ -313,33 +312,13 @@ searchguard.audit.type: internal_elasticsearch
 # If you set wrong values here this this could be a security risk
 # or make Search Guard stop working
 
-# Name of the index where searchguard stores its configuration.
-#searchguard.config_index_name: searchguard
-
-# This defines the OID of server node certificates
-# See http://docs.search-guard.com/v6/tls-in-production
-#searchguard.cert.oid: '1.2.3.4.5.5'
-
-# This specifies the implementation of com.floragunn.searchguard.transport.InterClusterRequestEvaluator
-# that is used to determine inter-cluster request.
-# Instances of com.floragunn.searchguard.transport.InterClusterRequestEvaluator must implement a single argument
-# constructor that takes an org.elasticsearch.common.settings.Settings
-#searchguard.cert.intercluster_request_evaluator_class: com.floragunn.searchguard.transport.DefaultInterClusterRequestEvaluator
-
-# Allow snapshot restore for normal users
-# By default only requests signed by an admin TLS certificate can do this
-# To enable snapshot restore for normal users set 'searchguard.enable_snapshot_restore_privilege: true'
-# The user who wants to restore a snapshot must have the 'cluster:admin/snapshot/restore' privilege and must also have
-# "indices:admin/create" and "indices:data/write/index" for the indices to be restores.
-# A snapshot can only be restored when it does not contain global state and does not restore the 'searchguard' index
-# If 'searchguard.check_snapshot_restore_write_privileges: false' is set then the additional indices checks are omitted.
-# This makes it less secure.
-#searchguard.enable_snapshot_restore_privilege: true
-#searchguard.check_snapshot_restore_write_privileges: false
-
 # Authentication cache timeout in minutes (A value of 0 disables caching, default is 60)
 #searchguard.cache.ttl_minutes: 60
 
 # Disable Search Guard
 # WARNING: This can expose your configuration (including passwords) to the public.
 #searchguard.disabled: false
+
+# Only enable SSL, all other functionality like authentication will be disabled
+# WARNING: This can expose your configuration (including passwords) to the public.
+#searchguard.ssl_only
