@@ -18,7 +18,6 @@
 package com.floragunn.searchguard.action.licenseinfo;
 
 import org.elasticsearch.action.Action;
-import org.elasticsearch.client.ElasticsearchClient;
 
 public class LicenseInfoAction extends Action<LicenseInfoResponse> {
 

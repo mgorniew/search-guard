@@ -32,7 +32,7 @@ public class CompatConfig implements DCFListener {
 
     private final Logger log = LogManager.getLogger(getClass());
     private final Settings staticSettings;
-    private DynamicConfigModel dcf;
+    private DynamicConfigModel dcm;
 
     public CompatConfig(final Environment environment) {
         super();
@@ -41,8 +41,8 @@ public class CompatConfig implements DCFListener {
     
     @Override
     public void onChanged(ConfigModel cm, DynamicConfigModel dcm, InternalUsersModel ium) {
-        this.dcf = dcf;
-        log.debug("dynamicSgConfig updated?: {}", (dcf != null));
+        this.dcm = dcm;
+        log.debug("dynamicSgConfig updated?: {}", (dcm != null));
     }
     
     //true is default
@@ -50,13 +50,13 @@ public class CompatConfig implements DCFListener {
         final boolean restInitiallyDisabled = staticSettings.getAsBoolean(ConfigConstants.SEARCHGUARD_UNSUPPORTED_DISABLE_REST_AUTH_INITIALLY, false);
         
         if(restInitiallyDisabled) {
-            if(dcf == null) {
+            if(dcm == null) {
                 if(log.isTraceEnabled()) {
                     log.trace("dynamicSgConfig is null, initially static restDisabled");
                 }
                 return false;
             } else {
-                final boolean restDynamicallyDisabled = dcf.isRestAuthDisabled();// dynamicSgConfig.dynamic.disable_rest_auth;
+                final boolean restDynamicallyDisabled = dcm.isRestAuthDisabled();
                 if(log.isTraceEnabled()) {
                     log.trace("searchguard.dynamic.disable_rest_auth {}", restDynamicallyDisabled);
                 }
@@ -73,13 +73,13 @@ public class CompatConfig implements DCFListener {
         final boolean interClusterAuthInitiallyDisabled = staticSettings.getAsBoolean(ConfigConstants.SEARCHGUARD_UNSUPPORTED_DISABLE_INTERTRANSPORT_AUTH_INITIALLY, false);
         
         if(interClusterAuthInitiallyDisabled) {
-            if(dcf == null) {
+            if(dcm == null) {
                 if(log.isTraceEnabled()) {
                     log.trace("dynamicSgConfig is null, initially static interClusterAuthDisabled");
                 }
                 return false;
             } else {
-                final boolean interClusterAuthDynamicallyDisabled = dcf.isInterTransportAuthDisabled();//dynamicSgConfig.dynamic.disable_intertransport_auth;
+                final boolean interClusterAuthDynamicallyDisabled = dcm.isInterTransportAuthDisabled();
                 if(log.isTraceEnabled()) {
                     log.trace("searchguard.dynamic.disable_intertransport_auth {}", interClusterAuthDynamicallyDisabled);
                 }

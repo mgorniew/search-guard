@@ -18,7 +18,6 @@
 package com.floragunn.searchguard.action.configupdate;
 
 import org.elasticsearch.action.Action;
-import org.elasticsearch.client.ElasticsearchClient;
 
 public class ConfigUpdateAction extends Action<ConfigUpdateResponse> {
 

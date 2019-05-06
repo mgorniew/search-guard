@@ -123,6 +123,7 @@ import com.floragunn.searchguard.support.SgUtils;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Files;
 
+@SuppressWarnings("deprecation")
 public class SearchGuardAdmin {
 
     private static final boolean CREATE_AS_LEGACY = Boolean.parseBoolean(System.getenv("SG_ADMIN_CREATE_AS_LEGACY"));

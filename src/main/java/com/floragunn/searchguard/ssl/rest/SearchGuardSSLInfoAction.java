@@ -26,6 +26,8 @@ import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -43,6 +45,7 @@ import com.floragunn.searchguard.ssl.util.SSLRequestHelper.SSLInfo;
 
 public class SearchGuardSSLInfoAction extends BaseRestHandler {
 
+    private final Logger log = LogManager.getLogger(this.getClass());
     private final SearchGuardKeyStore sgks;
     final PrincipalExtractor principalExtractor;
     private final Path configPath;
@@ -101,7 +104,7 @@ public class SearchGuardSSLInfoAction extends BaseRestHandler {
 
                     response = new BytesRestResponse(RestStatus.OK, builder);
                 } catch (final Exception e1) {
-                    logger.error("Error handle request "+e1, e1);
+                    log.error("Error handle request "+e1, e1);
                     builder = channel.newBuilder();
                     builder.startObject();
                     builder.field("error", e1.toString());
