@@ -1,6 +1,5 @@
 package com.floragunn.searchguard.sgconf;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +45,7 @@ public class DynamicConfigFactory implements Initializable, ConfigurationChangeL
             JsonNode staticRolesJsonNode = DefaultObjectMapper.YAML_MAPPER.readTree(DynamicConfigFactory.class.getResourceAsStream("/static_config/static_roles.yml"));
             staticRoles = SgDynamicConfiguration.fromNode(staticRolesJsonNode, CType.ROLES, 2, 0, 0);
    
-            JsonNode staticActionGroupsJsonNode = DefaultObjectMapper.YAML_MAPPER.readTree(DynamicConfigFactory.class.getResourceAsStream("/static_config/static_action_goups.yml"));
+            JsonNode staticActionGroupsJsonNode = DefaultObjectMapper.YAML_MAPPER.readTree(DynamicConfigFactory.class.getResourceAsStream("/static_config/static_action_groups.yml"));
             staticActionGroups = SgDynamicConfiguration.fromNode(staticActionGroupsJsonNode, CType.ACTIONGROUPS, 2, 0, 0);
       
             JsonNode staticTenantsJsonNode = DefaultObjectMapper.YAML_MAPPER.readTree(DynamicConfigFactory.class.getResourceAsStream("/static_config/static_tenants.yml"));
@@ -217,12 +216,6 @@ public class DynamicConfigFactory implements Initializable, ConfigurationChangeL
         SgDynamicConfiguration<ConfigV7> c = (SgDynamicConfiguration<ConfigV7>) sdc;
         return c.getCEntry("sg_config");
     }
-    
-    //how to determine current?
-    
-    
-    //atomic updates over a complete configupdate call
-    //atomic also in the sense of each listener
     
     @Override
     public final boolean isInitialized() {
