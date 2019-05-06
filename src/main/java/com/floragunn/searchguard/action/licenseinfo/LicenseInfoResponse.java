@@ -34,7 +34,6 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 
 import com.floragunn.searchguard.configuration.SearchGuardLicense;
 import com.floragunn.searchguard.support.ModuleInfo;
-import com.floragunn.searchguard.support.ModuleType;
 
 public class LicenseInfoResponse extends BaseNodesResponse<LicenseInfoNodeResponse> implements ToXContent {
     
@@ -120,14 +119,14 @@ public class LicenseInfoResponse extends BaseNodesResponse<LicenseInfoNodeRespon
         
         builder.endObject();
         
-        builder.startObject("modules");
+        builder.startArray("modules");
         
         List<ModuleInfo> mod0 = new LinkedList<>(allNodes.get(0).getModules());
         
+
         for(ModuleInfo moduleInfo: mod0) {
-        	ModuleType type = moduleInfo.getModuleType();
         	Map<String, String> infoAsMap = moduleInfo.getAsMap();
-            builder.field(type.name(), infoAsMap);
+            builder.value(infoAsMap);
         }
         
         boolean mismatch = false;
@@ -142,7 +141,7 @@ public class LicenseInfoResponse extends BaseNodesResponse<LicenseInfoNodeRespon
         	}
         }
 
-        builder.endObject();
+        builder.endArray();
         
         builder.startObject("compatibility");
         builder.field("modules_mismatch", mismatch);
