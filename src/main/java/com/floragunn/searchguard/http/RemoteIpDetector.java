@@ -18,7 +18,6 @@
 package com.floragunn.searchguard.http;
 
 import java.net.InetSocketAddress;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -26,12 +25,11 @@ import java.util.regex.Pattern;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
-import org.elasticsearch.http.netty4.Netty4HttpRequest;
 import org.elasticsearch.rest.RestRequest;
 
 import com.floragunn.searchguard.support.ConfigConstants;
 
-class RemoteIpDetector {
+final class RemoteIpDetector {
 
     /**
      * {@link Pattern} for a comma delimited string that support whitespace characters
@@ -54,26 +52,6 @@ class RemoteIpDetector {
     }
 
     /**
-     * Convert an array of strings in a comma delimited string
-     */
-    protected static String listToCommaDelimitedString(List<String> stringList) {
-        if (stringList == null) {
-            return "";
-        }
-        StringBuilder result = new StringBuilder();
-        for (Iterator<String> it = stringList.iterator(); it.hasNext();) {
-            Object element = it.next();
-            if (element != null) {
-                result.append(element);
-                if (it.hasNext()) {
-                    result.append(", ");
-                }
-            }
-        }
-        return result.toString();
-    }
-
-    /**
      * @see #setInternalProxies(String)
      */
     private Pattern internalProxies = Pattern.compile(
@@ -86,19 +64,9 @@ class RemoteIpDetector {
             "172\\.3[0-1]{1}\\.\\d{1,3}\\.\\d{1,3}");
 
     /**
-     * @see #setProxiesHeader(String)
-     */
-    private String proxiesHeader = "X-Forwarded-By";
-
-    /**
      * @see #setRemoteIpHeader(String)
      */
     private String remoteIpHeader = "X-Forwarded-For";
-
-    /**
-     * @see RemoteIpValve#setTrustedProxies(String)
-     */
-    private Pattern trustedProxies = null;
 
     /**
      * @see #setInternalProxies(String)
@@ -112,14 +80,6 @@ class RemoteIpDetector {
     }
 
     /**
-     * @see #setProxiesHeader(String)
-     * @return the proxies header name (e.g. "X-Forwarded-By")
-     */
-    public String getProxiesHeader() {
-        return proxiesHeader;
-    }
-
-    /**
      * @see #setRemoteIpHeader(String)
      * @return the remote IP header name (e.g. "X-Forwarded-For")
      */
@@ -127,22 +87,8 @@ class RemoteIpDetector {
         return remoteIpHeader;
     }
 
-    /**
-     * @see #setTrustedProxies(String)
-     * @return Regular expression that defines the trusted proxies
-     */
-    public String getTrustedProxies() {
-        if (trustedProxies == null) {
-            return null;
-        }
-        return trustedProxies.toString();
-    }
-
     String detect(RestRequest request, ThreadContext threadContext){
         final String originalRemoteAddr = ((InetSocketAddress)request.getHttpChannel().getRemoteAddress()).getAddress().getHostAddress();
-        @SuppressWarnings("unused")
-        final String originalProxiesHeader = request.header(proxiesHeader);
-        //final String originalRemoteIpHeader = request.getHeader(remoteIpHeader);
         
         if(log.isTraceEnabled()) {
             log.trace("originalRemoteAddr {}", originalRemoteAddr);
@@ -155,8 +101,6 @@ class RemoteIpDetector {
         if (internalProxies !=null &&
                 internalProxies.matcher(originalRemoteAddr).matches()) {
             String remoteIp = null;
-            // In java 6, proxiesHeaderValue should be declared as a java.util.Deque
-            final LinkedList<String> proxiesHeaderValue = new LinkedList<>();
             final StringBuilder concatRemoteIpHeaderValue = new StringBuilder();
             
             //client1, proxy1, proxy2
@@ -186,9 +130,6 @@ class RemoteIpDetector {
                 remoteIp = currentRemoteIp;
                 if (internalProxies.matcher(currentRemoteIp).matches()) {
                     // do nothing, internalProxies IPs are not appended to the
-                } else if (trustedProxies != null &&
-                        trustedProxies.matcher(currentRemoteIp).matches()) {
-                    proxiesHeaderValue.addFirst(currentRemoteIp);
                 } else {
                     idx--; // decrement idx because break statement doesn't do it
                     break;
@@ -203,29 +144,13 @@ class RemoteIpDetector {
             }
             
             if (remoteIp != null) {
-
-                /*if (proxiesHeaderValue.size() == 0) {
-                    request.request().headers().remove(proxiesHeader);
-                } else {
-                    String commaDelimitedListOfProxies = listToCommaDelimitedString(proxiesHeaderValue);
-                    request.request().headers().set(proxiesHeader,commaDelimitedListOfProxies);
-                }
-                if (newRemoteIpHeaderValue.size() == 0) {
-                    request.request().headers().remove(remoteIpHeader);
-                } else {
-                    String commaDelimitedRemoteIpHeaderValue = listToCommaDelimitedString(newRemoteIpHeaderValue);
-                    request.request().headers().set(remoteIpHeader,commaDelimitedRemoteIpHeaderValue);
-                }
-                */
                 if (log.isTraceEnabled()) {
                     final String originalRemoteHost = ((InetSocketAddress)request.getHttpChannel().getRemoteAddress()).getAddress().getHostName();
                     log.trace("Incoming request " + request.uri() + " with originalRemoteAddr '" + originalRemoteAddr
                               + "', originalRemoteHost='" + originalRemoteHost + "', will be seen as newRemoteAddr='" + remoteIp);
                 }
-                
-                //TODO check put in thread context
+
                 threadContext.putTransient(ConfigConstants.SG_XFF_DONE, Boolean.TRUE);
-                //request.putInContext(ConfigConstants.SG_XFF_DONE, Boolean.TRUE);
                 return remoteIp;
                 
             } else {
@@ -260,26 +185,6 @@ class RemoteIpDetector {
 
     /**
      * <p>
-     * The proxiesHeader directive specifies a header into which mod_remoteip will collect a list of all of the intermediate client IP
-     * addresses trusted to resolve the actual remote IP. Note that intermediate RemoteIPTrustedProxy addresses are recorded in this header,
-     * while any intermediate RemoteIPInternalProxy addresses are discarded.
-     * </p>
-     * <p>
-     * Name of the http header that holds the list of trusted proxies that has been traversed by the http request.
-     * </p>
-     * <p>
-     * The value of this header can be comma delimited.
-     * </p>
-     * <p>
-     * Default value : <code>X-Forwarded-By</code>
-     * </p>
-     */
-    public void setProxiesHeader(String proxiesHeader) {
-        this.proxiesHeader = proxiesHeader;
-    }
-
-    /**
-     * <p>
      * Name of the http header from which the remote ip is extracted.
      * </p>
      * <p>
@@ -293,22 +198,5 @@ class RemoteIpDetector {
      */
     public void setRemoteIpHeader(String remoteIpHeader) {
         this.remoteIpHeader = remoteIpHeader;
-    }
-
-    /**
-     * <p>
-     * Regular expression defining proxies that are trusted when they appear in
-     * the {@link #remoteIpHeader} header.
-     * </p>
-     * <p>
-     * Default value : empty list, no external proxy is trusted.
-     * </p>
-     */
-    public void setTrustedProxies(String trustedProxies) {
-        if (trustedProxies == null || trustedProxies.length() == 0) {
-            this.trustedProxies = null;
-        } else {
-            this.trustedProxies = Pattern.compile(trustedProxies);
-        }
     }
 }

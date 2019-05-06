@@ -87,9 +87,7 @@ public class XFFResolver implements DCFListener {
         if(enabled) {
             detector = new RemoteIpDetector();
             detector.setInternalProxies(dcm.getInternalProxies());
-            detector.setProxiesHeader(dcm.getProxiesHeader());
             detector.setRemoteIpHeader(dcm.getRemoteIpHeader());
-            detector.setTrustedProxies(dcm.getTrustedProxies());
         } else {
             detector = null;
         }

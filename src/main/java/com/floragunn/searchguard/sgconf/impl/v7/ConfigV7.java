@@ -50,9 +50,7 @@ public class ConfigV7 {
         
         dynamic.http.xff.enabled = c6.dynamic.http.xff.enabled;
         dynamic.http.xff.internalProxies = c6.dynamic.http.xff.internalProxies;
-        dynamic.http.xff.proxiesHeader = c6.dynamic.http.xff.proxiesHeader;
         dynamic.http.xff.remoteIpHeader = c6.dynamic.http.xff.remoteIpHeader;
-        dynamic.http.xff.trustedProxies = c6.dynamic.http.xff.trustedProxies;
         
         dynamic.authc = new Authc();
         
@@ -192,12 +190,9 @@ public class ConfigV7 {
                         "172\\.2[0-9]{1}\\.\\d{1,3}\\.\\d{1,3}|" +
                         "172\\.3[0-1]{1}\\.\\d{1,3}\\.\\d{1,3}").toString();
         public String remoteIpHeader="X-Forwarded-For";
-        public String proxiesHeader="X-Forwarded-By";
-        public String trustedProxies;
         @Override
         public String toString() {
-            return "Xff [enabled=" + enabled + ", internalProxies=" + internalProxies + ", remoteIpHeader=" + remoteIpHeader + ", proxiesHeader="
-                    + proxiesHeader + ", trustedProxies=" + trustedProxies + "]";
+            return "Xff [enabled=" + enabled + ", internalProxies=" + internalProxies + ", remoteIpHeader=" + remoteIpHeader+"]";
         }
         
         
@@ -401,7 +396,6 @@ public class ConfigV7 {
     public static class AuthzDomain {
         public boolean http_enabled = true;
         public boolean transport_enabled = true;
-        public int order;
         public AuthzBackend authorization_backend = new AuthzBackend();
         public String description;
         
@@ -412,18 +406,13 @@ public class ConfigV7 {
         public AuthzDomain(com.floragunn.searchguard.sgconf.impl.v6.ConfigV6.AuthzDomain v6) {
             http_enabled = v6.http_enabled && v6.enabled;
             transport_enabled = v6.transport_enabled && v6.enabled;
-//            if(v6.enabled) {
-//                http_enabled = true;
-//                transport_enabled = true;
-//            }
-            order = v6.order;
             authorization_backend = new AuthzBackend(v6.authorization_backend);
             description = "Migrated from v6";
         }
 
         @Override
         public String toString() {
-            return "AuthzDomain [http_enabled=" + http_enabled + ", transport_enabled=" + transport_enabled + ", order=" + order
+            return "AuthzDomain [http_enabled=" + http_enabled + ", transport_enabled=" + transport_enabled
                     + ", authorization_backend=" + authorization_backend + ", description=" + description + "]";
         }
         
