@@ -33,14 +33,11 @@ public abstract class DynamicConfigModel {
     public abstract Set<AuthorizationBackend> getRestAuthorizers();
     public abstract SortedSet<AuthDomain> getTransportAuthDomains();
     public abstract Set<AuthorizationBackend> getTransportAuthorizers();
-    //public List<Destroyable> getDestroyableComponents();
     public abstract String getTransportUsernameAttribute();
     public abstract boolean isAnonymousAuthenticationEnabled();
     public abstract boolean isXffEnabled();
     public abstract String getInternalProxies();
-    public abstract String getProxiesHeader();
     public abstract String getRemoteIpHeader();
-    public abstract String getTrustedProxies();
     public abstract boolean isRestAuthDisabled();
     public abstract boolean isInterTransportAuthDisabled();
     public abstract boolean isRespectRequestIndicesEnabled();
@@ -74,6 +71,9 @@ public abstract class DynamicConfigModel {
 
         authImplMap.put("ldap_c", "com.floragunn.dlic.auth.ldap.backend.LDAPAuthenticationBackend");
         authImplMap.put("ldap_z", "com.floragunn.dlic.auth.ldap.backend.LDAPAuthorizationBackend");
+        
+        authImplMap.put("ldap2_c", "com.floragunn.dlic.auth.ldap2.LDAPAuthenticationBackend2");
+        authImplMap.put("ldap2_z", "com.floragunn.dlic.auth.ldap2.LDAPAuthorizationBackend2");
 
         authImplMap.put("basic_h", HTTPBasicAuthenticator.class.getName());
         authImplMap.put("proxy_h", HTTPProxyAuthenticator.class.getName());
