@@ -238,6 +238,8 @@ public class SearchGuardAdmin {
 
         options.addOption(Option.builder("vc").numberOfArgs(1).optionalArg(true).argName("version").longOpt("validate-configs").desc("Validate config for version 6 or 7 (default 7)").build());
 
+        options.addOption(Option.builder("mo").longOpt("migrate-offline").hasArg().argName("folder").desc("Migrate and use folder to store migrated files").build());
+
         
         //when adding new options also adjust validate(CommandLine line)
         
@@ -286,6 +288,7 @@ public class SearchGuardAdmin {
         String migrate = null;
         final boolean resolveEnvVars;
         Integer validateConfig = null;
+        String migrateOffline = null;
         
         CommandLineParser parser = new DefaultParser();
         try {
@@ -382,6 +385,8 @@ public class SearchGuardAdmin {
                 throw new ParseException("version must be 6 or 7");
             }
             
+            migrateOffline = line.getOptionValue("mo");
+            
         }
         catch( ParseException exp ) {
             System.out.println("ERR: Parsing failed.  Reason: " + exp.getMessage());
@@ -391,8 +396,14 @@ public class SearchGuardAdmin {
         
         
         if(validateConfig != null) {
-            System.out.println("Validate configuration");
+            System.out.println("Validate configuration for Version "+validateConfig.intValue());
             return validateConfig(cd, file, type, validateConfig.intValue());
+        }
+        
+        if(migrateOffline != null) {
+            System.out.println("Migrate "+migrateOffline+" offline");
+            final boolean retVal =  Migrater.migrateDirectory(new File(migrateOffline), true);
+            return retVal?0:-1;
         }
         
         
@@ -1087,11 +1098,13 @@ public class SearchGuardAdmin {
             throw new ParseException("Specify at least -cd or -f together with vc");
         }
 
-        if(!line.hasOption("vc") && !line.hasOption("ks") && !line.hasOption("cert") /*&& !line.hasOption("simple-auth")*/) {
+        if(!line.hasOption("vc") && !line.hasOption("mo") && !line.hasOption("ks") 
+                && !line.hasOption("cert")) {
             throw new ParseException("Specify at least -ks or -cert");
         }
         
-        if(!line.hasOption("vc") && !line.hasOption("ts") && !line.hasOption("cacert") /*&& !line.hasOption("simple-auth")*/) {
+        if(!line.hasOption("vc")  && !line.hasOption("mo") 
+                && !line.hasOption("ts") && !line.hasOption("cacert")) {
             throw new ParseException("Specify at least -ts or -cacert");
         }
         
@@ -1285,7 +1298,17 @@ public class SearchGuardAdmin {
     private static int validateConfig(String cd, String file, String type, int version) {
         if (file != null) {
             try {
-                ConfigHelper.fromYamlFile(file, CType.fromString(type==null?readTypeFromFile(new File(file)):type), version==7?2:1, 0, 0);
+                
+                if(type == null) {
+                    type = readTypeFromFile(new File(file));
+                }
+                
+                if(type == null) {
+                    System.out.println("ERR: Unable to read type from "+file);
+                    return -1;
+                }
+                
+                ConfigHelper.fromYamlFile(file, CType.fromString(type), version==7?2:1, 0, 0);
                 return 0;
             } catch (Exception e) {
                 System.out.println("ERR: Seems "+file+" is not in SG "+version+" format: "+e);

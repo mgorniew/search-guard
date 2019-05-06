@@ -339,6 +339,30 @@ public class SgAdminTests extends SingleClusterTest {
         
         argsAsList = new ArrayList<>();
         argsAsList.add("-f");
+        argsAsList.add(new File("./src/main/resources/static_config/static_roles.yml").getAbsolutePath());
+        argsAsList.add("-vc");
+        
+        returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
+        Assert.assertEquals(0, returnCode);
+        
+        argsAsList = new ArrayList<>();
+        argsAsList.add("-f");
+        argsAsList.add(new File("./src/main/resources/static_config/static_action_groups.yml").getAbsolutePath());
+        argsAsList.add("-vc");
+        
+        returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
+        Assert.assertEquals(0, returnCode);
+        
+        argsAsList = new ArrayList<>();
+        argsAsList.add("-f");
+        argsAsList.add(new File("./src/main/resources/static_config/static_tenants.yml").getAbsolutePath());
+        argsAsList.add("-vc");
+        
+        returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
+        Assert.assertEquals(0, returnCode);
+        
+        argsAsList = new ArrayList<>();
+        argsAsList.add("-f");
         argsAsList.add(new File("./sgconfig/sg_roles.yml").getAbsolutePath());
         argsAsList.add("-vc");
         argsAsList.add("-t");

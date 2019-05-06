@@ -18,7 +18,6 @@
 package com.floragunn.searchguard.tools;
 
 import java.io.File;
-import java.io.FileFilter;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -28,7 +27,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.elasticsearch.common.collect.Tuple;
 
-import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.floragunn.searchguard.DefaultObjectMapper;
 import com.floragunn.searchguard.sgconf.Migration;
 import com.floragunn.searchguard.sgconf.impl.CType;
@@ -44,7 +42,6 @@ public class Migrater {
         final Options options = new Options();
         final HelpFormatter formatter = new HelpFormatter();
         options.addOption(Option.builder("dir").argName("directory").hasArg().required().desc("Directory containing file to be migrated").build());
-        options.addOption(Option.builder("b").desc("Backup files before changing them").build());
 
         final CommandLineParser parser = new DefaultParser();
         try {
@@ -52,7 +49,7 @@ public class Migrater {
             
             if(line.hasOption("dir")) {
                 final File dir = new File(line.getOptionValue("dir"));
-                if(!migrateDirectory(dir, line.hasOption("b"))) {
+                if(!migrateDirectory(dir, true)) {
                     System.exit(-1);
                 } else {
                     System.exit(0);
@@ -77,30 +74,16 @@ public class Migrater {
             return false;
         }
         
-        File[] files = dir.listFiles(new FileFilter() {
-            
-            @Override
-            public boolean accept(File pathname) {
-                if(pathname.isFile() && pathname.getName().endsWith(".yml")) {
-                    return true;
-                }
-                
-                return false;
-            }
-        });
-        
-        boolean retVal = true;
-        
-        for(File file: files) {
-            if(!migrateFile(file, backup)) {
-                retVal = false;
-            }
-        }
+        boolean retVal = migrateFile(new File(dir, "sg_config.yml"), CType.CONFIG, backup);
+        retVal = migrateFile(new File(dir, "sg_action_groups.yml"), CType.ACTIONGROUPS, backup)  && retVal;
+        retVal = migrateFile(new File(dir, "sg_roles.yml"), CType.ROLES, backup)  && retVal;
+        retVal = migrateFile(new File(dir, "sg_roles_mapping.yml"), CType.ROLESMAPPING, backup)  && retVal;
+        retVal = migrateFile(new File(dir, "sg_internal_users.yml"), CType.INTERNALUSERS, backup)  && retVal;
         
         return retVal;
     }
     
-    public static boolean migrateFile(File file, boolean backup) {
+    public static boolean migrateFile(File file, CType cType, boolean backup) {
         final String absolutePath = file.getAbsolutePath();
         if(!file.exists()) {
             System.out.println("Skip "+absolutePath+" because it does not exist");
@@ -113,54 +96,42 @@ public class Migrater {
         }
 
         try {
-            SgDynamicConfiguration<?> val = Migration.migrateConfig(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(file), CType.CONFIG, 1, 0, 0));
-            return backupAndWrite(file, val, backup);
-        } catch (UnrecognizedPropertyException e) {
-            //e.printStackTrace();
-            //suppress
+            if(cType == CType.ACTIONGROUPS) {
+                SgDynamicConfiguration<?> val;
+                try {
+                    val = Migration.migrateActionGroups(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(file), CType.ACTIONGROUPS, 0, 0, 0));
+                } catch (Exception e) {
+                    val = Migration.migrateActionGroups(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(file), CType.ACTIONGROUPS, 1, 0, 0));
+                }
+                return backupAndWrite(file, val, backup);
+            }
+            
+            if(cType == CType.CONFIG) {
+                SgDynamicConfiguration<?> val = Migration.migrateConfig(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(file), CType.CONFIG, 1, 0, 0));
+                return backupAndWrite(file, val, backup);
+            }
+            
+            if(cType == CType.ROLES) {
+                Tuple<SgDynamicConfiguration<RoleV7>, SgDynamicConfiguration<TenantV7>> tup = Migration.migrateRoles(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(file), CType.ROLES, 1, 0, 0), null);
+                boolean roles = backupAndWrite(file, tup.v1(), backup);
+                return roles && backupAndWrite(new File(file.getParent(),"sg_tenants.yml"), tup.v2(), backup);
+            }
+            
+            if(cType == CType.ROLESMAPPING) {
+                SgDynamicConfiguration<?> val = Migration.migrateRoleMappings(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(file), CType.ROLESMAPPING, 1, 0, 0));
+                return backupAndWrite(file, val, backup);
+            }
+            
+            if(cType == CType.INTERNALUSERS) {
+                SgDynamicConfiguration<?> val = Migration.migrateInternalUsers(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(file), CType.INTERNALUSERS, 1, 0, 0));
+                return backupAndWrite(file, val, backup);
+            }
         } catch (Exception e) {
-            //e.printStackTrace();
+            System.out.println("Can not migrate "+file+" due to "+e);
         }
         
-        try {
-            Tuple<SgDynamicConfiguration<RoleV7>, SgDynamicConfiguration<TenantV7>> tup = Migration.migrateRoles(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(file), CType.ROLES, 1, 0, 0), null);
-            boolean roles = backupAndWrite(file, tup.v1(), backup);
-            return roles && backupAndWrite(new File(file.getParent(),file.getName().replace(".yml", "")+"_tenants.yml"), tup.v2(), backup);
-        } catch (Exception e) {
-            //suppress
-        }
         
-        try {
-            SgDynamicConfiguration<?> val = Migration.migrateInternalUsers(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(file), CType.INTERNALUSERS, 1, 0, 0));
-            return backupAndWrite(file, val, backup);
-        } catch (Exception e) {
-            //suppress
-        }
-        
-        try {
-            SgDynamicConfiguration<?> val = Migration.migrateRoleMappings(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(file), CType.ROLESMAPPING, 1, 0, 0));
-            return backupAndWrite(file, val, backup);
-        } catch (Exception e) {
-            //suppress
-        }
-        
-        try {
-            SgDynamicConfiguration<?> val = Migration.migrateActionGroups(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(file), CType.ACTIONGROUPS, 1, 0, 0));
-            return backupAndWrite(file, val, backup);
-        } catch (Exception e) {
-            //suppress
-        }
-        
-        try {
-            SgDynamicConfiguration<?> val = Migration.migrateActionGroups(SgDynamicConfiguration.fromNode(DefaultObjectMapper.YAML_MAPPER.readTree(file), CType.ACTIONGROUPS, 0, 0, 0));
-            return backupAndWrite(file, val, backup);
-        } catch (Exception e) {
-            //suppress
-        }
-        
-        System.out.println("Unable to handle "+absolutePath);
         return false;
-        
     }
     
     private static boolean backupAndWrite(File file, SgDynamicConfiguration<?> val, boolean backup) {
@@ -173,7 +144,7 @@ public class Migrater {
                 Files.copy(file, new File(file.getParent(), file.getName()+".bck6"));
             }
             DefaultObjectMapper.YAML_MAPPER.writeValue(file, val);
-            System.out.println("Migrated (as "+val.getCType()+"/"+val.getImplementingClass()+") "+file.getAbsolutePath());
+            System.out.println("Migrated (as "+val.getCType()+") "+file.getAbsolutePath());
             return true;
         } catch (Exception e) {
             System.out.println("Unable to write "+file.getAbsolutePath()+". This is unexpected and we will abort migration.");
