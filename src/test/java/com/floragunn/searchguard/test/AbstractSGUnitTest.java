@@ -171,7 +171,7 @@ public abstract class AbstractSGUnitTest {
             } catch (Exception e) {
                 //ignore
             }
-
+            
             for(IndexRequest ir: sgconfig.getDynamicConfig(getResourceFolder())) {
                 tc.index(ir).actionGet();
             }
@@ -179,6 +179,7 @@ public abstract class AbstractSGUnitTest {
             ConfigUpdateResponse cur = tc
                     .execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(ConfigConstants.CONFIG_NAMES.toArray(new String[0])))
                     .actionGet();
+            Assert.assertFalse(cur.failures().toString(), cur.hasFailures());
             Assert.assertEquals(info.numNodes, cur.getNodes().size());
             
             SearchResponse sr = tc.search(new SearchRequest("searchguard")).actionGet();
@@ -217,6 +218,7 @@ public abstract class AbstractSGUnitTest {
         
                 if(!sslOnly) {
                     builder.putList("searchguard.authcz.admin_dn", "CN=kirk,OU=client,O=client,l=tEst, C=De");
+                    builder.put(ConfigConstants.SEARCHGUARD_BACKGROUND_INIT_IF_SGINDEX_NOT_EXIST, false);
                 //.put(other==null?Settings.EMPTY:other);
                 }
                 
