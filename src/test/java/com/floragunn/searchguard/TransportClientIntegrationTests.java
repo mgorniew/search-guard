@@ -361,6 +361,7 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 			tc.index(new IndexRequest("starfleet").type("ships").setRefreshPolicy(RefreshPolicy.IMMEDIATE).source("{\"content\":1}", XContentType.JSON)).actionGet();
 
 			ConfigUpdateResponse cur = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{"config","roles","rolesmapping","internalusers","actiongroups"})).actionGet();
+			Assert.assertFalse(cur.hasFailures());
 			Assert.assertEquals(clusterInfo.numNodes, cur.getNodes().size());
 
 		}
@@ -736,6 +737,7 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 			tc.index(new IndexRequest("starfleet").type("ships").setRefreshPolicy(RefreshPolicy.IMMEDIATE).source("{\"content\":1}", XContentType.JSON)).actionGet();
 
 			ConfigUpdateResponse cur = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{"config","roles","rolesmapping","internalusers","actiongroups"})).actionGet();
+			Assert.assertFalse(cur.hasFailures());
 			Assert.assertEquals(clusterInfo.numNodes, cur.getNodes().size());
 
 		}
