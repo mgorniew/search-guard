@@ -142,6 +142,7 @@ public class HttpIntegrationTests extends SingleClusterTest {
             try (TransportClient tc = getInternalTransportClient()) {       
                 tc.index(new IndexRequest("searchguard").type("sg").id("roles").setRefreshPolicy(RefreshPolicy.IMMEDIATE).source("roles", FileHelper.readYamlContent("sg_roles_deny.yml"))).actionGet();
                 ConfigUpdateResponse cur = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{"roles"})).actionGet();
+                Assert.assertFalse(cur.hasFailures());
                 Assert.assertEquals(clusterInfo.numNodes, cur.getNodes().size());
             }
             
@@ -150,6 +151,7 @@ public class HttpIntegrationTests extends SingleClusterTest {
             try (TransportClient tc = getInternalTransportClient()) {
                 tc.index(new IndexRequest("searchguard").type("sg").id("roles").setRefreshPolicy(RefreshPolicy.IMMEDIATE).source("roles", FileHelper.readYamlContent("sg_roles.yml"))).actionGet();
                 ConfigUpdateResponse cur = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{"roles"})).actionGet();
+                Assert.assertFalse(cur.hasFailures());
                 Assert.assertEquals(clusterInfo.numNodes, cur.getNodes().size());
             }
             
@@ -319,6 +321,7 @@ public class HttpIntegrationTests extends SingleClusterTest {
                 tc.index(new IndexRequest("searchguard").type("sg").id("config").setRefreshPolicy(RefreshPolicy.IMMEDIATE).source("config", FileHelper.readYamlContent("sg_config.yml"))).actionGet();
                 tc.index(new IndexRequest("searchguard").type("sg").setRefreshPolicy(RefreshPolicy.IMMEDIATE).id("internalusers").source("internalusers", FileHelper.readYamlContent("sg_internal_users.yml"))).actionGet();
                 ConfigUpdateResponse cur = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{"config","roles","rolesmapping","internalusers","actiongroups"})).actionGet();
+                Assert.assertFalse(cur.hasFailures());
                 Assert.assertEquals(clusterInfo.numNodes, cur.getNodes().size());
              }
     
@@ -349,6 +352,7 @@ public class HttpIntegrationTests extends SingleClusterTest {
             tc.index(new IndexRequest("vulcangov").type("type").setRefreshPolicy(RefreshPolicy.IMMEDIATE).source("{\"content\":1}", XContentType.JSON)).actionGet();
             
             ConfigUpdateResponse cur = tc.execute(ConfigUpdateAction.INSTANCE, new ConfigUpdateRequest(new String[]{"config","roles","rolesmapping","internalusers","actiongroups"})).actionGet();
+            Assert.assertFalse(cur.hasFailures());
             Assert.assertEquals(clusterInfo.numNodes, cur.getNodes().size());
         }
     
