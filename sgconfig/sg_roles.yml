@@ -154,6 +154,8 @@ sg_logstash:
     - CLUSTER_COMPOSITE_OPS
     - indices:admin/template/get
     - indices:admin/template/put
+    - cluster:admin/ingest/pipeline/put
+    - cluster:admin/ingest/pipeline/get
   indices:
     'logstash-*':
       '*':
