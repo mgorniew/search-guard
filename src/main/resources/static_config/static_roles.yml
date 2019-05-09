@@ -7,7 +7,7 @@ SGS_ALL_ACCESS:
   reserved: true
   hidden: false
   static: true
-  description: "Allow full access to all indices and all cluster APIs."
+  description: "Allow full access to all indices and all cluster APIs"
   cluster_permissions:
     - "*"
   index_permissions:
@@ -25,7 +25,7 @@ SGS_KIBANA_USER:
   reserved: true
   hidden: false
   static: true
-  description: "Provide the minimum permissions for a kibana user."
+  description: "Provide the minimum permissions for a kibana user"
   cluster_permissions:
     - "SGS_INDICES_MONITOR"
     - "SGS_CLUSTER_COMPOSITE_OPS"
@@ -44,19 +44,12 @@ SGS_KIBANA_USER:
         - ".management-beats"
       allowed_actions:
         - "SGS_INDICES_ALL"
-  #tenant_permissions:
-  #  - tenant_patterns:
-  #      - "SGS_GLOBAL"
-  #      - "SGS_PRIVATE"
-  #    allowed_actions:
-  #      - "SGS_KIBANA_ALL_WRITE"
-
 
 SGS_OWN_INDEX:
   reserved: true
   hidden: false
   static: true
-  description: "Migrated from v6 (all types mapped)"
+  description: "Allow all for indices named like the current user"
   cluster_permissions:
   - "SGS_CLUSTER_COMPOSITE_OPS"
   index_permissions:
@@ -69,7 +62,7 @@ SGS_XP_MONITORING:
   reserved: true
   hidden: false
   static: true
-  description: "Migrated from v6 (all types mapped)"
+  description: "Provide the minimum permissions for x-pack monitoring"
   cluster_permissions:
   - "cluster:monitor/xpack/info"
   - "cluster:monitor/main"
@@ -79,90 +72,13 @@ SGS_XP_MONITORING:
     - ".monitor*"
     allowed_actions:
     - "SGS_INDICES_ALL"
-  
-SGS_ALERTING:
-  reserved: true
-  hidden: false
-  static: true
-  description: "Migrated from v6 (all types mapped)"
-  cluster_permissions:
-  - "indices:data/read/scroll"
-  - "cluster:admin/xpack/watcher/watch/put"
-  - "cluster:admin/xpack/watcher*"
-  - "SGS_CLUSTER_MONITOR"
-  - "SGS_CLUSTER_COMPOSITE_OPS"
-  index_permissions:
-  - index_patterns:
-    - ".kibana*"
-    allowed_actions:
-    - "SGS_READ"
-  - index_patterns:
-    - ".watches*"
-    allowed_actions:
-    - "SGS_INDICES_ALL"
-  - index_patterns:
-    - ".watcher-history-*"
-    allowed_actions:
-    - "SGS_INDICES_ALL"
-  - index_patterns:
-    - ".triggered_watches"
-    allowed_actions:
-    - "SGS_INDICES_ALL"
-  - index_patterns:
-    - "*"
-    allowed_actions:
-    - "SGS_READ"
-  
-SGS_READONLY_AND_MONITOR:
-  reserved: true
-  hidden: false
-  static: true
-  description: "Migrated from v6 (all types mapped)"
-  cluster_permissions:
-  - "SGS_CLUSTER_MONITOR"
-  - "SGS_CLUSTER_COMPOSITE_OPS_RO"
-  index_permissions:
-  - index_patterns:
-    - "*"
-    allowed_actions:
-    - "SGS_READ"
-  
-SGS_MONITOR:
-  reserved: true
-  hidden: false
-  static: true
-  description: "Migrated from v6 (all types mapped)"
-  cluster_permissions:
-  - "cluster:admin/xpack/monitoring/*"
-  - "cluster:admin/ingest/pipeline/put"
-  - "cluster:admin/ingest/pipeline/get"
-  - "indices:admin/template/get"
-  - "indices:admin/template/put"
-  - "SGS_CLUSTER_MONITOR"
-  - "SGS_CLUSTER_COMPOSITE_OPS"
-  index_permissions:
-  - index_patterns:
-    - ".monitor*"
-    allowed_actions:
-    - "SGS_INDICES_ALL"
-  - index_patterns:
-    - ".marvel*"
-    allowed_actions:
-    - "SGS_INDICES_ALL"
-  - index_patterns:
-    - ".kibana*"
-    allowed_actions:
-    - "SGS_READ"
-  - index_patterns:
-    - "*"
-    allowed_actions:
-    - "indices:data/read/field_caps"
+
   
 SGS_MANAGE_SNAPSHOTS:
   reserved: true
   hidden: false
   static: true
-  description: "Migrated from v6 (all types mapped)"
+  description: "Provide the minimum permissions for managing snapshots"
   cluster_permissions:
   - "SGS_MANAGE_SNAPSHOTS"
   index_permissions:
@@ -176,7 +92,7 @@ SGS_XP_ALERTING:
   reserved: true
   hidden: false
   static: true
-  description: "Migrated from v6 (all types mapped)"
+  description: "Provide the minimum permissions for x-pack alerting"
   cluster_permissions:
   - "indices:data/read/scroll"
   - "cluster:admin/xpack/watcher*"
@@ -204,7 +120,7 @@ SGS_XP_MACHINE_LEARNING:
   reserved: true
   hidden: false
   static: true
-  description: "Migrated from v6 (all types mapped)"
+  description: "Provide the minimum permissions for x-pack machine learning"
   cluster_permissions:
   - "cluster:admin/persistent*"
   - "cluster:internal/xpack/ml*"
@@ -226,7 +142,7 @@ SGS_KIBANA_SERVER:
   reserved: true
   hidden: false
   static: true
-  description: "Migrated from v6 (all types mapped)"
+  description: "Provide the minimum permissions for the Kibana server"
   cluster_permissions:
   - "SGS_CLUSTER_MONITOR"
   - "SGS_CLUSTER_COMPOSITE_OPS"
@@ -271,12 +187,14 @@ SGS_LOGSTASH:
   reserved: true
   hidden: false
   static: true
-  description: "Migrated from v6 (all types mapped)"
+  description: "Provide the minimum permissions for logstash and beats"
   cluster_permissions:
   - "SGS_CLUSTER_MONITOR"
   - "SGS_CLUSTER_COMPOSITE_OPS"
   - "indices:admin/template/get"
   - "indices:admin/template/put"
+  - "cluster:admin/ingest/pipeline/put"
+  - "cluster:admin/ingest/pipeline/get"
   index_permissions:
   - index_patterns:
     - "logstash-*"
@@ -293,7 +211,7 @@ SGS_READALL_AND_MONITOR:
   reserved: true
   hidden: false
   static: true
-  description: "Migrated from v6 (all types mapped)"
+  description: "Provide the minimum permissions for to readall indices and monitor the cluster"
   cluster_permissions:
   - "SGS_CLUSTER_MONITOR"
   - "SGS_CLUSTER_COMPOSITE_OPS_RO"
@@ -307,7 +225,7 @@ SGS_READALL:
   reserved: true
   hidden: false
   static: true
-  description: "Migrated from v6 (all types mapped)"
+  description: "Provide the minimum permissions for to readall indices"
   cluster_permissions:
   - "SGS_CLUSTER_COMPOSITE_OPS_RO"
   index_permissions:

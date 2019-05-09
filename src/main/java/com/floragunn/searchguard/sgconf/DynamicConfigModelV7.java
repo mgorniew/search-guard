@@ -91,18 +91,12 @@ public class DynamicConfigModelV7 extends DynamicConfigModel {
     public String getInternalProxies() {
         return config.dynamic.http.xff.internalProxies;
     }
-    @Override
-    public String getProxiesHeader() {
-        return config.dynamic.http.xff.proxiesHeader;
-    }
+
     @Override
     public String getRemoteIpHeader() {
         return config.dynamic.http.xff.remoteIpHeader;
     }
-    @Override
-    public String getTrustedProxies() {
-        return config.dynamic.http.xff.trustedProxies;
-    }
+
     @Override
     public boolean isRestAuthDisabled() {
         return config.dynamic.disable_rest_auth;

@@ -5,7 +5,7 @@ set -e
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
-ES_VERSION=7.0.0
+ES_VERSION=7.0.1
 NETTY_NATIVE_VERSION=2.0.7.Final
 NETTY_NATIVE_CLASSIFIER=non-fedora-linux-x86_64
 
@@ -32,7 +32,7 @@ fi
 rm -f netty-tcnative-$NETTY_NATIVE_VERSION-$NETTY_NATIVE_CLASSIFIER.jar
 
 chmod +x elasticsearch-$ES_VERSION/plugins/search-guard-7/tools/install_demo_configuration.sh
-./elasticsearch-$ES_VERSION/plugins/search-guard-7/tools/install_demo_configuration.sh -y -i
+./elasticsearch-$ES_VERSION/plugins/search-guard-7/tools/install_demo_configuration.sh -y -i -c
 elasticsearch-$ES_VERSION/bin/elasticsearch -p es-smoketest-pid &
 
 while ! nc -z 127.0.0.1 9200; do

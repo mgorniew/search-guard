@@ -8,8 +8,3 @@ SGS_GLOBAL_TENANT:
   hidden: false
   static: true
   description: "Global tenant"
-
-#SGS_PRIVATE_TENANT:
-#  reserved: true
-#  hidden: false
-#  description: "Private tenant"

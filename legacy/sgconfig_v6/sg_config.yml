@@ -74,7 +74,7 @@ searchguard:
         #internalProxies: '.*' # trust all internal proxies, regex pattern
         remoteIpHeader:  'x-forwarded-for'
         proxiesHeader:   'x-forwarded-by'
-        #trustedProxies: '.*' # trust all external proxies, regex pattern
+        trustedProxies: '.*' # trust all external proxies, regex pattern
         ###### see https://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html for regex help
         ###### more information about XFF https://en.wikipedia.org/wiki/X-Forwarded-For
         ###### and here https://tools.ietf.org/html/rfc7239

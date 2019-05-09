@@ -18,7 +18,6 @@
 package com.floragunn.searchguard.action.whoami;
 
 import org.elasticsearch.action.Action;
-import org.elasticsearch.client.ElasticsearchClient;
 
 public class WhoAmIAction extends Action<WhoAmIResponse> {
 

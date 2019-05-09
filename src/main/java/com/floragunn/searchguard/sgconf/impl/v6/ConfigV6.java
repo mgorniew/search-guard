@@ -267,12 +267,10 @@ public class ConfigV6 {
         public boolean http_enabled = true;
         public boolean transport_enabled = true;
         public boolean enabled = true;
-        public int order;
         public AuthzBackend authorization_backend = new AuthzBackend();
         @Override
         public String toString() {
-            return "AuthzDomain [http_enabled=" + http_enabled + ", transport_enabled=" + transport_enabled + ", enabled=" + enabled + ", order="
-                    + order + ", authorization_backend=" + authorization_backend + "]";
+            return "AuthzDomain [http_enabled=" + http_enabled + ", transport_enabled=" + transport_enabled + ", enabled=" + enabled + ", authorization_backend=" + authorization_backend + "]";
         }
         
         

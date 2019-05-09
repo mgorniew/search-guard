@@ -19,8 +19,8 @@ sg_config:
         enabled: false
         internalProxies: "192\\.168\\.0\\.10|192\\.168\\.0\\.11"
         remoteIpHeader: "x-forwarded-for"
-        proxiesHeader: "x-forwarded-by"
-        trustedProxies: "proxy1|proxy2"
+
+
     authc:
       authentication_domain_clientcert:
         http_enabled: true

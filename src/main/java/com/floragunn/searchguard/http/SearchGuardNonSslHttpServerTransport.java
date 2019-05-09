@@ -17,27 +17,24 @@
 
 package com.floragunn.searchguard.http;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler;
-
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.BigArrays;
-import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.http.HttpHandlingSettings;
 import org.elasticsearch.http.netty4.Netty4HttpServerTransport;
 import org.elasticsearch.threadpool.ThreadPool;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
+
 public class SearchGuardNonSslHttpServerTransport extends Netty4HttpServerTransport {
 
     //https://github.com/floragunncom/search-guard/issues/256
-    private final ThreadContext threadContext;
     
     public SearchGuardNonSslHttpServerTransport(final Settings settings, final NetworkService networkService, final BigArrays bigArrays,
             final ThreadPool threadPool, final NamedXContentRegistry namedXContentRegistry, final Dispatcher dispatcher) {
         super(settings, networkService, bigArrays, threadPool, namedXContentRegistry, dispatcher);
-        this.threadContext = threadPool.getThreadContext();
     }
 
     @Override

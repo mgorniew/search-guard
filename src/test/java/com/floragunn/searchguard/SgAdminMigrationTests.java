@@ -24,7 +24,6 @@ import java.util.List;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.common.settings.Settings;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
@@ -141,7 +140,7 @@ public class SgAdminMigrationTests extends SingleClusterTest {
         assertContains(res, "*strict*");
         assertNotContains(res, "*DOWN*");
     }
-
+    
     @Override
     protected String getType() {
         return "sg";

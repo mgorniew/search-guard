@@ -25,12 +25,6 @@ import com.floragunn.searchguard.sgconf.impl.v7.TenantV7;
 
 public class Migration {
     
-    //Action groups List (0) format to ES 6 (1) format
-    //checker for ES 6 config format to detect unsupported options like composite mode/username implemented in sgadmin
-      //or maybe be lenient and just warn and discard
-    //SG 7 can load ES 6 config format (do we have any unsupported features then?)
-    //migration can only happen after cluster is fully on ES 7˝
-    
     public static Tuple<SgDynamicConfiguration<RoleV7>,SgDynamicConfiguration<TenantV7>>  migrateRoles(SgDynamicConfiguration<RoleV6> r6cs, SgDynamicConfiguration<RoleMappingsV6> rms6) throws MigrationException {
         
         final SgDynamicConfiguration<RoleV7> r7 = SgDynamicConfiguration.empty();
