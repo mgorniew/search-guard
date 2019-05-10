@@ -23,7 +23,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.nio.file.Path;
 import java.security.AccessController;
-
+import java.security.KeyStore;
 import java.security.PrivilegedAction;
 import java.security.cert.CRL;
 import java.security.cert.Certificate;
@@ -49,6 +49,7 @@ import org.elasticsearch.env.Environment;
 import org.elasticsearch.http.netty4.Netty4HttpChannel;
 import org.elasticsearch.rest.RestRequest;
 
+import com.floragunn.searchguard.FipsManager;
 import com.floragunn.searchguard.ssl.transport.PrincipalExtractor;
 import com.floragunn.searchguard.ssl.transport.PrincipalExtractor.Type;
 
@@ -221,7 +222,7 @@ public class SSLRequestHelper {
                 final String truststorePassword = settings.get(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_TRUSTSTORE_PASSWORD, "changeit");
                 //final String truststoreAlias = settings.get(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_TRUSTSTORE_ALIAS, null);
     
-                final KeyStore ts = KeyStore.getInstance(truststoreType);
+                final KeyStore ts = FipsManager.getKeystoreInstance(truststoreType);
                 try(FileInputStream fin = new FileInputStream(new File(env.configFile().resolve(truststore).toAbsolutePath().toString()))) {
                     ts.load(fin, (truststorePassword == null || truststorePassword.length() == 0) ?null:truststorePassword.toCharArray());
                 }

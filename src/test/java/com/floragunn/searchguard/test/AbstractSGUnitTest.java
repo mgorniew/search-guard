@@ -22,6 +22,9 @@ import io.netty.handler.ssl.OpenSsl;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.security.Permission;
+import java.security.Policy;
+import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
@@ -69,6 +72,24 @@ public abstract class AbstractSGUnitTest {
     protected static boolean withRemoteCluster;
 
 	static {
+	    
+	    //we need a security in case we test with FIPS
+	    Policy.setPolicy(new Policy() {
+
+            @Override
+            public boolean implies(ProtectionDomain domain, Permission permission) {
+                if(permission.getClass().getName().equals("org.bouncycastle.crypto.CryptoServicesPermission")) {
+                    if(permission.getActions().equals("[unapprovedModeEnabled]")) {
+                        System.out.println(permission);
+                        return false;
+                    }
+                }
+                return true;
+            }
+            
+        });
+
+        System.setSecurityManager(new SecurityManager());
 
 		System.out.println("OS: " + System.getProperty("os.name") + " " + System.getProperty("os.arch") + " "
 				+ System.getProperty("os.version"));

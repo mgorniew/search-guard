@@ -158,7 +158,7 @@ import com.google.common.collect.Lists;
 
 public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements ClusterPlugin, MapperPlugin {
 
-    public static final boolean FIPS_ENABLED = true;
+    public static final boolean FIPS_ENABLED = false;
     private static final String KEYWORD = ".keyword";
     private final boolean dlsFlsAvailable;
     private final Constructor<?> dlsFlsConstructor;
@@ -180,6 +180,10 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
     private volatile SearchGuardFilter sgf;
     private volatile ComplianceConfig complianceConfig;
     private volatile IndexResolverReplacer irr;
+    
+    static {
+        FipsManager.initialize(FIPS_ENABLED);
+    }
 
     @Override
     public void close() throws IOException {
@@ -245,22 +249,6 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
         demoCertHashes.add("bdc141ab2272c779d0f242b79063152c49e1b06a2af05e0fd90d505f2b44d5f5");
         demoCertHashes.add("3e839e2b059036a99ee4f742814995f2fb0ced7e9d68a47851f43a3c630b5324");
         demoCertHashes.add("9b13661c073d864c28ad7b13eda67dcb6cbc2f04d116adc7c817c20b4c7ed361");
-
-        /*final SecurityManager sm = System.getSecurityManager();
-
-        if (sm != null) {
-            sm.checkPermission(new SpecialPermission());
-        }
-
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
-            @Override
-            public Object run() {
-                if (Security.getProvider("BC") == null) {
-                    Security.addProvider(new BouncyCastleProvider());
-                }
-                return null;
-            }
-        });*/
 
         enterpriseModulesEnabled = settings.getAsBoolean(ConfigConstants.SEARCHGUARD_ENTERPRISE_MODULES_ENABLED, true);
         ReflectionHelper.init(enterpriseModulesEnabled);

@@ -28,7 +28,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
+import java.security.KeyStore;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
@@ -40,6 +40,7 @@ import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentType;
 
+import com.floragunn.searchguard.FipsManager;
 import com.floragunn.searchguard.support.SearchGuardDeprecationHandler;
 
 public class FileHelper {
@@ -52,7 +53,7 @@ public class FileHelper {
 	        return null;
 	    }
 	    
-	    KeyStore ks = KeyStore.getInstance("JKS");
+	    KeyStore ks = FipsManager.getKeystoreInstance("JKS");
 	    try (FileInputStream fin = new FileInputStream(path.toFile())) {
 	        ks.load(fin, password==null||password.isEmpty()?null:password.toCharArray());
 	    }

@@ -70,7 +70,7 @@ public class Hasher {
     public static String hash(final char[] clearTextPassword) {
         final byte[] salt = new byte[16];
         new SecureRandom().nextBytes(salt);
-        final String hash = FipsManager.generateHash((Objects.requireNonNull(clearTextPassword)), salt, 12);
+        final String hash = FipsManager.generatePasswordHash((Objects.requireNonNull(clearTextPassword)), salt, 12);
         Arrays.fill(salt, (byte)0);
         Arrays.fill(clearTextPassword, '\0');
         return hash;

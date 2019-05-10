@@ -96,7 +96,7 @@ public class InternalAuthenticationBackend implements AuthenticationBackend, Aut
         Arrays.fill(password, (byte)0);
        
         try {
-            if (FipsManager.checkPassword(internalUsersModel.getHash(credentials.getUsername()), array)) {
+            if (FipsManager.checkPasswordHash(internalUsersModel.getHash(credentials.getUsername()), array)) {
                 final List<String> roles = internalUsersModel.getBackenRoles(credentials.getUsername());
                 final Map<String, String> customAttributes = internalUsersModel.getAttributes(credentials.getUsername());
                 if(customAttributes != null) {

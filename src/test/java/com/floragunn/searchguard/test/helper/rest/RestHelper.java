@@ -20,7 +20,7 @@ package com.floragunn.searchguard.test.helper.rest;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-
+import java.security.KeyStore;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -51,6 +51,7 @@ import org.apache.http.ssl.SSLContexts;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.floragunn.searchguard.FipsManager;
 import com.floragunn.searchguard.test.helper.cluster.ClusterInfo;
 import com.floragunn.searchguard.test.helper.file.FileHelper;
 
@@ -192,11 +193,12 @@ public class RestHelper {
 			
             final String keyStorePath = FileHelper.getAbsoluteFilePathFromClassPath(keystore).toFile().getParent();
                         
-			final KeyStore myTrustStore = KeyStore.getInstance("JKS");
-			myTrustStore.load(new FileInputStream(keyStorePath+"/truststore.jks"),
+			final KeyStore myTrustStore = FipsManager.getKeystoreInstance("JKS");
+			myTrustStore.load(new FileInputStream(keyStorePath+"/truststore.jks"), //truststore.BCFKS
 					"changeit".toCharArray());
 
-			final KeyStore keyStore = KeyStore.getInstance("JKS");
+			final KeyStore keyStore = FipsManager.getKeystoreInstance("JKS");
+			//keystore = keystore.replace("jks", "BCFKS");
 			keyStore.load(new FileInputStream(FileHelper.getAbsoluteFilePathFromClassPath(keystore).toFile()), "changeit".toCharArray());
 
 			final SSLContextBuilder sslContextbBuilder = SSLContexts.custom();

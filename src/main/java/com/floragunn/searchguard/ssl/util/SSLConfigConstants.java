@@ -23,6 +23,8 @@ import java.util.List;
 
 import org.elasticsearch.common.settings.Settings;
 
+import com.floragunn.searchguard.FipsManager;
+
 public final class SSLConfigConstants {
 
     public static final String SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE = "searchguard.ssl.http.enable_openssl_if_available";
@@ -232,10 +234,10 @@ public final class SSLConfigConstants {
         }
         
         if(configuredCiphers != null && configuredCiphers.size() > 0) {
-            return configuredCiphers;
+            return FipsManager.filterFipsTlsChipers(configuredCiphers);
         }
 
-        return Collections.unmodifiableList(Arrays.asList(_SECURE_SSL_CIPHERS));
+        return FipsManager.filterFipsTlsChipers((Arrays.asList(_SECURE_SSL_CIPHERS)));
     }
     
     private SSLConfigConstants() {

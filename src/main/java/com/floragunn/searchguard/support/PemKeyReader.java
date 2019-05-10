@@ -33,7 +33,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyException;
 import java.security.KeyFactory;
-
+import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
@@ -42,6 +42,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -55,10 +56,11 @@ import javax.crypto.spec.PBEKeySpec;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.bouncycastle.util.encoders.Base64;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
+
+import com.floragunn.searchguard.FipsManager;
 
 public final class PemKeyReader {
     
@@ -101,7 +103,7 @@ public final class PemKeyReader {
                     " (see http://netty.io/wiki/sslcontextbuilder-and-private-key.html for more information)");
         }
 
-        return Base64.decode(m.group(1));
+        return Base64.getDecoder().decode(m.group(1));
     }
 
     private static String readContent(InputStream in) throws IOException {
@@ -220,7 +222,7 @@ public final class PemKeyReader {
           type = JKS;
       }
       
-      final KeyStore store = KeyStore.getInstance(type.toUpperCase());
+      final KeyStore store = FipsManager.getKeystoreInstance(type.toUpperCase());
       store.load(new FileInputStream(storePath), keyStorePassword==null?null:keyStorePassword.toCharArray());
       return store;
     }
@@ -335,7 +337,7 @@ public final class PemKeyReader {
             return null;
         }
         
-        KeyStore ks = KeyStore.getInstance(JKS);
+        KeyStore ks = FipsManager.getKeystoreInstance(JKS);
         ks.load(null);
         
         if(trustCertificates != null && trustCertificates.length > 0) {
@@ -350,7 +352,7 @@ public final class PemKeyReader {
     public static KeyStore toKeystore(final String authenticationCertificateAlias, final char[] password, final X509Certificate authenticationCertificate[], final PrivateKey authenticationKey) throws Exception {
 
         if(authenticationCertificateAlias != null && authenticationCertificate != null && authenticationKey != null) {          
-            KeyStore ks = KeyStore.getInstance(JKS);
+            KeyStore ks = FipsManager.getKeystoreInstance(JKS);
             ks.load(null, null);
             ks.setKeyEntry(authenticationCertificateAlias, authenticationKey, password, authenticationCertificate);
             return ks;

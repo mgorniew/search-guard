@@ -20,7 +20,7 @@ package com.floragunn.searchguard.ssl.util;
 
 import java.security.GeneralSecurityException;
 import java.security.InvalidParameterException;
-
+import java.security.KeyStore;
 import java.security.Security;
 import java.security.cert.CRL;
 import java.security.cert.CertPathBuilder;

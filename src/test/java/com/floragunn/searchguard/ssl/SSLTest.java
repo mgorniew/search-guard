@@ -20,7 +20,7 @@ package com.floragunn.searchguard.ssl;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.file.Paths;
-
+import java.security.KeyStore;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,6 +58,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import com.floragunn.searchguard.FipsManager;
 import com.floragunn.searchguard.SearchGuardPlugin;
 import com.floragunn.searchguard.ssl.util.ExceptionUtils;
 import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
@@ -547,13 +548,13 @@ public class SSLTest extends SingleClusterTest {
 
         final TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory
                 .getDefaultAlgorithm());
-        final KeyStore trustStore = KeyStore.getInstance("JKS");
+        final KeyStore trustStore = FipsManager.getKeystoreInstance("JKS");
         trustStore.load(this.getClass().getResourceAsStream("/truststore.jks"), "changeit".toCharArray());
         tmf.init(trustStore);
 
         final KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory
                 .getDefaultAlgorithm());
-        final KeyStore keyStore = KeyStore.getInstance("JKS");
+        final KeyStore keyStore = FipsManager.getKeystoreInstance("JKS");
         keyStore.load(this.getClass().getResourceAsStream("/node-0-keystore.jks"), "changeit".toCharArray());        
         kmf.init(keyStore, "changeit".toCharArray());
         

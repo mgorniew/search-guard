@@ -18,7 +18,7 @@
 package com.floragunn.searchguard.ssl.util;
 
 import java.security.Key;
-
+import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
