@@ -65,7 +65,7 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 
 		Settings tcSettings = Settings.builder()
 				.put(settings)
-				.put("searchguard.ssl.transport.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("spock-keystore.jks"))
+				.put("searchguard.ssl.transport.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("spock-keystore."+(!utFips()?"jks":"BCFKS")))
 				.put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_ALIAS,"spock")
 				.build();
 
@@ -367,7 +367,7 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 		}
 
 		Settings tcSettings = Settings.builder()
-				.put("searchguard.ssl.transport.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("spock-keystore.jks"))
+				.put("searchguard.ssl.transport.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("spock-keystore."+(!utFips()?"jks":"BCFKS")))
 				.put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_ALIAS,"spock")
 				.put("path.home", ".")
 				.put("request.headers.sg_impersonate_as", "worf")
@@ -390,7 +390,7 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 		setup(settings);
 
 		Settings tcSettings = Settings.builder()
-				.put("searchguard.ssl.transport.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("spock-keystore.jks"))
+				.put("searchguard.ssl.transport.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("spock-keystore."+(!utFips()?"jks":"BCFKS")))
 				.put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_ALIAS,"spock")
 				.put("path.home", ".")
 				.put("request.headers.sg_impersonate_as", "worf")
@@ -424,7 +424,7 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 
 		Settings tcSettings = Settings.builder()
 				.put(settings)
-				.put("searchguard.ssl.transport.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("spock-keystore.jks"))
+				.put("searchguard.ssl.transport.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("spock-keystore."+(!utFips()?"jks":"BCFKS")))
 				.put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_ALIAS,"spock")
 				.build();
 
@@ -743,7 +743,7 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 		}
 
 		Settings tcSettings = Settings.builder()
-				.put("searchguard.ssl.transport.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("spock-keystore.jks"))
+				.put("searchguard.ssl.transport.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("spock-keystore."+(!utFips()?"jks":"BCFKS")))
 				.put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_ALIAS,"spock")
 				.put("path.home", ".")
 				.put("request.headers.sg_impersonate_as", "worf")
@@ -768,7 +768,7 @@ public class TransportClientIntegrationTests extends SingleClusterTest {
 				, settings);
 		
 		Settings tcSettings = Settings.builder()
-				.put("searchguard.ssl.transport.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("spock-keystore.jks"))
+				.put("searchguard.ssl.transport.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("spock-keystore."+(!utFips()?"jks":"BCFKS")))
 				.put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_KEYSTORE_ALIAS,"spock")
 				.put("path.home", ".")
 				.put("request.headers.sg_impersonate_as", "worf")

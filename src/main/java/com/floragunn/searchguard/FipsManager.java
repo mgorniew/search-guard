@@ -68,6 +68,8 @@ public final class FipsManager {
                 throw new RuntimeException("Non fips compliant SSL/TLS protocols configured: "+tmp);
             }
         }
+        
+        //Collections.unmodifiableList(
     }
     
     public static List<String> filterFipsTlsChipers(List<String> tlsChipers) {
@@ -100,7 +102,7 @@ public final class FipsManager {
             return Collections.unmodifiableList(tmp);
             
         } else {
-            return tlsChipers;
+            return Collections.unmodifiableList(tlsChipers);
         }
     }
     
@@ -312,7 +314,7 @@ public final class FipsManager {
         try {
             
             SecretKey key = generatePasswordHash0(plainTextPassword, salt, rounds);
-            return Base64.getEncoder().encodeToString(salt)+":"+Base64.getEncoder().encodeToString(key.getEncoded());
+            return Base64.getEncoder().encodeToString(salt)+"#"+Base64.getEncoder().encodeToString(key.getEncoded());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -325,13 +327,16 @@ public final class FipsManager {
             return false;
         }
         
-        if(!isFipsEnabled()) {
+        if(!isFipsEnabled() && hash.startsWith("$")) {
             return OpenBSDBCrypt.checkPassword(hash, plainTextPassword);
         }
         
+        //remove
+        if(hash.startsWith("$")) {
+            return OpenBSDBCrypt.checkPassword(hash, plainTextPassword);
+        }
         
-        
-        final String[] splittedHash = hash.split(":");
+        final String[] splittedHash = hash.split("#");
         
         if(splittedHash.length != 2) {
             return false;

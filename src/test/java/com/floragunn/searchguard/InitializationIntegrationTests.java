@@ -56,8 +56,8 @@ public class InitializationIntegrationTests extends SingleClusterTest {
         final Settings settings = Settings.builder()
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_CLIENTAUTH_MODE, "REQUIRE")
                 .put("searchguard.ssl.http.enabled",true)
-                .put("searchguard.ssl.http.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("node-0-keystore.jks"))
-                .put("searchguard.ssl.http.truststore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("truststore.jks"))
+                .put("searchguard.ssl.http.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("node-0-keystore."+(!utFips()?"jks":"BCFKS")))
+                .put("searchguard.ssl.http.truststore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("truststore."+(!utFips()?"jks":"BCFKS")))
                 .build();
         setup(Settings.EMPTY, null, settings, false);
         final RestHelper rh = restHelper(); //ssl resthelper

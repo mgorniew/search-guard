@@ -53,6 +53,7 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.rules.TestName;
 import org.junit.rules.TestWatcher;
 
+import com.floragunn.searchguard.FipsManager;
 import com.floragunn.searchguard.SearchGuardPlugin;
 import com.floragunn.searchguard.action.configupdate.ConfigUpdateAction;
 import com.floragunn.searchguard.action.configupdate.ConfigUpdateRequest;
@@ -148,11 +149,12 @@ public abstract class AbstractSGUnitTest {
         
         Settings tcSettings = Settings.builder()
                 .put("cluster.name", info.clustername)
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, utFips()?false:allowOpenSSL)
                 .put("searchguard.ssl.transport.truststore_filepath",
-                        FileHelper.getAbsoluteFilePathFromClassPath(prefix+"truststore.jks"))
+                        FileHelper.getAbsoluteFilePathFromClassPath(prefix+"truststore."+(utFips()?"BCFKS":"jks")))
                 .put("searchguard.ssl.transport.enforce_hostname_verification", false)
                 .put("searchguard.ssl.transport.keystore_filepath",
-                        FileHelper.getAbsoluteFilePathFromClassPath(prefix+"kirk-keystore.jks"))
+                        FileHelper.getAbsoluteFilePathFromClassPath(prefix+"kirk-keystore."+(utFips()?"BCFKS":"jks")))
                 .put(initTransportClientSettings)
                 .build();
         
@@ -161,17 +163,27 @@ public abstract class AbstractSGUnitTest {
         return tc;
     }
     
+    protected String handleFips(String keyStore) {
+        if(utFips()) {
+            keyStore = keyStore.replace(".jks", ".BCFKS");
+            keyStore = keyStore.replace(".p12", ".BCFKS");
+        }
+        
+        return keyStore;
+    }
+    
     protected TransportClient getUserTransportClient(ClusterInfo info, String keyStore, Settings initTransportClientSettings) {
         
         final String prefix = getResourceFolder()==null?"":getResourceFolder()+"/";
         
         Settings tcSettings = Settings.builder()
                 .put("cluster.name", info.clustername)
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, utFips()?false:allowOpenSSL)
                 .put("searchguard.ssl.transport.truststore_filepath",
-                        FileHelper.getAbsoluteFilePathFromClassPath(prefix+"truststore.jks"))
+                        FileHelper.getAbsoluteFilePathFromClassPath(prefix+"truststore."+(utFips()?"BCFKS":"jks")))
                 .put("searchguard.ssl.transport.enforce_hostname_verification", false)
                 .put("searchguard.ssl.transport.keystore_filepath",
-                        FileHelper.getAbsoluteFilePathFromClassPath(prefix+keyStore))
+                        FileHelper.getAbsoluteFilePathFromClassPath(prefix+handleFips(keyStore)))
                 .put(initTransportClientSettings)
                 .build();
         
@@ -223,26 +235,28 @@ public abstract class AbstractSGUnitTest {
     }
     
     protected Settings.Builder minimumSearchGuardSettingsBuilder(int node, boolean sslOnly) {
-        
+
         final String prefix = getResourceFolder()==null?"":getResourceFolder()+"/";
-        
-        Settings.Builder builder = Settings.builder()
+
+        Settings.Builder builder = Settings.builder();
+                if(!sslOnly) {
                 //.put("searchguard.ssl.transport.enabled", true)
                  //.put("searchguard.no_default_init", true)
                 //.put("searchguard.ssl.http.enable_openssl_if_available", false)
                 //.put("searchguard.ssl.transport.enable_openssl_if_available", false)
-                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
-                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
-                .put("searchguard.ssl.transport.keystore_alias", "node-0")
-                .put("searchguard.ssl.transport.keystore_filepath",
-                        FileHelper.getAbsoluteFilePathFromClassPath(prefix+"node-0-keystore.jks"))
-                .put("searchguard.ssl.transport.truststore_filepath",
-                        FileHelper.getAbsoluteFilePathFromClassPath(prefix+"truststore.jks"))
-                .put("searchguard.ssl.transport.enforce_hostname_verification", false);
-        
-                if(!sslOnly) {
+                    builder.put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, utFips()?false:allowOpenSSL);
+                    builder.put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, utFips()?false:allowOpenSSL);
+                    builder.put("searchguard.ssl.transport.keystore_alias", "node-0");
+                    builder.put("searchguard.ssl.transport.keystore_filepath",
+                        FileHelper.getAbsoluteFilePathFromClassPath(prefix+"node-0-keystore."+(utFips()?"BCFKS":"jks")));
+                    builder.put("searchguard.ssl.transport.truststore_filepath",
+                        FileHelper.getAbsoluteFilePathFromClassPath(prefix+"truststore."+(utFips()?"BCFKS":"jks")));
+                    builder.put("searchguard.ssl.transport.enforce_hostname_verification", false);                
                     builder.putList("searchguard.authcz.admin_dn", "CN=kirk,OU=client,O=client,l=tEst, C=De");
                     builder.put(ConfigConstants.SEARCHGUARD_BACKGROUND_INIT_IF_SGINDEX_NOT_EXIST, false);
+                    
+                    builder.putList("searchguard.nodes_dn", "CN=node-*.example.com*");
+                    builder.put("searchguard.cert.oid", "0.0.0.1.1.xxx.xxx");
                 //.put(other==null?Settings.EMPTY:other);
                 }
                 
@@ -289,5 +303,9 @@ public abstract class AbstractSGUnitTest {
     
     protected String getType() {
         return "_doc";
+    }
+    
+    protected boolean utFips() {
+        return true;
     }
 }

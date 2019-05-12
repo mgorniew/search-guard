@@ -46,7 +46,7 @@ public class OpenSSLTest extends SSLTest {
 
     @Before
     public void setup() {
-        allowOpenSSL = true;
+        allowOpenSSL = !utFips();
     }
 
     @Test
@@ -55,7 +55,7 @@ public class OpenSSLTest extends SSLTest {
                 
         final String openSSLOptional = System.getenv("SG_TEST_OPENSSL_OPT");
         System.out.println("SG_TEST_OPENSSL_OPT "+openSSLOptional);
-        if(!Boolean.parseBoolean(openSSLOptional)) {
+        if(!Boolean.parseBoolean(openSSLOptional) && !utFips()) {
             System.out.println("OpenSSL must be available");
             Assert.assertTrue("OpenSSL not available: "+String.valueOf(OpenSsl.unavailabilityCause()), OpenSsl.isAvailable());
         } else {

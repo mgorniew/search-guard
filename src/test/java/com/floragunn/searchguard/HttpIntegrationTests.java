@@ -251,8 +251,8 @@ public class HttpIntegrationTests extends SingleClusterTest {
     public void testHTTPSCompressionEnabled() throws Exception {
         final Settings settings = Settings.builder()
                 .put("searchguard.ssl.http.enabled",true)
-                .put("searchguard.ssl.http.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("node-0-keystore.jks"))
-                .put("searchguard.ssl.http.truststore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("truststore.jks"))
+                .put("searchguard.ssl.http.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("node-0-keystore."+(!utFips()?"jks":"BCFKS")))
+                .put("searchguard.ssl.http.truststore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("truststore."+(!utFips()?"jks":"BCFKS")))
                 .put("http.compression",true)
                 .build();
         setup(Settings.EMPTY, new DynamicSgConfig(), settings, true);
@@ -273,8 +273,8 @@ public class HttpIntegrationTests extends SingleClusterTest {
     public void testHTTPSCompression() throws Exception {
         final Settings settings = Settings.builder()
                 .put("searchguard.ssl.http.enabled",true)
-                .put("searchguard.ssl.http.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("node-0-keystore.jks"))
-                .put("searchguard.ssl.http.truststore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("truststore.jks"))
+                .put("searchguard.ssl.http.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("node-0-keystore."+(!utFips()?"jks":"BCFKS")))
+                .put("searchguard.ssl.http.truststore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("truststore."+(!utFips()?"jks":"BCFKS")))
                 .build();
         setup(Settings.EMPTY, new DynamicSgConfig(), settings, true);
         final RestHelper rh = restHelper(); //ssl resthelper
@@ -337,8 +337,8 @@ public class HttpIntegrationTests extends SingleClusterTest {
         final Settings settings = Settings.builder()
                 .put("searchguard.ssl.http.clientauth_mode","REQUIRE")
                 .put("searchguard.ssl.http.enabled",true)
-                .put("searchguard.ssl.http.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("node-0-keystore.jks"))
-                .put("searchguard.ssl.http.truststore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("truststore.jks"))
+                .put("searchguard.ssl.http.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("node-0-keystore."+(!utFips()?"jks":"BCFKS")))
+                .put("searchguard.ssl.http.truststore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("truststore."+(!utFips()?"jks":"BCFKS")))
                 .putList(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLED_PROTOCOLS, "TLSv1.1","TLSv1.2")
                 .putList(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLED_CIPHERS, "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256")
                 .putList(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLED_PROTOCOLS, "TLSv1.1","TLSv1.2")
@@ -378,8 +378,8 @@ public class HttpIntegrationTests extends SingleClusterTest {
         
         try {
             final Settings settings = Settings.builder()
-                    .put("searchguard.ssl.http.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("node-0-keystore.jks"))
-                    .put("searchguard.ssl.http.truststore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("truststore.jks"))
+                    .put("searchguard.ssl.http.keystore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("node-0-keystore."+(!utFips()?"jks":"BCFKS")))
+                    .put("searchguard.ssl.http.truststore_filepath", FileHelper.getAbsoluteFilePathFromClassPath("truststore."+(!utFips()?"jks":"BCFKS")))
                     .put("searchguard.ssl.http.enabled", true)
                     .build();
             setup(settings);

@@ -65,19 +65,21 @@ public class RestHelper {
 	public boolean trustHTTPServerCertificate = true;
 	public String keystore = "node-0-keystore.jks";
 	public final String prefix;
-	//public String truststore = "truststore.jks";
 	private ClusterInfo clusterInfo;
+	private final boolean utFips;
 	
-	public RestHelper(ClusterInfo clusterInfo, String prefix) {
+	public RestHelper(ClusterInfo clusterInfo, String prefix, boolean utFips) {
 		this.clusterInfo = clusterInfo;
 		this.prefix = prefix;
+		this.utFips = utFips;
 	}
 	
-	public RestHelper(ClusterInfo clusterInfo, boolean enableHTTPClientSSL, boolean trustHTTPServerCertificate, String prefix) {
+	public RestHelper(ClusterInfo clusterInfo, boolean enableHTTPClientSSL, boolean trustHTTPServerCertificate, String prefix, boolean utFips) {
 		this.clusterInfo = clusterInfo;
 		this.enableHTTPClientSSL = enableHTTPClientSSL;
 		this.trustHTTPServerCertificate = trustHTTPServerCertificate;
 		this.prefix = prefix;
+		this.utFips = utFips;
 	}
 	public String executeSimpleRequest(final String request) throws Exception {
 
@@ -194,11 +196,16 @@ public class RestHelper {
             final String keyStorePath = FileHelper.getAbsoluteFilePathFromClassPath(keystore).toFile().getParent();
                         
 			final KeyStore myTrustStore = FipsManager.getKeystoreInstance("JKS");
-			myTrustStore.load(new FileInputStream(keyStorePath+"/truststore.jks"), //truststore.BCFKS
+			myTrustStore.load(new FileInputStream(keyStorePath+"/truststore."+(!utFips?"jks":"BCFKS")), //truststore.BCFKS
 					"changeit".toCharArray());
 
 			final KeyStore keyStore = FipsManager.getKeystoreInstance("JKS");
-			//keystore = keystore.replace("jks", "BCFKS");
+			
+			if(utFips) {
+			    keystore = keystore.replace(".jks", ".BCFKS");
+			    keystore = keystore.replace(".p12", ".BCFKS");
+			}
+			
 			keyStore.load(new FileInputStream(FileHelper.getAbsoluteFilePathFromClassPath(keystore).toFile()), "changeit".toCharArray());
 
 			final SSLContextBuilder sslContextbBuilder = SSLContexts.custom();
