@@ -42,6 +42,8 @@ SGS_KIBANA_USER:
     - index_patterns:
         - ".tasks"
         - ".management-beats"
+        - "*:.tasks"
+        - "*:.management-beats"
       allowed_actions:
         - "SGS_INDICES_ALL"
 
@@ -70,6 +72,7 @@ SGS_XP_MONITORING:
   index_permissions:
   - index_patterns:
     - ".monitor*"
+    - "*:.monitor*"
     allowed_actions:
     - "SGS_INDICES_ALL"
 
@@ -100,14 +103,11 @@ SGS_XP_ALERTING:
   index_permissions:
   - index_patterns:
     - ".watches*"
-    allowed_actions:
-    - "SGS_INDICES_ALL"
-  - index_patterns:
     - ".watcher-history-*"
-    allowed_actions:
-    - "SGS_INDICES_ALL"
-  - index_patterns:
     - ".triggered_watches"
+    - "*:.watches*"
+    - "*:.watcher-history-*"
+    - "*:.triggered_watches"
     allowed_actions:
     - "SGS_INDICES_ALL"
   - index_patterns:
@@ -135,6 +135,7 @@ SGS_XP_MACHINE_LEARNING:
     - "indices:admin/get*"
   - index_patterns:
     - ".ml-*"
+    - "*:.ml-*"
     allowed_actions:
     - "*"
   
@@ -152,30 +153,16 @@ SGS_KIBANA_SERVER:
   index_permissions:
   - index_patterns:
     - ".kibana"
-    allowed_actions:
-    - "SGS_INDICES_ALL"
-  - index_patterns:
     - ".kibana-6"
-    allowed_actions:
-    - "SGS_INDICES_ALL"
-  - index_patterns:
     - ".kibana_*"
-    allowed_actions:
-    - "SGS_INDICES_ALL"
-  - index_patterns:
     - ".reporting*"
-    allowed_actions:
-    - "SGS_INDICES_ALL"
-  - index_patterns:
+    - "*:.reporting*"
     - ".monitoring*"
-    allowed_actions:
-    - "SGS_INDICES_ALL"
-  - index_patterns:
+    - "*:.monitoring*"
     - ".tasks"
-    allowed_actions:
-    - "SGS_INDICES_ALL"
-  - index_patterns:
     - ".management-beats*"
+    - "*:.tasks"
+    - "*:.management-beats*" 
     allowed_actions:
     - "SGS_INDICES_ALL"
   - index_patterns:
