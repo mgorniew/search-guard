@@ -53,7 +53,6 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.rules.TestName;
 import org.junit.rules.TestWatcher;
 
-import com.floragunn.searchguard.FipsManager;
 import com.floragunn.searchguard.SearchGuardPlugin;
 import com.floragunn.searchguard.action.configupdate.ConfigUpdateAction;
 import com.floragunn.searchguard.action.configupdate.ConfigUpdateRequest;
@@ -73,7 +72,7 @@ public abstract class AbstractSGUnitTest {
     protected static boolean withRemoteCluster;
 
 	static {
-	    
+	    if(System.getSecurityManager() == null) {
 	    //we need a security in case we test with FIPS
 	    Policy.setPolicy(new Policy() {
 
@@ -91,6 +90,7 @@ public abstract class AbstractSGUnitTest {
         });
 
         System.setSecurityManager(new SecurityManager());
+	    }
 
 		System.out.println("OS: " + System.getProperty("os.name") + " " + System.getProperty("os.arch") + " "
 				+ System.getProperty("os.version"));

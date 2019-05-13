@@ -60,7 +60,7 @@ import org.elasticsearch.SpecialPermission;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 
-import com.floragunn.searchguard.FipsManager;
+import com.floragunn.searchguard.cyrpto.CryptoManagerFactory;
 import com.floragunn.searchguard.ssl.util.ExceptionUtils;
 import com.floragunn.searchguard.ssl.util.SSLCertificateHelper;
 import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
@@ -269,7 +269,7 @@ public class DefaultSearchGuardKeyStore implements SearchGuardKeyStore {
 
                 try {
 
-                    final KeyStore ks = FipsManager.getKeystoreInstance(keystoreType);
+                    final KeyStore ks = CryptoManagerFactory.getInstance().getKeystoreInstance(keystoreType);
                     ks.load(new FileInputStream(new File(keystoreFilePath)),
                             (keystorePassword == null || keystorePassword.length() == 0) ? null
                                     : keystorePassword.toCharArray());
@@ -301,7 +301,7 @@ public class DefaultSearchGuardKeyStore implements SearchGuardKeyStore {
                                 "No certificates found in " + keystoreFilePath + " with alias " + keystoreAlias);
                     }
 
-                    final KeyStore ts = FipsManager.getKeystoreInstance(truststoreType);
+                    final KeyStore ts = CryptoManagerFactory.getInstance().getKeystoreInstance(truststoreType);
                     ts.load(new FileInputStream(new File(truststoreFilePath)),
                             (truststorePassword == null || truststorePassword.length() == 0) ? null
                                     : truststorePassword.toCharArray());
@@ -404,7 +404,7 @@ public class DefaultSearchGuardKeyStore implements SearchGuardKeyStore {
 
                 try {
 
-                    final KeyStore ks = FipsManager.getKeystoreInstance(keystoreType);
+                    final KeyStore ks = CryptoManagerFactory.getInstance().getKeystoreInstance(keystoreType);
                     try (FileInputStream fin = new FileInputStream(new File(keystoreFilePath))) {
                         ks.load(fin, (keystorePassword == null || keystorePassword.length() == 0) ? null
                                 : keystorePassword.toCharArray());
@@ -452,7 +452,7 @@ public class DefaultSearchGuardKeyStore implements SearchGuardKeyStore {
                         final String truststoreAlias = settings
                                 .get(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_TRUSTSTORE_ALIAS, null);
 
-                        final KeyStore ts = FipsManager.getKeystoreInstance(truststoreType);
+                        final KeyStore ts = CryptoManagerFactory.getInstance().getKeystoreInstance(truststoreType);
                         try (FileInputStream fin = new FileInputStream(new File(truststoreFilePath))) {
                             ts.load(fin, (truststorePassword == null || truststorePassword.length() == 0) ? null
                                     : truststorePassword.toCharArray());

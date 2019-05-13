@@ -58,8 +58,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import com.floragunn.searchguard.FipsManager;
 import com.floragunn.searchguard.SearchGuardPlugin;
+import com.floragunn.searchguard.cyrpto.CryptoManagerFactory;
 import com.floragunn.searchguard.ssl.util.ExceptionUtils;
 import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
 import com.floragunn.searchguard.support.ConfigConstants;
@@ -553,13 +553,13 @@ public class SSLTest extends SingleClusterTest {
 
         final TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory
                 .getDefaultAlgorithm());
-        final KeyStore trustStore = FipsManager.getKeystoreInstance("JKS");
+        final KeyStore trustStore = CryptoManagerFactory.getInstance().getKeystoreInstance("JKS");
         trustStore.load(this.getClass().getResourceAsStream("ssl/truststore."+(!utFips()?"jks":"BCFKS")), "changeit".toCharArray());
         tmf.init(trustStore);
 
         final KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory
                 .getDefaultAlgorithm());
-        final KeyStore keyStore = FipsManager.getKeystoreInstance("JKS");
+        final KeyStore keyStore = CryptoManagerFactory.getInstance().getKeystoreInstance("JKS");
         keyStore.load(this.getClass().getResourceAsStream("ssl/node-0-keystore."+(!utFips()?"jks":"BCFKS")), "changeit".toCharArray());        
         kmf.init(keyStore, "changeit".toCharArray());
         

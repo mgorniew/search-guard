@@ -60,7 +60,7 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 
-import com.floragunn.searchguard.FipsManager;
+import com.floragunn.searchguard.cyrpto.CryptoManagerFactory;
 
 public final class PemKeyReader {
     
@@ -222,7 +222,7 @@ public final class PemKeyReader {
           type = JKS;
       }
       
-      final KeyStore store = FipsManager.getKeystoreInstance(type.toUpperCase());
+      final KeyStore store = CryptoManagerFactory.getInstance().getKeystoreInstance(type.toUpperCase());
       store.load(new FileInputStream(storePath), keyStorePassword==null?null:keyStorePassword.toCharArray());
       return store;
     }
@@ -337,7 +337,7 @@ public final class PemKeyReader {
             return null;
         }
         
-        KeyStore ks = FipsManager.getKeystoreInstance(JKS);
+        KeyStore ks = CryptoManagerFactory.getInstance().getKeystoreInstance(JKS);
         ks.load(null);
         
         if(trustCertificates != null && trustCertificates.length > 0) {
@@ -352,7 +352,7 @@ public final class PemKeyReader {
     public static KeyStore toKeystore(final String authenticationCertificateAlias, final char[] password, final X509Certificate authenticationCertificate[], final PrivateKey authenticationKey) throws Exception {
 
         if(authenticationCertificateAlias != null && authenticationCertificate != null && authenticationKey != null) {          
-            KeyStore ks = FipsManager.getKeystoreInstance(JKS);
+            KeyStore ks = CryptoManagerFactory.getInstance().getKeystoreInstance(JKS);
             ks.load(null, null);
             ks.setKeyEntry(authenticationCertificateAlias, authenticationKey, password, authenticationCertificate);
             return ks;

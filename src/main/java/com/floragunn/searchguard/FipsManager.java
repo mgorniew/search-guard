@@ -1,5 +1,8 @@
 package com.floragunn.searchguard;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.security.AccessController;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -13,6 +16,8 @@ import java.security.ProtectionDomain;
 import java.security.Provider;
 import java.security.Provider.Service;
 import java.security.Security;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -26,6 +31,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,11 +46,10 @@ import org.elasticsearch.SpecialPermission;
 
 import com.google.common.collect.Lists;
 
-public final class FipsManager {
+final class FipsManager {
     
     private static final Logger LOGGER = LogManager.getLogger(FipsManager.class);
-    private static AtomicBoolean INITIALIZED = new AtomicBoolean();
-    private static AtomicBoolean FIPS_ENABLED = new AtomicBoolean();
+   
     
     private static Map<String, String> fipsKeystores;
     private static Map<String, String> fipsMessageDigests;
@@ -57,6 +65,24 @@ public final class FipsManager {
             return KeyStore.getInstance(fipsKeyStoreType);
         }
         return KeyStore.getInstance(keystoreType);
+    }
+    
+    public static KeyManager[] getKeyManagers(String keyStoreFile, char[] password) throws NoSuchAlgorithmException, KeyStoreException, NoSuchProviderException, CertificateException, FileNotFoundException, IOException, UnrecoverableKeyException {
+        checkInitialized();
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        KeyStore ks = getKeystoreInstance(KeyStore.getDefaultType());
+        ks.load(new FileInputStream(keyStoreFile), password);
+        kmf.init(ks, password);
+        return kmf.getKeyManagers();
+    }
+    
+    public static TrustManager[] getTrustManagers(String keyStoreFile, char[] password) throws NoSuchAlgorithmException, KeyStoreException, NoSuchProviderException, CertificateException, FileNotFoundException, IOException, UnrecoverableKeyException {
+        checkInitialized();
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        KeyStore ks = getKeystoreInstance(KeyStore.getDefaultType());
+        ks.load(new FileInputStream(keyStoreFile), password);
+        tmf.init(ks);
+        return tmf.getTrustManagers();
     }
     
     public static void checkTlsProtocols(List<String> tlsProtocols) {

@@ -18,12 +18,13 @@
 package com.floragunn.searchguard.ssl.util;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
 import org.elasticsearch.common.settings.Settings;
 
-import com.floragunn.searchguard.FipsManager;
+import com.floragunn.searchguard.cyrpto.CryptoManagerFactory;
 
 public final class SSLConfigConstants {
 
@@ -98,8 +99,11 @@ public final class SSLConfigConstants {
         }
         
         if(configuredProtocols != null && configuredProtocols.size() > 0) {
+            CryptoManagerFactory.getInstance().checkTlsProtocols(configuredProtocols);
             return configuredProtocols.toArray(new String[0]);
         }
+        
+        CryptoManagerFactory.getInstance().checkTlsProtocols(Arrays.asList(_SECURE_SSL_PROTOCOLS));
         
         return _SECURE_SSL_PROTOCOLS.clone();
     }
@@ -233,11 +237,14 @@ public final class SSLConfigConstants {
             }
         }
         
-        if(configuredCiphers != null && configuredCiphers.size() > 0) {
-            return FipsManager.filterFipsTlsChipers(configuredCiphers);
+        if(configuredCiphers == null || configuredCiphers.isEmpty()) {
+            configuredCiphers = Arrays.asList(_SECURE_SSL_CIPHERS);
         }
+        
+        CryptoManagerFactory.getInstance().checkTlsChipers(configuredCiphers);
+        return Collections.unmodifiableList(configuredCiphers);
 
-        return FipsManager.filterFipsTlsChipers((Arrays.asList(_SECURE_SSL_CIPHERS)));
+        
     }
     
     private SSLConfigConstants() {

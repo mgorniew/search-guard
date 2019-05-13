@@ -40,7 +40,7 @@ import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentType;
 
-import com.floragunn.searchguard.FipsManager;
+import com.floragunn.searchguard.cyrpto.CryptoManagerFactory;
 import com.floragunn.searchguard.support.SearchGuardDeprecationHandler;
 
 public class FileHelper {
@@ -53,7 +53,7 @@ public class FileHelper {
 	        return null;
 	    }
 	    
-	    KeyStore ks = FipsManager.getKeystoreInstance("JKS");
+	    KeyStore ks = CryptoManagerFactory.getInstance().getKeystoreInstance("JKS");
 	    try (FileInputStream fin = new FileInputStream(path.toFile())) {
 	        ks.load(fin, password==null||password.isEmpty()?null:password.toCharArray());
 	    }

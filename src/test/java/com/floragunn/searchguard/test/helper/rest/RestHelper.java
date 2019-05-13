@@ -51,7 +51,7 @@ import org.apache.http.ssl.SSLContexts;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.floragunn.searchguard.FipsManager;
+import com.floragunn.searchguard.cyrpto.CryptoManagerFactory;
 import com.floragunn.searchguard.test.helper.cluster.ClusterInfo;
 import com.floragunn.searchguard.test.helper.file.FileHelper;
 
@@ -195,11 +195,11 @@ public class RestHelper {
 			
             final String keyStorePath = FileHelper.getAbsoluteFilePathFromClassPath(keystore).toFile().getParent();
                         
-			final KeyStore myTrustStore = FipsManager.getKeystoreInstance("JKS");
+			final KeyStore myTrustStore = CryptoManagerFactory.getInstance().getKeystoreInstance("JKS");
 			myTrustStore.load(new FileInputStream(keyStorePath+"/truststore."+(!utFips?"jks":"BCFKS")), //truststore.BCFKS
 					"changeit".toCharArray());
 
-			final KeyStore keyStore = FipsManager.getKeystoreInstance("JKS");
+			final KeyStore keyStore = CryptoManagerFactory.getInstance().getKeystoreInstance("JKS");
 			
 			if(utFips) {
 			    keystore = keystore.replace(".jks", ".BCFKS");
