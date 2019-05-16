@@ -72,6 +72,10 @@ public class SgDynamicConfiguration<T> implements ToXContent {
             throw new IOException("A version of "+version+" must have a _sg_meta key for "+ctype);
         }
         
+        if(version >= 2 && !sdc.get_sg_meta().getType().equals(ctype.toLCString())) {
+            throw new IOException("A version of "+version+" must have a _sg_meta.type key matching "+ctype.toLCString());
+        }
+        
         if(version < 2 && ctype == CType.CONFIG && (sdc.getCEntries().size() != 1 || !sdc.getCEntries().keySet().contains("searchguard"))) {
             throw new IOException("A version of "+version+" must have a single toplevel key named 'searchguard' for "+ctype);
         }
