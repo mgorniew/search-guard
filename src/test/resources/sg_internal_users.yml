@@ -3,102 +3,115 @@ _sg_meta:
   type: "internalusers"
   config_version: 2
 bug.99:
-  hash: "$2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m"
+  hash: "v/Q/8ehM2NjcmlLLI5tAOg4ZPni803LBKya8rBVfnTk=#91drNERtMfLtOcBYzTfKr8sMlOciRcmqttPOpo2Ybuw="
   reserved: false
   hidden: false
   backend_roles: []
   attributes: {}
   description: "Migrated from v6"
+  static: false
 user_c:
-  hash: "$2a$04$jQcEXpODnTFoGDuA7DPdSevA84CuH/7MOYkb80M3XZIrH76YMWS9G"
+  hash: "gDn0zhMVb9O3Rx3upgL7ek8lUv2nd14Qoemuv8DGEyc=#UnvRRX9sflrT02SCJ2dSzvu/m75VqXTjzdAPDBUAve8="
   reserved: false
   hidden: false
   backend_roles:
   - "sg_uc"
   attributes: {}
   description: "Migrated from v6"
+  static: false
 user_b:
-  hash: "$2a$04$idGSEpNOhFbyiRL6toGPT.orh7ENOEU8kAqwkRFaXWRdA6wVgyqUu"
+  hash: "wpUoiI6b7r+p/BTfelATwDw5iCzSPWvzA5KE3zYZtCI=#tsBcyiilka9KM3nuF5iBWJQkF36AHmu5MF2w7q5kn2s="
   reserved: false
   hidden: false
   backend_roles:
   - "sg_ub"
   attributes: {}
   description: "Migrated from v6"
+  static: false
 snapresuser:
-  hash: "$2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m"
+  hash: "v/Q/8ehM2NjcmlLLI5tAOg4ZPni803LBKya8rBVfnTk=#91drNERtMfLtOcBYzTfKr8sMlOciRcmqttPOpo2Ybuw="
   reserved: false
   hidden: false
   backend_roles: []
   attributes: {}
   description: "Migrated from v6"
+  static: false
 user_a:
-  hash: "$2a$04$NDy7mGbRNrmPMh9nSnIB.OTMFkcioEd69A04ReSGkJDd7QHxnCcVC"
+  hash: "nCqDlRX8T6xdD/hcYmlYbcF9sW8+H9UpHFXAwNHHWOw=#WmYhuVFX8tz6s8xze8B79QyNepc+DXtTncBzmcYiAIc="
   reserved: false
   hidden: false
   backend_roles:
   - "sg_ua"
   attributes: {}
   description: "Migrated from v6"
+  static: false
 sarek:
-  hash: "$2a$12$Ioo1uXmH.Nq/lS5dUVBEsePSmZ5pSIpVO/xKHaquU/Jvq97I7nAgG"
+  hash: "dT/XQ+9JVya1ZAJ4Ls4LYt8Rk0dhSg71Q3aRbZXjt3U=#0Len0uds4F4uRQ0e0nig9PBnmDThsb0/J7gnnQB5mwM="
   reserved: false
   hidden: false
   backend_roles: []
   attributes: {}
   description: "Migrated from v6"
+  static: false
 crusherw:
-  hash: "$2a$12$61vXe3cXy32p0cjsW0Y/SeZa7kEVSWuQK0jg98D9d5zOGXfo5NgyC"
+  hash: "FNcJ4g48X9VUcVTJ1hfLHT88EGJOZRmY1WOSphLbkDo=#5mDFEk4+KWUwctj8EA7bskFvpP1UKJA6OIb9HjoUYe0="
   reserved: false
   hidden: false
   backend_roles:
   - "starfleet_academy"
   attributes: {}
   description: "Migrated from v6"
+  static: false
 kibanaserver:
-  hash: "$2a$12$4AcgAt3xwOWadA5s5blL6ev39OXDNhmOesEoo33eZtrq2N0YrU3H."
+  hash: "aTyRAqOEn5+4YU4xsOo0L33MV9NSk9RIHq+ENIAvWjw=#rmEIrYyfGw2RIQ2j1wXF7NN86eTHHvgG+tPJOz/2p3M="
   reserved: true
   hidden: false
   backend_roles: []
   attributes: {}
   description: "Migrated from v6"
+  static: false
 theindexadmin:
-  hash: "$2a$12$P.QbiwOsnxgz7kLBT10F7u6GhY7//Keyz7Xwf7lNzskRxpo9.zxFS"
+  hash: "LSqvkJ31eLBl7dm+pu9gvj8ex5vPnplFUq9nwASokNE=#Dt+m8gooRZTjMU4WUqw1HODJMogPLGcrTb+Q3tE7+V4="
   reserved: false
   hidden: false
   backend_roles: []
   attributes: {}
   description: "Migrated from v6"
+  static: false
 aliastest:
-  hash: "$2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m"
+  hash: "v/Q/8ehM2NjcmlLLI5tAOg4ZPni803LBKya8rBVfnTk=#91drNERtMfLtOcBYzTfKr8sMlOciRcmqttPOpo2Ybuw="
   reserved: false
   hidden: false
   backend_roles: []
   attributes: {}
   description: "Migrated from v6"
+  static: false
 logstash:
-  hash: "$2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m"
+  hash: "v/Q/8ehM2NjcmlLLI5tAOg4ZPni803LBKya8rBVfnTk=#91drNERtMfLtOcBYzTfKr8sMlOciRcmqttPOpo2Ybuw="
   reserved: false
   hidden: false
   backend_roles: []
   attributes: {}
   description: "Migrated from v6"
+  static: false
 twitter:
-  hash: "$2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m"
+  hash: "v/Q/8ehM2NjcmlLLI5tAOg4ZPni803LBKya8rBVfnTk=#91drNERtMfLtOcBYzTfKr8sMlOciRcmqttPOpo2Ybuw="
   reserved: false
   hidden: false
   backend_roles: []
   attributes: {}
   description: "Migrated from v6"
+  static: false
 mindex12:
-  hash: "$2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m"
+  hash: "v/Q/8ehM2NjcmlLLI5tAOg4ZPni803LBKya8rBVfnTk=#91drNERtMfLtOcBYzTfKr8sMlOciRcmqttPOpo2Ybuw="
   reserved: false
   hidden: false
   backend_roles: []
   attributes: {}
   description: "Migrated from v6"
+  static: false
 spock:
-  hash: "$2a$12$GI9JXffO3WUjTsU7Yy3E4.LBxC2ILo66Zg/rr79BpikSL2IIRezQa"
+  hash: "AZeX9OHiYlCAV4e11VPZlHknbeeAiyWoMKZgMGa+7Xo=#i0eus4oAuOFIeK2KxZmCKADygv3cDtUinxtqT6zru8M="
   reserved: false
   hidden: false
   backend_roles:
@@ -106,31 +119,43 @@ spock:
   - "starfleet"
   attributes: {}
   description: "Migrated from v6"
+  static: false
 knuddel:
   hash: "_imponly_"
   reserved: false
   hidden: false
   backend_roles: []
   attributes:
-    test1: test2
+    test1: "test2"
   description: "Migrated from v6"
+  static: false
 557:
-  hash: "$2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m"
+  hash: "v/Q/8ehM2NjcmlLLI5tAOg4ZPni803LBKya8rBVfnTk=#91drNERtMfLtOcBYzTfKr8sMlOciRcmqttPOpo2Ybuw="
   reserved: false
   hidden: false
   backend_roles:
   - "sg_557"
   attributes: {}
   description: "Migrated from v6"
+  static: false
+env.replace@example.comp.com:
+  hash: "v/Q/8ehM2NjcmlLLI5tAOg4ZPni803LBKya8rBVfnTk=#91drNERtMfLtOcBYzTfKr8sMlOciRcmqttPOpo2Ybuw="
+  reserved: false
+  hidden: false
+  backend_roles: []
+  attributes: {}
+  description: null
+  static: false
 baz:
-  hash: "$2a$12$A41IxPXV1/Dx46C6i1ufGubv.p3qYX7xVcY46q33sylYbIqQVwTMu"
+  hash: "ow733o3PmoTm4Xcfdxy/dDPKwQuopuAnoBGZwCLLh+4=#TisBcOS4klSaF9RmRmQJ1peBEa8C7YiPa6D21jfsBfw="
   reserved: false
   hidden: false
   backend_roles: []
   attributes: {}
   description: "Migrated from v6"
+  static: false
 picard:
-  hash: "$2a$12$wkY2BsRneCU5za1OPYlzsehQit6gu2vprVv/4jHiSEEBv2ThunaTS"
+  hash: "LV1y6WWdFdlDMiDQI6SrtYqtIUohO/BbEKY5cYdY0og=#GovJwzlLtCe56iaF8EbdyvoEqGAtFGJQx0Ziuw8FhnE="
   reserved: false
   hidden: false
   backend_roles:
@@ -138,22 +163,25 @@ picard:
   - "starfleet"
   attributes: {}
   description: "Migrated from v6"
+  static: false
 bug108:
-  hash: "$2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m"
+  hash: "v/Q/8ehM2NjcmlLLI5tAOg4ZPni803LBKya8rBVfnTk=#91drNERtMfLtOcBYzTfKr8sMlOciRcmqttPOpo2Ybuw="
   reserved: false
   hidden: false
   backend_roles: []
   attributes: {}
   description: "Migrated from v6"
+  static: false
 nagilum:
-  hash: "$2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m"
+  hash: "v/Q/8ehM2NjcmlLLI5tAOg4ZPni803LBKya8rBVfnTk=#91drNERtMfLtOcBYzTfKr8sMlOciRcmqttPOpo2Ybuw="
   reserved: false
   hidden: false
   backend_roles: []
   attributes: {}
   description: "Migrated from v6"
+  static: false
 custattr:
-  hash: "$2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m"
+  hash: "v/Q/8ehM2NjcmlLLI5tAOg4ZPni803LBKya8rBVfnTk=#91drNERtMfLtOcBYzTfKr8sMlOciRcmqttPOpo2Ybuw="
   reserved: false
   hidden: false
   backend_roles: []
@@ -165,13 +193,15 @@ custattr:
     c5: null
     null: "abc"
   description: "Migrated from v6"
+  static: false
 restoreuser:
-  hash: "$2a$12$JU2QjYVTlI24Q/enEOpf2uTLCPGchN.eXWCsrBiieUcRoeh53NB0y"
+  hash: "f2CodzX5+b7boSwz/GUUZt2Z7505yRIfOL5iGYBx6Hs=#S2t5/CkhHsrJ3tf933jmruXtxpTdgP6Ts7+EZWcZHVE="
   reserved: false
   hidden: false
   backend_roles: []
   attributes: {}
   description: "Migrated from v6"
+  static: false
 CN=spock,OU=client,O=client,L=Test,C=DE:
   hash: "_impersonation_only_"
   reserved: false
@@ -181,8 +211,9 @@ CN=spock,OU=client,O=client,L=Test,C=DE:
   - "starfleet"
   attributes: {}
   description: "Migrated from v6"
+  static: false
 abc:
-  hash: "$2a$12$bP0CO5d5nhmaTOj7mGteHugXQQ8jlSV0dxcl5//moZ1xnI.pVPXfe"
+  hash: "w4STZuaLPdbMRDL4RgWN/bJY1RMcS/dBZYbPHXLKdQI=#hjf829Ni00j+DscImMysoz4l1VnZuTAxzwEUshgCb9Y="
   reserved: false
   hidden: false
   backend_roles:
@@ -190,8 +221,9 @@ abc:
   - "starfleet"
   attributes: {}
   description: "Migrated from v6"
+  static: false
 kirk:
-  hash: "$2a$12$xZOcnwYPYQ3zIadnlQIJ0eNhX1ngwMkTN.oMwkKxoGvDVPn4/6XtO"
+  hash: "ZKcB590jzMOMXIDbqIVx5Yt75BgNTImziFf+T9G89n0=#26cpxtO8GNq0O5arRyROUEGMm8rIlK7DOr4uXwJSRIw="
   reserved: false
   hidden: false
   backend_roles:
@@ -199,22 +231,25 @@ kirk:
   - "starfleet"
   attributes: {}
   description: "Migrated from v6"
+  static: false
 §ÄÖÜäöüß:
-  hash: "$2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m"
+  hash: "v/Q/8ehM2NjcmlLLI5tAOg4ZPni803LBKya8rBVfnTk=#91drNERtMfLtOcBYzTfKr8sMlOciRcmqttPOpo2Ybuw="
   reserved: false
   hidden: false
   backend_roles: []
   attributes: {}
   description: "Migrated from v6"
+  static: false
 ccsresolv:
-  hash: "$2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m"
+  hash: "v/Q/8ehM2NjcmlLLI5tAOg4ZPni803LBKya8rBVfnTk=#91drNERtMfLtOcBYzTfKr8sMlOciRcmqttPOpo2Ybuw="
   reserved: false
   hidden: false
   backend_roles: []
   attributes: {}
   description: "Migrated from v6"
+  static: false
 itt1635:
-  hash: "$2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m"
+  hash: "v/Q/8ehM2NjcmlLLI5tAOg4ZPni803LBKya8rBVfnTk=#91drNERtMfLtOcBYzTfKr8sMlOciRcmqttPOpo2Ybuw="
   reserved: false
   hidden: false
   backend_roles:
@@ -223,15 +258,17 @@ itt1635:
   - "sg_esb_5"
   attributes: {}
   description: "Migrated from v6"
+  static: false
 rexclude:
-  hash: "$2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m"
+  hash: "v/Q/8ehM2NjcmlLLI5tAOg4ZPni803LBKya8rBVfnTk=#91drNERtMfLtOcBYzTfKr8sMlOciRcmqttPOpo2Ybuw="
   reserved: false
   hidden: false
   backend_roles: []
   attributes: {}
   description: "Migrated from v6"
+  static: false
 user_role01_role02_role03:
-  hash: "$2a$12$6.4Y6L//xeKQ7t8YEG0s6OH4F4q9gMw0J8E0GjmUMNZeyIWu1IRWS"
+  hash: "5WKgIDGYOxFe6BL7Ie7qCoL90DwLkrHmM04sRBqyKWc=#agPc4gBcaB0ENCmU2wteoRhSWclTiEvhQWVc2JNKcPg="
   reserved: false
   hidden: false
   backend_roles:
@@ -240,35 +277,40 @@ user_role01_role02_role03:
   - "role03"
   attributes: {}
   description: "Migrated from v6"
+  static: false
 underscore:
-  hash: "$2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m"
+  hash: "v/Q/8ehM2NjcmlLLI5tAOg4ZPni803LBKya8rBVfnTk=#91drNERtMfLtOcBYzTfKr8sMlOciRcmqttPOpo2Ybuw="
   reserved: false
   hidden: false
   backend_roles: []
   attributes: {}
   description: "Migrated from v6"
+  static: false
 dlsnoinvest:
-  hash: "$2a$12$9Zr4IgoJRqK6xJq4xjoa6OZAnY4QOQ6xIhcCxeYoQtB/HriMkeJSC"
+  hash: "EJ3PyuCQLB84tH8dry92JEBiDA/8e/8pNzj64DjZWeQ=#nciHZxXSdRfHrbzRMj9qRZm2qENS5X3AH+0uDOV1AlQ="
   reserved: false
   hidden: false
   backend_roles: []
   attributes: {}
   description: "Migrated from v6"
+  static: false
 aliasmngt:
-  hash: "$2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m"
+  hash: "v/Q/8ehM2NjcmlLLI5tAOg4ZPni803LBKya8rBVfnTk=#91drNERtMfLtOcBYzTfKr8sMlOciRcmqttPOpo2Ybuw="
   reserved: false
   hidden: false
   backend_roles:
   - "sg_aliasmngt"
   attributes: {}
   description: "Migrated from v6"
+  static: false
 '"''+-,;_?*@<>!$%&/()=#':
-  hash: "$2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m"
+  hash: "v/Q/8ehM2NjcmlLLI5tAOg4ZPni803LBKya8rBVfnTk=#91drNERtMfLtOcBYzTfKr8sMlOciRcmqttPOpo2Ybuw="
   reserved: false
   hidden: false
   backend_roles: []
   attributes: {}
   description: "Migrated from v6"
+  static: false
 userwithnopasswd:
   hash: null
   reserved: false
@@ -278,8 +320,9 @@ userwithnopasswd:
   - "starfleet"
   attributes: {}
   description: "Migrated from v6"
+  static: false
 worf:
-  hash: "$2a$12$A41IxPXV1/Dx46C6i1ufGubv.p3qYX7xVcY46q33sylYbIqQVwTMu"
+  hash: "jdXAZpXqk+esuZ1Gw8NCRRgbZqCDicn4WnTXekd6vRg=#B+0MafGONLNgQ0rVzek6RM1DxtW/3qcy9IdKLj9wyyo="
   reserved: false
   hidden: false
   backend_roles:
@@ -287,29 +330,33 @@ worf:
   - "starfleet"
   attributes: {}
   description: "Migrated from v6"
+  static: false
 writer:
-  hash: "$2a$12$LZvbDVnegkTbEFTu9hHnWO4HIrdB9rGaKcEOID5n0VV4j58cnvyZ."
+  hash: "cPLWXEmbQyyCxL1Ph7Nptib1HKd5c6/bspNCqZ+4TFA=#cC1uPL5HJv9g/NHlOjuH60nT/7ybFWLVFbsxBhnc/nQ="
   reserved: false
   hidden: false
   backend_roles: []
   attributes: {}
   description: "Migrated from v6"
+  static: false
 user_role01:
-  hash: "$2a$12$XrBfLQh2T8wIzpxE5vzhUOPjjGfONcD8UEjd5IT5KveG8ULZaj04."
+  hash: "XpOm2nahuo4Aynwc8jUKK/Tbubnrsc1yglSGznGAbe0=#bHHlLkDiWui72RrHZ2/12Cn2v6ZPcgdoUqLVWAII1ak="
   reserved: false
   hidden: false
   backend_roles:
   - "role01"
   attributes: {}
   description: "Migrated from v6"
+  static: false
 bulk:
-  hash: "$2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m"
+  hash: "v/Q/8ehM2NjcmlLLI5tAOg4ZPni803LBKya8rBVfnTk=#91drNERtMfLtOcBYzTfKr8sMlOciRcmqttPOpo2Ybuw="
   reserved: false
   hidden: false
   backend_roles:
   - "sg_bulk"
   attributes: {}
   description: "Migrated from v6"
+  static: false
 userwithblankpasswd:
   hash: ""
   reserved: false
@@ -319,6 +366,4 @@ userwithblankpasswd:
   - "starfleet"
   attributes: {}
   description: "Migrated from v6"
-env.replace@example.comp.com:
-  hash: $2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m
-  #password is: nagilum
+  static: false

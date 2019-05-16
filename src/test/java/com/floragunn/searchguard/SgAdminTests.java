@@ -54,6 +54,7 @@ public class SgAdminTests extends SingleClusterTest {
         argsAsList.add("-cd");
         argsAsList.add(new File("./sgconfig").getAbsolutePath());
         argsAsList.add("-nhnv");
+        argsAsList.add("-noopenssl");
         
         
         int returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
@@ -82,7 +83,7 @@ public class SgAdminTests extends SingleClusterTest {
         argsAsList.add("-cd");
         argsAsList.add(new File("./legacy/sgconfig_v6").getAbsolutePath());
         argsAsList.add("-nhnv");
-        
+        argsAsList.add("-noopenssl");
         
         int returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
         Assert.assertNotEquals(0, returnCode);
@@ -110,7 +111,7 @@ public class SgAdminTests extends SingleClusterTest {
         argsAsList.add("-cd");
         argsAsList.add(new File("./sgconfig").getAbsolutePath());
         argsAsList.add("-nhnv");
-        
+        argsAsList.add("-noopenssl");
         
         int returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
         Assert.assertEquals(0, returnCode);
@@ -145,7 +146,7 @@ public class SgAdminTests extends SingleClusterTest {
         argsAsList.add("-t");
         argsAsList.add("config");
         argsAsList.add("-nhnv");
-        
+        argsAsList.add("-noopenssl");
         
         int returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
         Assert.assertEquals(0, returnCode);
@@ -164,7 +165,7 @@ public class SgAdminTests extends SingleClusterTest {
         argsAsList.add("-t");
         argsAsList.add("rolesmapping");
         argsAsList.add("-nhnv");
-        
+        argsAsList.add("-noopenssl");
         
         returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
         Assert.assertEquals(0, returnCode);
@@ -183,7 +184,7 @@ public class SgAdminTests extends SingleClusterTest {
         argsAsList.add("-t");
         argsAsList.add("tenants");
         argsAsList.add("-nhnv");
-        
+        argsAsList.add("-noopenssl");
         
         returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
         Assert.assertEquals(0, returnCode);
@@ -218,6 +219,7 @@ public class SgAdminTests extends SingleClusterTest {
         argsAsList.add("-t");
         argsAsList.add("config");
         argsAsList.add("-nhnv");
+        argsAsList.add("-noopenssl");
         
         int returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
         Assert.assertNotEquals(0, returnCode);
@@ -253,7 +255,7 @@ public class SgAdminTests extends SingleClusterTest {
         argsAsList.add("-t");
         argsAsList.add("roles");
         argsAsList.add("-nhnv");
-        
+        argsAsList.add("-noopenssl");
         
         int returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
         Assert.assertNotEquals(0, returnCode);
@@ -300,7 +302,7 @@ public class SgAdminTests extends SingleClusterTest {
         argsAsList.add(clusterInfo.clustername);
         argsAsList.add("-rl");
         argsAsList.add("-nhnv");
-        
+        argsAsList.add("-noopenssl");
         
         int returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
         Assert.assertNotEquals(0, returnCode);

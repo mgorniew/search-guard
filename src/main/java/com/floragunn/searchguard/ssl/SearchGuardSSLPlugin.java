@@ -71,6 +71,7 @@ import org.elasticsearch.transport.Transport;
 import org.elasticsearch.transport.TransportInterceptor;
 import org.elasticsearch.watcher.ResourceWatcherService;
 
+import com.floragunn.searchguard.crypto.CryptoManagerFactory;
 import com.floragunn.searchguard.ssl.http.netty.SearchGuardSSLNettyHttpServerTransport;
 import com.floragunn.searchguard.ssl.http.netty.ValidatingDispatcher;
 import com.floragunn.searchguard.ssl.rest.SearchGuardSSLInfoAction;
@@ -80,8 +81,9 @@ import com.floragunn.searchguard.ssl.transport.SearchGuardSSLTransportIntercepto
 import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
 
 //For ES5 this class has only effect when SSL only plugin is installed
-public class SearchGuardSSLPlugin extends Plugin implements ActionPlugin, NetworkPlugin {
+public abstract class SearchGuardSSLPlugin extends Plugin implements ActionPlugin, NetworkPlugin {
 
+    public static boolean FIPS_ENABLED = true;
     protected final Logger log = LogManager.getLogger(this.getClass());
     protected static final String CLIENT_TYPE = "client.type";
     protected final boolean client;
@@ -93,9 +95,9 @@ public class SearchGuardSSLPlugin extends Plugin implements ActionPlugin, Networ
     protected final Path configPath;
     private final static SslExceptionHandler NOOP_SSL_EXCEPTION_HANDLER = new SslExceptionHandler() {};
     
-//    public SearchGuardSSLPlugin(final Settings settings, final Path configPath) {
-//        this(settings, configPath, false);
-//    }
+    static {
+        CryptoManagerFactory.initialize(FIPS_ENABLED);
+    }
 
     protected SearchGuardSSLPlugin(final Settings settings, final Path configPath, boolean disabled) {
      
@@ -189,6 +191,11 @@ public class SearchGuardSSLPlugin extends Plugin implements ActionPlugin, Networ
         }
         
         if(ExternalSearchGuardKeyStore.hasExternalSslContext(settings)) {
+            
+            if(FIPS_ENABLED) {
+                throw new RuntimeException("External SSL context not allowed in FIPS mode");
+            }
+            
             this.sgks = new ExternalSearchGuardKeyStore(settings);
         } else {
             this.sgks = new DefaultSearchGuardKeyStore(settings, configPath);

@@ -18,7 +18,6 @@
 package com.floragunn.searchguard.user;
 
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,6 +26,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.elasticsearch.ElasticsearchSecurityException;
+
+import com.floragunn.searchguard.crypto.CryptoManagerFactory;
 
 /**
  * AuthCredentials are an abstraction to encapsulate credentials like passwords or generic
@@ -98,9 +99,8 @@ public final class AuthCredentials {
 
         if(this.password != null) {
             try {
-                MessageDigest digester = MessageDigest.getInstance(DIGEST_ALGORITHM);
-                internalPasswordHash = digester.digest(this.password);
-            } catch (NoSuchAlgorithmException e) {
+                internalPasswordHash = CryptoManagerFactory.getInstance().hash(this.password, DIGEST_ALGORITHM);
+            } catch (Exception e) {
                 throw new ElasticsearchSecurityException("Unable to digest password", e);
             }
         } else {

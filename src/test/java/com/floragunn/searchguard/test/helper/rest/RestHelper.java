@@ -51,7 +51,7 @@ import org.apache.http.ssl.SSLContexts;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.floragunn.searchguard.cyrpto.CryptoManagerFactory;
+import com.floragunn.searchguard.crypto.CryptoManagerFactory;
 import com.floragunn.searchguard.test.helper.cluster.ClusterInfo;
 import com.floragunn.searchguard.test.helper.file.FileHelper;
 

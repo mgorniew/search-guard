@@ -41,6 +41,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.codec.binary.Hex;
 import org.apache.lucene.search.QueryCachingPolicy;
 import org.apache.lucene.search.Weight;
 import org.elasticsearch.ElasticsearchException;
@@ -125,6 +126,7 @@ import com.floragunn.searchguard.configuration.CompatConfig;
 import com.floragunn.searchguard.configuration.ConfigurationRepository;
 import com.floragunn.searchguard.configuration.DlsFlsRequestValve;
 import com.floragunn.searchguard.configuration.SearchGuardIndexSearcherWrapper;
+import com.floragunn.searchguard.crypto.CryptoManagerFactory;
 import com.floragunn.searchguard.filter.SearchGuardFilter;
 import com.floragunn.searchguard.filter.SearchGuardRestFilter;
 import com.floragunn.searchguard.http.SearchGuardHttpServerTransport;
@@ -158,7 +160,6 @@ import com.google.common.collect.Lists;
 
 public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements ClusterPlugin, MapperPlugin {
 
-    public static final boolean FIPS_ENABLED = true;
     private static final String KEYWORD = ".keyword";
     private final boolean dlsFlsAvailable;
     private final Constructor<?> dlsFlsConstructor;
@@ -180,10 +181,6 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
     private volatile SearchGuardFilter sgf;
     private volatile ComplianceConfig complianceConfig;
     private volatile IndexResolverReplacer irr;
-    
-    static {
-        FipsManager.initialize(FIPS_ENABLED);
-    }
 
     @Override
     public void close() throws IOException {
@@ -210,7 +207,15 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
 
     public SearchGuardPlugin(final Settings settings, final Path configPath) {
         super(settings, configPath, isDisabled(settings));
-
+        
+        if(FIPS_ENABLED) {
+            log.info("FIPS mode enabled");
+        } else {
+            log.info("FIPS mode not enabled");
+        }
+        
+        CryptoManagerFactory.getInstance().validateSettings(settings);
+        
         disabled = isDisabled(settings);
 
         if (disabled) {
@@ -343,7 +348,7 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
         }
 
         try {
-            final String hash = FipsManager.sha256Hash(Files.readAllBytes(p));
+            final String hash = Hex.encodeHexString(CryptoManagerFactory.getInstance().hash(Files.readAllBytes(p), "SHA-256"));
             log.debug(hash + " :: " + p);
             return hash;
         } catch (Exception e) {

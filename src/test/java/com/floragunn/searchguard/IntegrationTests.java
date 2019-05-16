@@ -46,6 +46,7 @@ import com.floragunn.searchguard.action.configupdate.ConfigUpdateResponse;
 import com.floragunn.searchguard.action.whoami.WhoAmIAction;
 import com.floragunn.searchguard.action.whoami.WhoAmIRequest;
 import com.floragunn.searchguard.action.whoami.WhoAmIResponse;
+import com.floragunn.searchguard.crypto.CryptoManagerFactory;
 import com.floragunn.searchguard.http.HTTPClientCertAuthenticator;
 import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
 import com.floragunn.searchguard.support.ConfigConstants;
@@ -230,7 +231,7 @@ public class IntegrationTests extends SingleClusterTest {
 
     @Test
     public void testEnsureOpenSSLAvailability() {
-        Assume.assumeTrue(allowOpenSSL);
+        Assume.assumeTrue(allowOpenSSL && !CryptoManagerFactory.isFipsEnabled());
         Assert.assertTrue(String.valueOf(OpenSsl.unavailabilityCause()), OpenSsl.isAvailable());
     }
 

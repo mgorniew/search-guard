@@ -30,7 +30,7 @@ import org.elasticsearch.ElasticsearchSecurityException;
 
 import com.floragunn.searchguard.auth.AuthenticationBackend;
 import com.floragunn.searchguard.auth.AuthorizationBackend;
-import com.floragunn.searchguard.cyrpto.CryptoManagerFactory;
+import com.floragunn.searchguard.crypto.CryptoManagerFactory;
 import com.floragunn.searchguard.sgconf.ConfigModel;
 import com.floragunn.searchguard.sgconf.DynamicConfigFactory.DCFListener;
 import com.floragunn.searchguard.sgconf.DynamicConfigModel;
@@ -108,6 +108,8 @@ public class InternalAuthenticationBackend implements AuthenticationBackend, Aut
             } else {
                 throw new ElasticsearchSecurityException("password does not match");
             }
+        } catch (Exception e) {
+            throw new ElasticsearchSecurityException("Unexpected exception", e);
         } finally {
             Arrays.fill(wrap.array(), (byte)0);
             Arrays.fill(buf.array(), '\0');

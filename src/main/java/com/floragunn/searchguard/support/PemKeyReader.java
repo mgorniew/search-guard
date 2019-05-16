@@ -60,7 +60,7 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 
-import com.floragunn.searchguard.cyrpto.CryptoManagerFactory;
+import com.floragunn.searchguard.crypto.CryptoManagerFactory;
 
 public final class PemKeyReader {
     

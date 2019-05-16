@@ -49,7 +49,7 @@ import org.elasticsearch.env.Environment;
 import org.elasticsearch.http.netty4.Netty4HttpChannel;
 import org.elasticsearch.rest.RestRequest;
 
-import com.floragunn.searchguard.cyrpto.CryptoManagerFactory;
+import com.floragunn.searchguard.crypto.CryptoManagerFactory;
 import com.floragunn.searchguard.ssl.transport.PrincipalExtractor;
 import com.floragunn.searchguard.ssl.transport.PrincipalExtractor.Type;
 

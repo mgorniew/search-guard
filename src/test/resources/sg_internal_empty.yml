@@ -9,3 +9,4 @@ _:
   backend_roles: []
   attributes: {}
   description: "Migrated from v6"
+  static: false

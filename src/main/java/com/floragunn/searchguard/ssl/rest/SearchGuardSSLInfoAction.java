@@ -38,6 +38,7 @@ import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestStatus;
 
+import com.floragunn.searchguard.crypto.CryptoManagerFactory;
 import com.floragunn.searchguard.ssl.SearchGuardKeyStore;
 import com.floragunn.searchguard.ssl.transport.PrincipalExtractor;
 import com.floragunn.searchguard.ssl.util.SSLRequestHelper;
@@ -90,13 +91,19 @@ public class SearchGuardSSLInfoAction extends BaseRestHandler {
 
                     builder.field("ssl_protocol", sslInfo == null?null:sslInfo.getProtocol());
                     builder.field("ssl_cipher", sslInfo == null?null:sslInfo.getCipher());
-                    builder.field("ssl_openssl_available", OpenSsl.isAvailable());
-                    builder.field("ssl_openssl_version", OpenSsl.version());
-                    builder.field("ssl_openssl_version_string", OpenSsl.versionString());
-                    Throwable openSslUnavailCause = OpenSsl.unavailabilityCause();
-                    builder.field("ssl_openssl_non_available_cause", openSslUnavailCause==null?"":openSslUnavailCause.toString());
-                    builder.field("ssl_openssl_supports_key_manager_factory", OpenSsl.supportsKeyManagerFactory());
-                    builder.field("ssl_openssl_supports_hostname_validation", OpenSsl.supportsHostnameValidation());
+                    builder.field("ssl_openssl_available", CryptoManagerFactory.getInstance().isOpenSslAvailable());
+                    
+                    if(!CryptoManagerFactory.isFipsEnabled()) {
+                        builder.field("ssl_openssl_version", OpenSsl.version());
+                        builder.field("ssl_openssl_version_string", OpenSsl.versionString());
+                        Throwable openSslUnavailCause = OpenSsl.unavailabilityCause();
+                        builder.field("ssl_openssl_non_available_cause", openSslUnavailCause==null?"":openSslUnavailCause.toString());
+                        builder.field("ssl_openssl_supports_key_manager_factory", OpenSsl.supportsKeyManagerFactory());
+                        builder.field("ssl_openssl_supports_hostname_validation", OpenSsl.supportsHostnameValidation());
+                    } else {
+                        builder.field("ssl_openssl_non_available_cause", "In FIPS mode openssl is not supported/available.");
+                    }
+                    
                     builder.field("ssl_provider_http", sgks.getHTTPProviderName());
                     builder.field("ssl_provider_transport_server", sgks.getTransportServerProviderName());
                     builder.field("ssl_provider_transport_client", sgks.getTransportClientProviderName());

@@ -18,6 +18,9 @@
 package com.floragunn.searchguard.support;
 
 import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -32,6 +35,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.settings.Settings;
 
+import com.floragunn.searchguard.crypto.CryptoManagerFactory;
 import com.floragunn.searchguard.tools.Hasher;
 
 public final class SgUtils {
@@ -169,15 +173,48 @@ public final class SgUtils {
     //${env.MY_ENV_VAR}
     //${env.MY_ENV_VAR:-default}
     private static String resolveEnvVar(String envVarName, String mode, boolean bc) {
-        final String envVarValue = System.getenv(envVarName);
-        if(envVarValue == null || envVarValue.isEmpty()) {
-            if(mode != null && mode.startsWith(":-") && mode.length() > 2) {
-                return bc?Hasher.hash(mode.substring(2).toCharArray()):mode.substring(2);
+        try {
+            final String envVarValue = System.getenv(envVarName);
+            if(envVarValue == null || envVarValue.isEmpty()) {
+                if(mode != null && mode.startsWith(":-") && mode.length() > 2) {
+                    return bc?CryptoManagerFactory.getInstance().generatePasswordHash(mode.substring(2).toCharArray()):mode.substring(2);
+                } else {
+                    return null;
+                }
             } else {
-                return null;
+                return bc?CryptoManagerFactory.getInstance().generatePasswordHash(envVarValue.toCharArray()):envVarValue;
             }
-        } else {
-            return bc?Hasher.hash(envVarValue.toCharArray()):envVarValue;
+        } catch (Exception e) {
+            log.error("Unable to handle environment variable {} because of {}", envVarName, e.toString(), e);
+            return null;
         }
+    }
+    
+    public static String substringBetween(String string, String startToken, String endToken, boolean includeTokens) {
+        if(string == null) {
+            return null;
+        }
+        
+        if(string.isEmpty() || startToken == null || endToken == null) {
+            return string;
+        }
+        
+        int startIndex = string.indexOf(startToken);
+        if(startIndex < 0) {
+            return string;
+        }
+        
+        int endIndex = string.indexOf(endToken, startIndex);
+        if(endIndex < 0) {
+            return string;
+        }
+        
+        if(includeTokens) {
+            endIndex = endIndex+endToken.length();
+        } else {
+            startIndex = startIndex+startToken.length();
+        }
+        
+        return string.substring(startIndex, endIndex);
     }
 }

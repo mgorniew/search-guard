@@ -34,19 +34,24 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ExceptionsHelper;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
+import com.floragunn.searchguard.crypto.CryptoManagerFactory;
 import com.floragunn.searchguard.ssl.util.CertificateValidator;
 import com.floragunn.searchguard.ssl.util.ExceptionUtils;
 import com.floragunn.searchguard.test.helper.file.FileHelper;
 
 public class CertificateValidatorTest {
     
-    public static final Date CRL_DATE = new Date(1525546426000L);
+    //public static final Date CRL_DATE = new Date(1525546426000L);
+    public static final Date CRL_DATE = new Date  (1557866192000L);
     protected final Logger log = LogManager.getLogger(this.getClass());
     
     @Test
     public void testStaticCRL() throws Exception {
+        
+        Assume.assumeTrue(CryptoManagerFactory.getInstance().isHttpsClientCertRevocationSuported());
         
         File staticCrl = FileHelper.getAbsoluteFilePathFromClassPath("ssl/crl/revoked.crl").toFile();
         Collection<? extends CRL> crls = null;
@@ -87,6 +92,8 @@ public class CertificateValidatorTest {
     @Test
     public void testStaticCRLOk() throws Exception {
         
+        Assume.assumeTrue(CryptoManagerFactory.getInstance().isHttpsClientCertRevocationSuported());
+        
         File staticCrl = FileHelper.getAbsoluteFilePathFromClassPath("ssl/crl/revoked.crl").toFile();
         Collection<? extends CRL> crls = null;
         try(FileInputStream crlin = new FileInputStream(staticCrl)) {
@@ -124,6 +131,8 @@ public class CertificateValidatorTest {
     
     @Test
     public void testNoValidationPossible() throws Exception {
+        
+        Assume.assumeTrue(CryptoManagerFactory.getInstance().isHttpsClientCertRevocationSuported());
 
         //trust chain incl intermediate certificates (root + intermediates)
         Collection<? extends Certificate> rootCas;
@@ -156,6 +165,8 @@ public class CertificateValidatorTest {
     
     @Test
     public void testCRLDP() throws Exception {
+        
+        Assume.assumeTrue(CryptoManagerFactory.getInstance().isHttpsClientCertRevocationSuported());
 
         //trust chain incl intermediate certificates (root + intermediates)
         Collection<? extends Certificate> rootCas;

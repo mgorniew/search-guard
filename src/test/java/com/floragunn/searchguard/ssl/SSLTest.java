@@ -17,6 +17,8 @@
 
 package com.floragunn.searchguard.ssl;
 
+import static org.junit.Assert.assertTrue;
+
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.file.Paths;
@@ -59,7 +61,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import com.floragunn.searchguard.SearchGuardPlugin;
-import com.floragunn.searchguard.cyrpto.CryptoManagerFactory;
+import com.floragunn.searchguard.crypto.CryptoManagerFactory;
 import com.floragunn.searchguard.ssl.util.ExceptionUtils;
 import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
 import com.floragunn.searchguard.support.ConfigConstants;
@@ -208,7 +210,11 @@ public class SSLTest extends SingleClusterTest {
                     || e.toString().contains("Unable to configure permitted SSL ciphers")
                     || e.toString().contains("OPENSSL_internal:NO_CIPHER_MATCH")
                    );
-            Assert.assertTrue("Check if >= Java 8 and no openssl",allowOpenSSL?true:Constants.JRE_IS_MINIMUM_JAVA8 );        
+            Assert.assertTrue("Check if >= Java 8 and no openssl",allowOpenSSL?true:Constants.JRE_IS_MINIMUM_JAVA8 );
+            Assert.assertFalse(CryptoManagerFactory.isFipsEnabled());
+        } catch (RuntimeException e) {
+            Assert.assertTrue(CryptoManagerFactory.isFipsEnabled());
+            //in FIPS mode java.lang.RuntimeException: Non fips compliant SSL/TLS chipers configured: [SSL_RSA_EXPORT_WITH_RC4_40_MD5] is expected
         }
     }
     
@@ -376,9 +382,10 @@ public class SSLTest extends SingleClusterTest {
         try {
             setupSslOnlyMode(settings);
             Assert.fail();
+        } catch (RuntimeException e1) {
+            Assert.assertTrue(CryptoManagerFactory.isFipsEnabled());
         } catch (Exception e1) {
-            e1.printStackTrace();
-            System.out.println("##1 "+e1.toString());
+            Assert.assertFalse(CryptoManagerFactory.isFipsEnabled());
             Throwable e = ExceptionUtils.getRootCause(e1);
             Assert.assertTrue(e.toString(), e.toString().contains("no valid cipher"));
         }
@@ -467,7 +474,13 @@ public class SSLTest extends SingleClusterTest {
 
     @Test
     public void testHttpsV3Fail() throws Exception {
-        thrown.expect(SSLHandshakeException.class);
+        
+        if(CryptoManagerFactory.isFipsEnabled()) {
+            thrown.expect(IllegalArgumentException.class);
+        } else {
+            thrown.expect(SSLHandshakeException.class);
+        }
+        
 
         final Settings settings = Settings.builder().put("searchguard.ssl.transport.enabled", false)
                 .put(ConfigConstants.SEARCHGUARD_SSL_ONLY, true)
@@ -531,6 +544,10 @@ public class SSLTest extends SingleClusterTest {
     @Test
     public void testTransportClientSSLExternalContext() throws Exception {
 
+        if(CryptoManagerFactory.isFipsEnabled() && allowOpenSSL) {
+            thrown.expect(RuntimeException.class);
+        }
+        
         final Settings settings = Settings.builder().put("searchguard.ssl.transport.enabled", true)
                 .put(ConfigConstants.SEARCHGUARD_SSL_ONLY, true)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
@@ -554,18 +571,19 @@ public class SSLTest extends SingleClusterTest {
         final TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory
                 .getDefaultAlgorithm());
         final KeyStore trustStore = CryptoManagerFactory.getInstance().getKeystoreInstance("JKS");
-        trustStore.load(this.getClass().getResourceAsStream("ssl/truststore."+(!utFips()?"jks":"BCFKS")), "changeit".toCharArray());
+        trustStore.load(this.getClass().getResourceAsStream("/ssl/truststore."+(!utFips()?"jks":"BCFKS")), "changeit".toCharArray());
         tmf.init(trustStore);
 
         final KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory
                 .getDefaultAlgorithm());
         final KeyStore keyStore = CryptoManagerFactory.getInstance().getKeystoreInstance("JKS");
-        keyStore.load(this.getClass().getResourceAsStream("ssl/node-0-keystore."+(!utFips()?"jks":"BCFKS")), "changeit".toCharArray());        
+        keyStore.load(this.getClass().getResourceAsStream("/ssl/node-0-keystore."+(!utFips()?"jks":"BCFKS")), "changeit".toCharArray());
         kmf.init(keyStore, "changeit".toCharArray());
         
         
         SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
         sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+        
         ExternalSearchGuardKeyStore.registerExternalSslContext("abcx", sslContext);
         
         try (TransportClient tc = new TransportClientImpl(tcSettings, asCollection(SearchGuardPlugin.class))) {
@@ -591,7 +609,13 @@ public class SSLTest extends SingleClusterTest {
             //Assert.assertEquals(3, tc.admin().cluster().nodesInfo(new NodesInfoRequest()).actionGet().getNodes().length);
             
             //log.debug("NodesInfoRequest asserted");
-            
+            if(CryptoManagerFactory.isFipsEnabled()) {
+                Assert.fail("External context must not be allowed with FIPS");
+            }
+        } catch (Exception e) {
+            if(CryptoManagerFactory.isFipsEnabled()) {
+                Assert.assertEquals(ExceptionUtils.getRootCause(e).getClass(), RuntimeException.class);
+            }
         }
     }
 
@@ -653,6 +677,8 @@ public class SSLTest extends SingleClusterTest {
         setupSslOnlyMode(settings);
 
         final Settings tcSettings = Settings.builder().put("cluster.name", clusterInfo.clustername)
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)
                 .put("path.home", FileHelper. getAbsoluteFilePathFromClassPath("ssl/node-0-keystore."+(!utFips()?"jks":"BCFKS")).getParent())
                 .put("searchguard.ssl.transport.keystore_filepath", FileHelper. getAbsoluteFilePathFromClassPath("ssl/node-0-keystore."+(!utFips()?"jks":"BCFKS")))
                 .put("searchguard.ssl.transport.truststore_filepath", FileHelper. getAbsoluteFilePathFromClassPath("ssl/truststore_fail."+(!utFips()?"jks":"BCFKS")))
@@ -697,6 +723,10 @@ public class SSLTest extends SingleClusterTest {
     
     @Test
     public void testCustomPrincipalExtractor() throws Exception {
+        
+        if(CryptoManagerFactory.isFipsEnabled() && allowOpenSSL) {
+            thrown.expect(RuntimeException.class);
+        }
         
         final Settings settings = Settings.builder().put("searchguard.ssl.transport.enabled", true)
                 .put(ConfigConstants.SEARCHGUARD_SSL_ONLY, true)
@@ -751,6 +781,8 @@ public class SSLTest extends SingleClusterTest {
 
     @Test
     public void testCRLPem() throws Exception {
+        
+        Assume.assumeTrue(CryptoManagerFactory.getInstance().isHttpsClientCertRevocationSuported());
 
         final Settings settings = Settings.builder().put("searchguard.ssl.transport.enabled", true)
                 .put(ConfigConstants.SEARCHGUARD_SSL_ONLY, true)
@@ -785,6 +817,8 @@ public class SSLTest extends SingleClusterTest {
     
     @Test
     public void testCRL() throws Exception {
+        
+        Assume.assumeTrue(CryptoManagerFactory.getInstance().isHttpsClientCertRevocationSuported());
 
         final Settings settings = Settings.builder().put("searchguard.ssl.transport.enabled", false)
                 .put(ConfigConstants.SEARCHGUARD_SSL_ONLY, true)
@@ -884,6 +918,10 @@ public class SSLTest extends SingleClusterTest {
     @Test
     public void testHttpsAndNodeSSLKeyPass() throws Exception {
 
+        if(CryptoManagerFactory.isFipsEnabled() && allowOpenSSL) {
+            thrown.expect(RuntimeException.class);
+        }
+        
         final Settings settings = Settings.builder().put("searchguard.ssl.transport.enabled", true)
                 .put(ConfigConstants.SEARCHGUARD_SSL_ONLY, true)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, allowOpenSSL)

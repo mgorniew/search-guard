@@ -4,7 +4,7 @@
 #password is: admin
 admin:
   readonly: true
-  hash: $2a$12$VcCDgh2NDk07JGN0rjGbM.Ad41qVR/YFJcgHp0UGns5JDymv..TOG
+  hash: ePZd6nWd8ZVrIVauOaj4cte4WS49hMycPPG3Xsum790=#DJeVs/lj6XvRHPCjUTpQC8qqP4jFQreP4wrfDOa4Oaw=
   roles:
     - admin
   attributes:
@@ -22,7 +22,7 @@ logstash:
 #password is: kibanaserver  
 kibanaserver:
   readonly: true
-  hash: $2a$12$4AcgAt3xwOWadA5s5blL6ev39OXDNhmOesEoo33eZtrq2N0YrU3H.
+  hash: aTyRAqOEn5+4YU4xsOo0L33MV9NSk9RIHq+ENIAvWjw=#rmEIrYyfGw2RIQ2j1wXF7NN86eTHHvgG+tPJOz/2p3M=
 
 #password is: kibanaro
 kibanaro:  

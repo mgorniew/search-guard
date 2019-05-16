@@ -21,17 +21,28 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Provider;
+import java.security.Signature;
+import java.security.spec.InvalidKeySpecException;
+import java.util.Base64;
 import java.util.Map;
+
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 
 import org.elasticsearch.common.settings.Settings;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.floragunn.searchguard.crypto.CryptoManagerFactory;
 import com.floragunn.searchguard.support.ConfigConstants;
 import com.floragunn.searchguard.support.SgUtils;
 import com.floragunn.searchguard.support.WildcardMatcher;
+import com.floragunn.searchguard.test.AbstractSGUnitTest;
 
-public class UtilTests {
+public class UtilTests extends AbstractSGUnitTest {
     
     @Test
     public void testWildcards() {
@@ -90,14 +101,15 @@ public class UtilTests {
     }
     
     @Test
-    public void testEnvReplace() {
+    public void testEnvReplace() throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException {
         Settings settings = Settings.EMPTY;
         Assert.assertEquals("abv${env.MYENV}xyz", SgUtils.replaceEnvVars("abv${env.MYENV}xyz",settings));
         Assert.assertEquals("abv${envbc.MYENV}xyz", SgUtils.replaceEnvVars("abv${envbc.MYENV}xyz",settings));
         Assert.assertEquals("abvtTtxyz", SgUtils.replaceEnvVars("abv${env.MYENV:-tTt}xyz",settings));
-        Assert.assertTrue(FipsManager.checkPasswordHash(SgUtils.replaceEnvVars("${envbc.MYENV:-tTt}",settings), "tTt".toCharArray()));
+        Assert.assertTrue(CryptoManagerFactory.getInstance().checkPasswordHash(SgUtils.replaceEnvVars("${envbc.MYENV:-tTt}",settings), "tTt".toCharArray()));
         Assert.assertEquals("abvtTtxyzxxx", SgUtils.replaceEnvVars("abv${env.MYENV:-tTt}xyz${env.MYENV:-xxx}",settings));
-        Assert.assertTrue(SgUtils.replaceEnvVars("abv${env.MYENV:-tTt}xyz${envbc.MYENV:-xxx}",settings).startsWith("abvtTtxyz$2y$"));
+        String enc = SgUtils.replaceEnvVars("abv${env.MYENV:-tTt}xyz${envbc.MYENV:-xxx}",settings);
+        Assert.assertTrue(enc, enc.startsWith("abvtTtxyz") && enc.contains("#"));
         Assert.assertEquals("abv${env.MYENV:tTt}xyz", SgUtils.replaceEnvVars("abv${env.MYENV:tTt}xyz",settings));
         Assert.assertEquals("abv${env.MYENV-tTt}xyz", SgUtils.replaceEnvVars("abv${env.MYENV-tTt}xyz",settings));
         //Assert.assertEquals("abvabcdefgxyz", SgUtils.replaceEnvVars("abv${envbase64.B64TEST}xyz",settings));
@@ -117,7 +129,7 @@ public class UtilTests {
             Assert.assertEquals("abv"+val+"xyz", SgUtils.replaceEnvVars("abv${env."+k+":-k182765ggh}xyz",settings));
             Assert.assertEquals("abv"+val+"xyzabv"+val+"xyz", SgUtils.replaceEnvVars("abv${env."+k+"}xyzabv${env."+k+"}xyz",settings));
             Assert.assertEquals("abv"+val+"xyz", SgUtils.replaceEnvVars("abv${env."+k+":-k182765ggh}xyz",settings));
-            Assert.assertTrue(FipsManager.checkPasswordHash(SgUtils.replaceEnvVars("${envbc."+k+"}",settings), val.toCharArray()));
+            Assert.assertTrue(CryptoManagerFactory.getInstance().checkPasswordHash(SgUtils.replaceEnvVars("${envbc."+k+"}",settings), val.toCharArray()));
             checked = true;
         }
         
@@ -144,5 +156,41 @@ public class UtilTests {
             Assert.assertEquals("abv${env."+k+"}xyzabv${env."+k+"}xyz", SgUtils.replaceEnvVars("abv${env."+k+"}xyzabv${env."+k+"}xyz",settings));
             Assert.assertEquals("abv${env."+k+":-k182765ggh}xyz", SgUtils.replaceEnvVars("abv${env."+k+":-k182765ggh}xyz",settings));
         }
+    }
+    
+    @Test
+    public void testSubstringBetween() throws Exception {
+        String test = SgUtils.substringBetween("aaa\bbb{xxx}\n\n", "", "", true);
+        Assert.assertEquals("", test);
+        test = SgUtils.substringBetween("aaa\bbb{xxx}\n\n", "{", "}", true);
+        Assert.assertEquals("{xxx}", test);
+        test = SgUtils.substringBetween("aaa\bbb{xxx}\n\n", "bb{", "xx}", true);
+        Assert.assertEquals("bb{xxx}", test);
+        test = SgUtils.substringBetween("aaa\bbb{xxx}\n\n", "bb{", "xx}", false);
+        Assert.assertEquals("x", test);
+        test = SgUtils.substringBetween("aaa\bbb{xxx}\n\n", "bb{x", "xx}", true);
+        Assert.assertEquals("bb{xxx}", test);
+        test = SgUtils.substringBetween("aaa\bbb{xxx}\n\n", "bb{x", "xx}", false);
+        Assert.assertEquals("", test);
+        test = SgUtils.substringBetween("aaa\bbb{xxx}\n\n", "bb{x", "ddxx}", true);
+        Assert.assertEquals("aaa\bbb{xxx}\n\n", test);
+        test = SgUtils.substringBetween("aaa\bbb{xxx}\n\n", "{", "}", false);
+        Assert.assertEquals("xxx", test);
+        test = SgUtils.substringBetween("aaa\bbb{xxx}\n\n", "{x", "\n", false);
+        Assert.assertEquals("xx}", test);
+    }
+    
+    @Test
+    public void testSignatureAlgoAvailable() throws Exception {
+        Provider p = Signature.getInstance("SHA512withRSA").getProvider();
+        System.out.println("SHA512withRSA supported by "+p.getName());
+        p = Signature.getInstance("SHA512withECDSA").getProvider();
+        System.out.println("SHA512withECDSA supported by "+p.getName());
+        p = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512").getProvider(); 
+        System.out.println("PBKDF2WithHmacSHA512 supported by "+p.getName());
+        PBEKeySpec pbeSpec = new PBEKeySpec("123456789123456789123456789".toCharArray(), "123456789123456789123456789".getBytes(), 10000, 256); //32 byte key len
+        byte[] hash = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512").generateSecret(pbeSpec).getEncoded();
+        System.out.println(hash.length);
+        System.out.println(Base64.getEncoder().encodeToString(hash).length());
     }
 }

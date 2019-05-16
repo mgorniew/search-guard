@@ -60,7 +60,7 @@ import org.elasticsearch.SpecialPermission;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 
-import com.floragunn.searchguard.cyrpto.CryptoManagerFactory;
+import com.floragunn.searchguard.crypto.CryptoManagerFactory;
 import com.floragunn.searchguard.ssl.util.ExceptionUtils;
 import com.floragunn.searchguard.ssl.util.SSLCertificateHelper;
 import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
@@ -124,6 +124,10 @@ public class DefaultSearchGuardKeyStore implements SearchGuardKeyStore {
         final boolean useOpenSSLForTransportIfAvailable = settings
                 .getAsBoolean(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, true);
 
+        if(SearchGuardSSLPlugin.FIPS_ENABLED && (useOpenSSLForHttpIfAvailable || useOpenSSLForTransportIfAvailable)) {
+            throw new RuntimeException("OpenSSL bindings are not allowed when running in FIPS mode");
+        }
+        
         boolean openSSLInfoLogged = false;
 
         if (httpSSLEnabled && useOpenSSLForHttpIfAvailable) {
@@ -561,7 +565,7 @@ public class DefaultSearchGuardKeyStore implements SearchGuardKeyStore {
     }
 
     private void logOpenSSLInfos() {
-        if (OpenSsl.isAvailable()) {
+        if (CryptoManagerFactory.getInstance().isOpenSslAvailable()) {
             log.info("OpenSSL " + OpenSsl.versionString() + " (" + OpenSsl.version() + ") available");
 
             if (OpenSsl.version() < 0x10002000L) {
@@ -577,8 +581,13 @@ public class DefaultSearchGuardKeyStore implements SearchGuardKeyStore {
 
             log.debug("OpenSSL available ciphers " + OpenSsl.availableOpenSslCipherSuites());
         } else {
-            log.info("OpenSSL not available (this is not an error, we simply fallback to built-in JDK SSL) because of "
-                    + OpenSsl.unavailabilityCause());
+            
+            if(CryptoManagerFactory.isFipsEnabled()) {
+                log.info("OpenSSL not available in FIPS mode. This is not an error, we simply use Java SSL");
+            } else {
+                log.info("OpenSSL not available (this is not an error, we simply fallback to built-in JDK SSL) because of "
+                        + OpenSsl.unavailabilityCause());
+            }
         }
     }
 
@@ -617,7 +626,7 @@ public class DefaultSearchGuardKeyStore implements SearchGuardKeyStore {
         final List<String> secureHttpSSLProtocols = Arrays.asList(SSLConfigConstants.getSecureSSLProtocols(settings, true));
         final List<String> secureTransportSSLProtocols = Arrays.asList(SSLConfigConstants.getSecureSSLProtocols(settings, false));
 
-        if (OpenSsl.isAvailable()) {
+        if (CryptoManagerFactory.getInstance().isOpenSslAvailable()) {
             final Set<String> openSSLSecureHttpCiphers = new HashSet<>();
             for (final String secure : secureHttpSSLCiphers) {
                 if (OpenSsl.isCipherSuiteAvailable(secure)) {
@@ -635,7 +644,7 @@ public class DefaultSearchGuardKeyStore implements SearchGuardKeyStore {
             enabledHttpCiphersOpenSSLProvider = Collections.emptyList();
         }
 
-        if (OpenSsl.isAvailable()) {
+        if (CryptoManagerFactory.getInstance().isOpenSslAvailable()) {
             final Set<String> openSSLSecureTransportCiphers = new HashSet<>();
             for (final String secure : secureTransportSSLCiphers) {
                 if (OpenSsl.isCipherSuiteAvailable(secure)) {
@@ -649,7 +658,7 @@ public class DefaultSearchGuardKeyStore implements SearchGuardKeyStore {
             enabledTransportCiphersOpenSSLProvider = Collections.emptyList();
         }
         
-        if(OpenSsl.isAvailable() && OpenSsl.version() > 0x10101009L) {
+        if (CryptoManagerFactory.getInstance().isOpenSslAvailable() && OpenSsl.version() > 0x10101009L) {
             enabledHttpProtocolsOpenSSLProvider = new ArrayList(Arrays.asList("TLSv1.3","TLSv1.2","TLSv1.1","TLSv1"));
             enabledHttpProtocolsOpenSSLProvider.retainAll(secureHttpSSLProtocols);
             enabledTransportProtocolsOpenSSLProvider = new ArrayList(Arrays.asList("TLSv1.3","TLSv1.2","TLSv1.1"));
@@ -657,7 +666,7 @@ public class DefaultSearchGuardKeyStore implements SearchGuardKeyStore {
             
             log.info("OpenSSL supports TLSv1.3");
             
-        } else if(OpenSsl.isAvailable()){
+        } else if(CryptoManagerFactory.getInstance().isOpenSslAvailable()){
             enabledHttpProtocolsOpenSSLProvider = new ArrayList(Arrays.asList("TLSv1.2","TLSv1.1","TLSv1"));
             enabledHttpProtocolsOpenSSLProvider.retainAll(secureHttpSSLProtocols);
             enabledTransportProtocolsOpenSSLProvider = new ArrayList(Arrays.asList("TLSv1.2","TLSv1.1"));

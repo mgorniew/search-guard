@@ -35,6 +35,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.floragunn.searchguard.SearchGuardPlugin;
+import com.floragunn.searchguard.crypto.CryptoManagerFactory;
 import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
 import com.floragunn.searchguard.support.ConfigConstants;
 import com.floragunn.searchguard.test.helper.file.FileHelper;
@@ -46,7 +47,7 @@ public class OpenSSLTest extends SSLTest {
 
     @Before
     public void setup() {
-        allowOpenSSL = !utFips();
+        allowOpenSSL = true;
     }
 
     @Test
@@ -55,7 +56,7 @@ public class OpenSSLTest extends SSLTest {
                 
         final String openSSLOptional = System.getenv("SG_TEST_OPENSSL_OPT");
         System.out.println("SG_TEST_OPENSSL_OPT "+openSSLOptional);
-        if(!Boolean.parseBoolean(openSSLOptional) && !utFips()) {
+        if(!Boolean.parseBoolean(openSSLOptional) && !CryptoManagerFactory.isFipsEnabled()) {
             System.out.println("OpenSSL must be available");
             Assert.assertTrue("OpenSSL not available: "+String.valueOf(OpenSsl.unavailabilityCause()), OpenSsl.isAvailable());
         } else {
@@ -66,69 +67,69 @@ public class OpenSSLTest extends SSLTest {
     @Override
     @Test
     public void testHttps() throws Exception {
-        Assume.assumeTrue(OpenSsl.isAvailable());
+        Assume.assumeTrue(CryptoManagerFactory.getInstance().isOpenSslAvailable());
         super.testHttps();
     }
 
     @Override
     @Test
     public void testHttpsAndNodeSSL() throws Exception {
-        Assume.assumeTrue(OpenSsl.isAvailable());
+        Assume.assumeTrue(CryptoManagerFactory.getInstance().isOpenSslAvailable());
         super.testHttpsAndNodeSSL();
     }
 
     @Override
     @Test
     public void testHttpPlainFail() throws Exception {
-        Assume.assumeTrue(OpenSsl.isAvailable());
+        Assume.assumeTrue(CryptoManagerFactory.getInstance().isOpenSslAvailable());
         super.testHttpPlainFail();
     }
 
     @Override
     @Test
     public void testHttpsNoEnforce() throws Exception {
-        Assume.assumeTrue(OpenSsl.isAvailable());
+        Assume.assumeTrue(CryptoManagerFactory.getInstance().isOpenSslAvailable());
         super.testHttpsNoEnforce();
     }
 
     @Override
     @Test
     public void testHttpsV3Fail() throws Exception {
-        Assume.assumeTrue(OpenSsl.isAvailable());
+        Assume.assumeTrue(CryptoManagerFactory.getInstance().isOpenSslAvailable());
         super.testHttpsV3Fail();
     }
 
     @Override
     @Test(timeout=40000)
     public void testTransportClientSSL() throws Exception {
-        Assume.assumeTrue(OpenSsl.isAvailable());
+        Assume.assumeTrue(CryptoManagerFactory.getInstance().isOpenSslAvailable());
         super.testTransportClientSSL();
     }
 
     @Override
     @Test(timeout=40000)
     public void testNodeClientSSL() throws Exception {
-        Assume.assumeTrue(OpenSsl.isAvailable());
+        Assume.assumeTrue(CryptoManagerFactory.getInstance().isOpenSslAvailable());
         super.testNodeClientSSL();
     }
 
     @Override
     @Test(timeout=40000)
     public void testTransportClientSSLFail() throws Exception {
-        Assume.assumeTrue(OpenSsl.isAvailable());
+        Assume.assumeTrue(CryptoManagerFactory.getInstance().isOpenSslAvailable());
         super.testTransportClientSSLFail();
     }
     
     @Override
     @Test
     public void testHttpsOptionalAuth() throws Exception {
-        Assume.assumeTrue(OpenSsl.isAvailable());
+        Assume.assumeTrue(CryptoManagerFactory.getInstance().isOpenSslAvailable());
         super.testHttpsOptionalAuth();
     }
     
     @Test
     public void testAvailCiphersOpenSSL() throws Exception {
-        Assume.assumeTrue(OpenSsl.isAvailable());
+        Assume.assumeTrue(CryptoManagerFactory.getInstance().isOpenSslAvailable());
 
         // Set<String> openSSLAvailCiphers = new
         // HashSet<>(OpenSsl.availableCipherSuites());
@@ -149,38 +150,38 @@ public class OpenSSLTest extends SSLTest {
     
     @Test
     public void testHttpsEnforceFail() throws Exception {
-        Assume.assumeTrue(OpenSsl.isAvailable());
+        Assume.assumeTrue(CryptoManagerFactory.getInstance().isOpenSslAvailable());
         super.testHttpsEnforceFail();
     }
 
     @Override
     public void testCipherAndProtocols() throws Exception {
-        Assume.assumeTrue(OpenSsl.isAvailable());
+        Assume.assumeTrue(CryptoManagerFactory.getInstance().isOpenSslAvailable());
         super.testCipherAndProtocols();
     }
 
     @Override
     public void testHttpsAndNodeSSLFailedCipher() throws Exception {
-        Assume.assumeTrue(OpenSsl.isAvailable());
+        Assume.assumeTrue(CryptoManagerFactory.getInstance().isOpenSslAvailable());
         super.testHttpsAndNodeSSLFailedCipher();
     }
     
     @Test
     public void testHttpsAndNodeSSLPem() throws Exception {
-        Assume.assumeTrue(OpenSsl.isAvailable());
+        Assume.assumeTrue(CryptoManagerFactory.getInstance().isOpenSslAvailable());
         super.testHttpsAndNodeSSLPem();
     }
     
     @Test
     public void testHttpsAndNodeSSLPemEnc() throws Exception {
-        Assume.assumeTrue(OpenSsl.isAvailable());
+        Assume.assumeTrue(CryptoManagerFactory.getInstance().isOpenSslAvailable());
         super.testHttpsAndNodeSSLPemEnc();
     }
     
     @Test
     public void testNodeClientSSLwithOpenSslTLSv13() throws Exception {
         
-        Assume.assumeTrue(OpenSsl.isAvailable() && OpenSsl.version() > 0x10101009L);
+        Assume.assumeTrue(CryptoManagerFactory.getInstance().isOpenSslAvailable() && OpenSsl.version() > 0x10101009L);
 
         final Settings settings = Settings.builder().put("searchguard.ssl.transport.enabled", true)
                 .put(ConfigConstants.SEARCHGUARD_SSL_ONLY, true)
@@ -224,7 +225,7 @@ public class OpenSSLTest extends SSLTest {
 
     @Test
     public void testTLSv1() throws Exception {
-        Assume.assumeTrue(OpenSsl.isAvailable());
+        Assume.assumeTrue(CryptoManagerFactory.getInstance().isOpenSslAvailable());
         super.testTLSv1();
     }
 }

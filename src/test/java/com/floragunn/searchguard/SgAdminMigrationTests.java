@@ -66,7 +66,7 @@ public class SgAdminMigrationTests extends SingleClusterTest {
         argsAsList.add("-migrate");
         argsAsList.add("data/"+clusterInfo.clustername+"_migration");
         argsAsList.add("-nhnv");
-        
+        argsAsList.add("-noopenssl");
         
         int returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
         Assert.assertEquals(0, returnCode);
@@ -113,6 +113,7 @@ public class SgAdminMigrationTests extends SingleClusterTest {
         argsAsList.add("-cd");
         argsAsList.add(new File("./sgconfig").getAbsolutePath()+"/v7");
         argsAsList.add("-nhnv");
+        argsAsList.add("-noopenssl");
 
         int returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
         Assert.assertNotEquals(0, returnCode);
@@ -128,7 +129,7 @@ public class SgAdminMigrationTests extends SingleClusterTest {
         argsAsList.add("-migrate");
         argsAsList.add("data/"+clusterInfo.clustername+"_migration");
         argsAsList.add("-nhnv");
-        
+        argsAsList.add("-noopenssl");
         
         returnCode  = SearchGuardAdmin.execute(argsAsList.toArray(new String[0]));
         Assert.assertEquals(0, returnCode);

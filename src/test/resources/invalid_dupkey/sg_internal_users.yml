@@ -1,31 +1,46 @@
 ---
-# This is the internal user database
-# The hash value is a bcrypt hash and can be generated with plugin/tools/hash.sh
-
 _sg_meta:
   type: "internalusers"
   config_version: 2
-  
-# Define your internal users here
-# See https://docs.search-guard.com/latest/internal-users-database
-
-## Demo users
-
+logstash:
+  hash: "v2gzKBWfJ9IMJgfstfU/yQBVGNBs8B/MholAhr8pq2I=#gIVVWW2+r0NrHUFblDOxY1+nvJvgiJzCw6rwCFZJg4k="
+  reserved: false
+  hidden: false
+  backend_roles:
+  - "logstash"
+  attributes: {}
+  description: "Demo logstash user"
+  static: false
+snapshotrestore:
+  hash: "9SvUc85seXai7R3pmbLQFsSvZd3l1vUisQ7mQeJPYVA=#ETYQcsODvq9MPpNvjyAFnf0QoGQttyI1Imbv6us+U0M="
+  reserved: false
+  hidden: false
+  backend_roles:
+  - "snapshotrestore"
+  attributes: {}
+  description: "Demo snapshotrestore user"
+  static: false
 admin:
-  hash: "$2a$12$VcCDgh2NDk07JGN0rjGbM.Ad41qVR/YFJcgHp0UGns5JDymv..TOG"
+  hash: "ePZd6nWd8ZVrIVauOaj4cte4WS49hMycPPG3Xsum790=#DJeVs/lj6XvRHPCjUTpQC8qqP4jFQreP4wrfDOa4Oaw="
   reserved: true
+  hidden: false
   backend_roles:
   - "admin"
+  attributes: {}
   description: "Demo admin user"
-
+  static: false
 kibanaserver:
-  hash: "$2a$12$4AcgAt3xwOWadA5s5blL6ev39OXDNhmOesEoo33eZtrq2N0YrU3H."
+  hash: "aTyRAqOEn5+4YU4xsOo0L33MV9NSk9RIHq+ENIAvWjw=#rmEIrYyfGw2RIQ2j1wXF7NN86eTHHvgG+tPJOz/2p3M="
   reserved: true
+  hidden: false
+  backend_roles: []
+  attributes: {}
   description: "Demo kibanaserver user"
-
+  static: false
 kibanaro:
-  hash: "$2a$12$JJSXNfTowz7Uu5ttXfeYpeYE0arACvcwlPBStB1F.MI7f0U9Z4DGC"
+  hash: "uSxoybyQarzuhJgi7x1giE7gpSDgBwu/QitsvNe4JBw=#K/EZk4ccF4A1DXuJ94okplvqb8e/bl1JJJrXCjbhfyg="
   reserved: false
+  hidden: false
   backend_roles:
   - "kibanauser"
   - "readall"
@@ -34,24 +49,13 @@ kibanaro:
     attribute2: "value2"
     attribute3: "value3"
   description: "Demo kibanaro user"
-
-logstash:
-  hash: "$2a$12$u1ShR4l4uBS3Uv59Pa2y5.1uQuZBrZtmNfqB3iM/.jL0XoV9sghS2"
-  reserved: false
-  backend_roles:
-  - "logstash"
-  description: "Demo logstash user"
-
+  static: false
 readall:
-  hash: "$2a$12$ae4ycwzwvLtZxwZ82RmiEunBbIPiAmGZduBAjKN0TXdwQFtCwARz2"
+  hash: "LW8hYrdGo6yan4QxRVQJaGkAoX6WFjK0KfHHPKelCPI=#huey+gCIDPkS5Y2Kim54THyJWEZVU84x2Dk3EYPF2Dk="
   reserved: false
+  hidden: false
   backend_roles:
   - "readall"
+  attributes: {}
   description: "Demo readall user"
-
-snapshotrestore:
-  hash: "$2y$12$DpwmetHKwgYnorbgdvORCenv4NAK8cPUg8AI6pxLCuWf/ALc0.v7W"
-  reserved: false
-  backend_roles:
-  - "snapshotrestore"
-  description: "Demo snapshotrestore user"
+  static: false

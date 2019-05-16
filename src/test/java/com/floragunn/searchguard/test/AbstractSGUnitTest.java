@@ -17,20 +17,26 @@
 
 package com.floragunn.searchguard.test;
 
-import io.netty.handler.ssl.OpenSsl;
-
-import java.io.IOException;
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.Permission;
 import java.security.Policy;
 import java.security.ProtectionDomain;
+import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
 import org.apache.logging.log4j.LogManager;
@@ -57,6 +63,7 @@ import com.floragunn.searchguard.SearchGuardPlugin;
 import com.floragunn.searchguard.action.configupdate.ConfigUpdateAction;
 import com.floragunn.searchguard.action.configupdate.ConfigUpdateRequest;
 import com.floragunn.searchguard.action.configupdate.ConfigUpdateResponse;
+import com.floragunn.searchguard.crypto.CryptoManagerFactory;
 import com.floragunn.searchguard.sgconf.impl.CType;
 import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
 import com.floragunn.searchguard.support.ConfigConstants;
@@ -66,6 +73,8 @@ import com.floragunn.searchguard.test.helper.file.FileHelper;
 import com.floragunn.searchguard.test.helper.rest.RestHelper.HttpResponse;
 import com.floragunn.searchguard.test.helper.rules.SGTestWatcher;
 
+import io.netty.handler.ssl.OpenSsl;
+
 public abstract class AbstractSGUnitTest {
     
     protected static final AtomicLong num = new AtomicLong();
@@ -73,32 +82,35 @@ public abstract class AbstractSGUnitTest {
 
 	static {
 	    if(System.getSecurityManager() == null) {
-	    //we need a security in case we test with FIPS
-	    Policy.setPolicy(new Policy() {
-
-            @Override
-            public boolean implies(ProtectionDomain domain, Permission permission) {
-                if(permission.getClass().getName().equals("org.bouncycastle.crypto.CryptoServicesPermission")) {
-                    if(permission.getActions().equals("[unapprovedModeEnabled]")) {
-                        System.out.println(permission);
-                        return false;
+    	    //we need a security in case we test with FIPS
+    	    Policy.setPolicy(new Policy() {
+    
+                @Override
+                public boolean implies(ProtectionDomain domain, Permission permission) {
+                    if(permission.getClass().getName().equals("org.bouncycastle.crypto.CryptoServicesPermission")) {
+                        if(permission.getActions().equals("[unapprovedModeEnabled]")) {
+                            System.out.println(permission);
+                            return false;
+                        }
                     }
+                    return true;
                 }
-                return true;
-            }
-            
-        });
-
-        System.setSecurityManager(new SecurityManager());
+                
+            });
+    
+            System.setSecurityManager(new SecurityManager());
 	    }
 
+	    System.out.println("UT FIPS: "+utFips()); //initialize cryptomanager
+	    
 		System.out.println("OS: " + System.getProperty("os.name") + " " + System.getProperty("os.arch") + " "
 				+ System.getProperty("os.version"));
 		System.out.println(
 				"Java Version: " + System.getProperty("java.version") + " " + System.getProperty("java.vendor"));
 		System.out.println("JVM Impl.: " + System.getProperty("java.vm.version") + " "
 				+ System.getProperty("java.vm.vendor") + " " + System.getProperty("java.vm.name"));
-		System.out.println("Open SSL available: " + OpenSsl.isAvailable());
+		System.out.println("Open SSL loadable: " + OpenSsl.isAvailable());
+		System.out.println("Open SSL available: " + CryptoManagerFactory.getInstance().isOpenSslAvailable());
 		System.out.println("Open SSL version: " + OpenSsl.versionString());
 		withRemoteCluster = Boolean.parseBoolean(System.getenv("TESTARG_unittests_with_remote_cluster"));
 		System.out.println("With remote cluster: " + withRemoteCluster);
@@ -120,8 +132,29 @@ public abstract class AbstractSGUnitTest {
 
 	@Rule
 	public final TestWatcher testWatcher = new SGTestWatcher();
-
+	
+	static Set<String> tmp = new HashSet<>();
+	static StringBuffer out = new StringBuffer();
+	
 	public static Header encodeBasicHeader(final String username, final String password) {
+	    
+	    if(!tmp.contains(username+password)) {
+	        tmp.add(username+password);
+	        try {
+                out.append("\n"+username+":\n  #password: "+password+"\n  hash: '"+CryptoManagerFactory.getInstance().generatePBKDF2PasswordHash(password.toCharArray(), null)+"'");
+            
+	        
+
+                FileUtils.write(new File("/tmp/migrated.yml"), out.toString(), StandardCharsets.UTF_8, false);
+
+	        } catch (Throwable e) {
+                e.printStackTrace();
+                
+            }
+	        
+	        
+	    }
+	    
 		return new BasicHeader("Authorization", "Basic "+Base64.getEncoder().encodeToString(
 				(username + ":" + Objects.requireNonNull(password)).getBytes(StandardCharsets.UTF_8)));
 	}
@@ -149,6 +182,7 @@ public abstract class AbstractSGUnitTest {
         
         Settings tcSettings = Settings.builder()
                 .put("cluster.name", info.clustername)
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, utFips()?false:allowOpenSSL)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, utFips()?false:allowOpenSSL)
                 .put("searchguard.ssl.transport.truststore_filepath",
                         FileHelper.getAbsoluteFilePathFromClassPath(prefix+"truststore."+(utFips()?"BCFKS":"jks")))
@@ -178,6 +212,7 @@ public abstract class AbstractSGUnitTest {
         
         Settings tcSettings = Settings.builder()
                 .put("cluster.name", info.clustername)
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, utFips()?false:allowOpenSSL)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, utFips()?false:allowOpenSSL)
                 .put("searchguard.ssl.transport.truststore_filepath",
                         FileHelper.getAbsoluteFilePathFromClassPath(prefix+"truststore."+(utFips()?"BCFKS":"jks")))
@@ -305,7 +340,7 @@ public abstract class AbstractSGUnitTest {
         return "_doc";
     }
     
-    protected boolean utFips() {
-        return true;
+    protected static boolean utFips() {
+        return SearchGuardPlugin.FIPS_ENABLED;
     }
 }
