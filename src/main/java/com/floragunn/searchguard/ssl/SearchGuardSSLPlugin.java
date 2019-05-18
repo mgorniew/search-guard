@@ -83,7 +83,7 @@ import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
 //For ES5 this class has only effect when SSL only plugin is installed
 public abstract class SearchGuardSSLPlugin extends Plugin implements ActionPlugin, NetworkPlugin {
 
-    public static boolean FIPS_ENABLED = true;
+    public static boolean FIPS_ENABLED = false;
     protected final Logger log = LogManager.getLogger(this.getClass());
     protected static final String CLIENT_TYPE = "client.type";
     protected final boolean client;

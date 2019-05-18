@@ -84,7 +84,7 @@ public abstract class AbstractSGUnitTest {
                 public boolean implies(ProtectionDomain domain, Permission permission) {
                     if(permission.getClass().getName().equals("org.bouncycastle.crypto.CryptoServicesPermission")) {
                         if(permission.getActions().equals("[unapprovedModeEnabled]")) {
-                            System.out.println(permission);
+                            //System.out.println(permission);
                             return false;
                         }
                     }
@@ -94,6 +94,7 @@ public abstract class AbstractSGUnitTest {
             });
     
             System.setSecurityManager(new SecurityManager());
+            System.out.println("Security Manager installed");
 	    }
 
 	    System.out.println("UT FIPS: "+utFips()); //initialize cryptomanager

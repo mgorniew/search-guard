@@ -30,6 +30,8 @@ import java.util.regex.Pattern;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.lucene.util.Constants;
+import org.elasticsearch.bootstrap.JavaVersion;
 import org.elasticsearch.common.settings.Settings;
 
 import com.floragunn.searchguard.crypto.CryptoManagerFactory;
@@ -212,5 +214,38 @@ public final class SgUtils {
         }
         
         return string.substring(startIndex, endIndex);
+    }
+    
+    public static Boolean isJndiHostnameValidationEnabledByDefault() {
+         /*Licensed to Elasticsearch under one or more contributor
+         * license agreements. See the NOTICE file distributed with
+         * this work for additional information regarding copyright
+         * ownership. Elasticsearch licenses this file to you under
+         * the Apache License, Version 2.0 (the "License"); you may
+         * not use this file except in compliance with the License.
+         * You may obtain a copy of the License at
+         *
+         *    http://www.apache.org/licenses/LICENSE-2.0*/
+         
+         //Borrowed from BootstrapChecks.java
+        
+        if (JavaVersion.current().equals(JavaVersion.parse("1.8"))) {
+            final Pattern pattern = Pattern.compile("(\\d+)\\.(\\d+)-b\\d+");
+            final Matcher matcher = pattern.matcher(Constants.JVM_VERSION);
+            if(!matcher.matches()) {
+                return null;
+            }
+            final int major = Integer.parseInt(matcher.group(1));
+            final int update = Integer.parseInt(matcher.group(2));
+            // HotSpot versions for Java 8 have major version 25, the bad versions are all versions prior to update 40
+            System.out.println(major+" "+update);
+            if (update < 181) {
+                return Boolean.FALSE;
+            }
+        }
+        
+        return Boolean.TRUE;
+
+        //https://www.oracle.com/technetwork/java/javase/8u181-relnotes-4479407.html
     }
 }

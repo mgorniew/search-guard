@@ -112,7 +112,7 @@
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpg-jdk15on</artifactId>
       <version>${bc.version}</version>
-    </dependency>
+    </dependency> 
     
 
     <!-- provided scoped deps -->

@@ -382,13 +382,13 @@ public class SSLTest extends SingleClusterTest {
         try {
             setupSslOnlyMode(settings);
             Assert.fail();
-        } catch (RuntimeException e1) {
-            Assert.assertTrue(CryptoManagerFactory.isFipsEnabled());
-        } catch (Exception e1) {
+        } catch (IllegalStateException e1) {
             Assert.assertFalse(CryptoManagerFactory.isFipsEnabled());
             Throwable e = ExceptionUtils.getRootCause(e1);
             Assert.assertTrue(e.toString(), e.toString().contains("no valid cipher"));
-        }
+        } catch (RuntimeException e1) {
+            Assert.assertTrue(e1.toString(), CryptoManagerFactory.isFipsEnabled());
+        } 
     }
 
     @Test

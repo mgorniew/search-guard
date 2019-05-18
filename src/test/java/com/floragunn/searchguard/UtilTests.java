@@ -109,7 +109,8 @@ public class UtilTests extends AbstractSGUnitTest {
         Assert.assertTrue(CryptoManagerFactory.getInstance().checkPasswordHash(SgUtils.replaceEnvVars("${envbc.MYENV:-tTt}",settings), "tTt".toCharArray()));
         Assert.assertEquals("abvtTtxyzxxx", SgUtils.replaceEnvVars("abv${env.MYENV:-tTt}xyz${env.MYENV:-xxx}",settings));
         String enc = SgUtils.replaceEnvVars("abv${env.MYENV:-tTt}xyz${envbc.MYENV:-xxx}",settings);
-        Assert.assertTrue(enc, enc.startsWith("abvtTtxyz") && enc.contains("#"));
+        Assert.assertTrue(enc, enc.startsWith("abvtTtxyz") && enc.contains(CryptoManagerFactory.isFipsEnabled()?"#":"$"));
+        
         Assert.assertEquals("abv${env.MYENV:tTt}xyz", SgUtils.replaceEnvVars("abv${env.MYENV:tTt}xyz",settings));
         Assert.assertEquals("abv${env.MYENV-tTt}xyz", SgUtils.replaceEnvVars("abv${env.MYENV-tTt}xyz",settings));
         //Assert.assertEquals("abvabcdefgxyz", SgUtils.replaceEnvVars("abv${envbase64.B64TEST}xyz",settings));
