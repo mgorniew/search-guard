@@ -18,11 +18,7 @@
 package com.floragunn.searchguard.support;
 
 import java.nio.charset.StandardCharsets;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
@@ -31,12 +27,12 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.settings.Settings;
 
 import com.floragunn.searchguard.crypto.CryptoManagerFactory;
-import com.floragunn.searchguard.tools.Hasher;
 
 public final class SgUtils {
     
@@ -163,7 +159,7 @@ public final class SgUtils {
         while(matcher.find()) {
             final String replacement = resolveEnvVar(matcher.group(1), matcher.group(2), false);
             if(replacement != null) {
-                matcher.appendReplacement(sb, (Matcher.quoteReplacement(new String(Base64.getDecoder().decode(replacement), StandardCharsets.UTF_8))));
+                matcher.appendReplacement(sb, (Matcher.quoteReplacement(new String(Base64.decodeBase64(replacement), StandardCharsets.UTF_8))));
             }
         }
         matcher.appendTail(sb);

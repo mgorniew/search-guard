@@ -711,7 +711,7 @@ public class SSLTest extends SingleClusterTest {
     @Test
     public void testUnmodifieableCipherProtocolConfig() throws Exception {
         SSLConfigConstants.getSecureSSLProtocols(Settings.EMPTY, false)[0] = "bogus";
-        Assert.assertEquals("TLSv1.3", SSLConfigConstants.getSecureSSLProtocols(Settings.EMPTY, false)[0]);
+        Assert.assertNotEquals("bogus", SSLConfigConstants.getSecureSSLProtocols(Settings.EMPTY, false)[0]);
         
         try {
             SSLConfigConstants.getSecureSSLCiphers(Settings.EMPTY, false).set(0, "bogus");

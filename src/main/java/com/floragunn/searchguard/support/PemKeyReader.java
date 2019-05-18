@@ -42,7 +42,6 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -54,6 +53,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
@@ -103,7 +103,7 @@ public final class PemKeyReader {
                     " (see http://netty.io/wiki/sslcontextbuilder-and-private-key.html for more information)");
         }
 
-        return Base64.getDecoder().decode(m.group(1));
+        return Base64.decodeBase64(m.group(1));
     }
 
     private static String readContent(InputStream in) throws IOException {

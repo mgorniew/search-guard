@@ -17,14 +17,6 @@
 
 package com.floragunn.searchguard.ssl;
 
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.handler.ssl.ApplicationProtocolConfig;
-import io.netty.handler.ssl.ClientAuth;
-import io.netty.handler.ssl.OpenSsl;
-import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
-import io.netty.handler.ssl.SslProvider;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.file.Files;
@@ -47,7 +39,6 @@ import java.util.Objects;
 import java.util.Set;
 
 import javax.crypto.Cipher;
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLParameters;
@@ -64,6 +55,14 @@ import com.floragunn.searchguard.crypto.CryptoManagerFactory;
 import com.floragunn.searchguard.ssl.util.ExceptionUtils;
 import com.floragunn.searchguard.ssl.util.SSLCertificateHelper;
 import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
+
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.handler.ssl.ApplicationProtocolConfig;
+import io.netty.handler.ssl.ClientAuth;
+import io.netty.handler.ssl.OpenSsl;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.SslProvider;
 
 public class DefaultSearchGuardKeyStore implements SearchGuardKeyStore {
 
@@ -659,24 +658,24 @@ public class DefaultSearchGuardKeyStore implements SearchGuardKeyStore {
         }
         
         if (CryptoManagerFactory.getInstance().isOpenSslAvailable() && OpenSsl.version() > 0x10101009L) {
-            enabledHttpProtocolsOpenSSLProvider = new ArrayList(Arrays.asList("TLSv1.3","TLSv1.2","TLSv1.1","TLSv1"));
+            enabledHttpProtocolsOpenSSLProvider = new ArrayList<String>(Arrays.asList("TLSv1.3","TLSv1.2","TLSv1.1","TLSv1"));
             enabledHttpProtocolsOpenSSLProvider.retainAll(secureHttpSSLProtocols);
-            enabledTransportProtocolsOpenSSLProvider = new ArrayList(Arrays.asList("TLSv1.3","TLSv1.2","TLSv1.1"));
+            enabledTransportProtocolsOpenSSLProvider = new ArrayList<String>(Arrays.asList("TLSv1.3","TLSv1.2","TLSv1.1"));
             enabledTransportProtocolsOpenSSLProvider.retainAll(secureTransportSSLProtocols);
             
             log.info("OpenSSL supports TLSv1.3");
             
         } else if(CryptoManagerFactory.getInstance().isOpenSslAvailable()){
-            enabledHttpProtocolsOpenSSLProvider = new ArrayList(Arrays.asList("TLSv1.2","TLSv1.1","TLSv1"));
+            enabledHttpProtocolsOpenSSLProvider = new ArrayList<String>(Arrays.asList("TLSv1.2","TLSv1.1","TLSv1"));
             enabledHttpProtocolsOpenSSLProvider.retainAll(secureHttpSSLProtocols);
-            enabledTransportProtocolsOpenSSLProvider = new ArrayList(Arrays.asList("TLSv1.2","TLSv1.1"));
+            enabledTransportProtocolsOpenSSLProvider = new ArrayList<String>(Arrays.asList("TLSv1.2","TLSv1.1"));
             enabledTransportProtocolsOpenSSLProvider.retainAll(secureTransportSSLProtocols);
         } else {
             enabledHttpProtocolsOpenSSLProvider = Collections.emptyList();
             enabledTransportProtocolsOpenSSLProvider = Collections.emptyList();
         }
 
-        SSLEngine engine = null;
+        /*SSLEngine engine = null;
         List<String> jdkSupportedCiphers = null;
         List<String> jdkSupportedProtocols = null;
         try {
@@ -705,7 +704,10 @@ public class DefaultSearchGuardKeyStore implements SearchGuardKeyStore {
                 }
                 engine.closeOutbound();
             }
-        }
+        }*/
+        
+        final List<String> jdkSupportedCiphers = CryptoManagerFactory.JDK_SUPPORTED_SSL_CIPHERS;
+        final List<String> jdkSupportedProtocols = CryptoManagerFactory.JDK_SUPPORTED_SSL_PROTOCOLS;
 
         if(jdkSupportedCiphers == null || jdkSupportedCiphers.isEmpty() || jdkSupportedProtocols == null || jdkSupportedProtocols.isEmpty()) {
             throw new ElasticsearchException("Unable to determine supported ciphers or protocols");

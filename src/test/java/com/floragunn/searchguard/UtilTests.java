@@ -26,12 +26,12 @@ import java.security.NoSuchProviderException;
 import java.security.Provider;
 import java.security.Signature;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Base64;
 import java.util.Map;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
+import org.apache.commons.codec.binary.Base64;
 import org.elasticsearch.common.settings.Settings;
 import org.junit.Assert;
 import org.junit.Test;
@@ -191,6 +191,6 @@ public class UtilTests extends AbstractSGUnitTest {
         PBEKeySpec pbeSpec = new PBEKeySpec("123456789123456789123456789".toCharArray(), "123456789123456789123456789".getBytes(), 10000, 256); //32 byte key len
         byte[] hash = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512").generateSecret(pbeSpec).getEncoded();
         System.out.println(hash.length);
-        System.out.println(Base64.getEncoder().encodeToString(hash).length());
+        System.out.println(Base64.encodeBase64String(hash).length());
     }
 }

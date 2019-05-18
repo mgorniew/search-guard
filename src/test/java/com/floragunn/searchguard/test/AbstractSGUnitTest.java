@@ -20,22 +20,17 @@ package com.floragunn.searchguard.test;
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.Permission;
 import java.security.Policy;
 import java.security.ProtectionDomain;
-import java.security.spec.InvalidKeySpecException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
@@ -155,7 +150,7 @@ public abstract class AbstractSGUnitTest {
 	        
 	    }
 	    
-		return new BasicHeader("Authorization", "Basic "+Base64.getEncoder().encodeToString(
+		return new BasicHeader("Authorization", "Basic "+Base64.encodeBase64String(
 				(username + ":" + Objects.requireNonNull(password)).getBytes(StandardCharsets.UTF_8)));
 	}
 	

@@ -65,6 +65,10 @@ public class InitializationIntegrationTests extends SingleClusterTest {
         rh.enableHTTPClientSSL = true;
         rh.trustHTTPServerCertificate = true;
         rh.sendHTTPClientCertificate = true;
+        Assert.assertEquals(HttpStatus.SC_SERVICE_UNAVAILABLE, rh.executePutRequest("searchguard/config/0", "{}").getStatusCode());
+        Assert.assertEquals(HttpStatus.SC_SERVICE_UNAVAILABLE, rh.executePutRequest("searchguard/"+getType()+"/config", "{}").getStatusCode());
+        Assert.assertEquals(HttpStatus.SC_SERVICE_UNAVAILABLE, rh.executePutRequest("searchguard/config/0", "{}", encodeBasicHeader("___", "___")).getStatusCode());
+        Assert.assertEquals(HttpStatus.SC_SERVICE_UNAVAILABLE, rh.executePutRequest("searchguard/"+getType()+"/config", "{}", encodeBasicHeader("___", "___")).getStatusCode());
         Assert.assertEquals(HttpStatus.SC_SERVICE_UNAVAILABLE, rh.executePutRequest("searchguard/config/0", "{}", encodeBasicHeader("___", "")).getStatusCode());
         Assert.assertEquals(HttpStatus.SC_SERVICE_UNAVAILABLE, rh.executePutRequest("searchguard/"+getType()+"/config", "{}", encodeBasicHeader("___", "")).getStatusCode());
         

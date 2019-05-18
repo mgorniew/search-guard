@@ -1,11 +1,16 @@
+---
+_sg_meta:
+  type: "internalusers"
+  config_version: 2
+
 # This is the internal user database
 # The hash value is a pbkdf2 based hash and can be generated with plugin/tools/hash.sh
 
 #password is: admin
 admin:
-  readonly: true
+  reserved: true
   hash: "ePZd6nWd8ZVrIVauOaj4cte4WS49hMycPPG3Xsum790=#DJeVs/lj6XvRHPCjUTpQC8qqP4jFQreP4wrfDOa4Oaw="
-  roles:
+  backend_roles:
     - admin
   attributes:
     #no dots allowed in attribute names
@@ -16,18 +21,18 @@ admin:
 #password is: logstash
 logstash:
   hash: "iNZ75AixiBVkZhgr9/VGRNf7Ggces3oIZLTS8ggmcX0=#8I0/l23iu3DL/ymHGlj2Rv6kYDewxHq1zaEbUfQf9sY="
-  roles:
+  backend_roles:
     - logstash
 
 #password is: kibanaserver  
 kibanaserver:
-  readonly: true
+  reserved: true
   hash: "aTyRAqOEn5+4YU4xsOo0L33MV9NSk9RIHq+ENIAvWjw=#rmEIrYyfGw2RIQ2j1wXF7NN86eTHHvgG+tPJOz/2p3M="
 
 #password is: kibanaro
 kibanaro:  
   hash: "KTBoFTHiTHLoi6M0BmA5rDkRaRbkE2Z8K/VlV65Zsnw=#q64pQzMLt/c1+ffHfJ0uTH7QJ7K6KWcMuul1PcNo4iE="
-  roles:
+  backend_roles:
     - kibanauser
     - readall
 
@@ -35,11 +40,11 @@ kibanaro:
 readall:
   hash: "wtrGb54bA1e4VQJ+hxEM5lWBYZOqITagH0zrR6nYwcE=#td6iJOneF9yhNAedm2ulwnQkvjGAtmJ0FIIAdlqHYpc="
   #password is: readall
-  roles:
+  backend_roles:
     - readall
 
 #password is: snapshotrestore
 snapshotrestore:
   hash: "/zKJKhQ5ZsRkZZqo4qVnWLsbcPIagpQvCgte/nbRCuY=#0QLZ6V/yA2yqt8XJ5Y8sYUdoofTKpPUuXzRdeiB6HHg="
-  roles:
+  backend_roles:
     - snapshotrestore
