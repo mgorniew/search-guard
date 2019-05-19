@@ -22,7 +22,9 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-public class HeapBasedClientBlockRegistryTest {
+import com.floragunn.searchguard.test.AbstractSGUnitTest;
+
+public class HeapBasedClientBlockRegistryTest extends AbstractSGUnitTest {
     
     @Test
     public void simpleTest() throws Exception {   

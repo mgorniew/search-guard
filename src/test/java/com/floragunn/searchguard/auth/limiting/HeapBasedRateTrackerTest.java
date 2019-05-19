@@ -22,9 +22,10 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import com.floragunn.searchguard.test.AbstractSGUnitTest;
 import com.floragunn.searchguard.util.ratetracking.HeapBasedRateTracker;
 
-public class HeapBasedRateTrackerTest {
+public class HeapBasedRateTrackerTest extends AbstractSGUnitTest {
     
     @Test
     public void simpleTest() throws Exception {   

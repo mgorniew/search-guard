@@ -40,9 +40,10 @@ import org.junit.Test;
 import com.floragunn.searchguard.crypto.CryptoManagerFactory;
 import com.floragunn.searchguard.ssl.util.CertificateValidator;
 import com.floragunn.searchguard.ssl.util.ExceptionUtils;
+import com.floragunn.searchguard.test.AbstractSGUnitTest;
 import com.floragunn.searchguard.test.helper.file.FileHelper;
 
-public class CertificateValidatorTest {
+public class CertificateValidatorTest extends AbstractSGUnitTest {
     
     //public static final Date CRL_DATE = new Date(1525546426000L);
     public static final Date CRL_DATE = new Date  (1557866192000L);

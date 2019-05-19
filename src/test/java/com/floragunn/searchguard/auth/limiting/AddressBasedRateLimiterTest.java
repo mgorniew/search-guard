@@ -23,9 +23,10 @@ import static org.junit.Assert.assertTrue;
 import org.elasticsearch.common.settings.Settings;
 import org.junit.Test;
 
+import com.floragunn.searchguard.test.AbstractSGUnitTest;
 import com.floragunn.searchguard.user.AuthCredentials;
 
-public class AddressBasedRateLimiterTest {
+public class AddressBasedRateLimiterTest  extends AbstractSGUnitTest {
 
     private final static byte[] PASSWORD = new byte[] { '1', '2', '3' };
 
