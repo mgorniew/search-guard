@@ -231,7 +231,7 @@ public final class ClusterHelper {
     private static void closeNode(Node node) {
         try {
             LoggerContext context = (LoggerContext) LogManager.getContext(false);
-            Configurator.shutdown(context);
+            //Configurator.shutdown(context);
             node.close();
             Thread.sleep(250);
         } catch (Throwable e) {
