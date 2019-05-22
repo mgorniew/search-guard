@@ -50,12 +50,13 @@ public class SearchGuardIndexAccessEvaluator {
         final List<String> sgIndexDeniedActionPatternsList = new ArrayList<String>();
         sgIndexDeniedActionPatternsList.add("indices:data/write*");
         sgIndexDeniedActionPatternsList.add("indices:admin/delete*");
-        sgIndexDeniedActionPatternsList.add("indices:admin/mapping/delete*");
-        sgIndexDeniedActionPatternsList.add("indices:admin/mapping/put*");
-        //sgIndexDeniedActionPatternsList.add("indices:admin/template/*");
         sgIndexDeniedActionPatternsList.add("indices:admin/freeze*");
-        sgIndexDeniedActionPatternsList.add("indices:admin/settings/update*");
-        sgIndexDeniedActionPatternsList.add("indices:admin/aliases");
+        
+        //can cause issues during rolling upgrades and are strictly not necessary
+        //sgIndexDeniedActionPatternsList.add("indices:admin/mapping/delete*");
+        //sgIndexDeniedActionPatternsList.add("indices:admin/mapping/put*");
+        //sgIndexDeniedActionPatternsList.add("indices:admin/settings/update*");
+        //sgIndexDeniedActionPatternsList.add("indices:admin/aliases");
 
         final List<String> sgIndexDeniedActionPatternsListNoSnapshot = new ArrayList<String>();
         sgIndexDeniedActionPatternsListNoSnapshot.addAll(sgIndexDeniedActionPatternsList);
