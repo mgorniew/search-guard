@@ -101,9 +101,9 @@ jobs:
               cp -a /usr/local/openjdk-8/jre/lib/security/java.security /usr/local/openjdk-8/jre/lib/security/java.security.orig
               cp java.security.fips /usr/local/openjdk-8/jre/lib/security/java.security
 
-              cp -a /etc/ssl/certs/java/cacerts /etc/ssl/certs/java/cacerts.orig
-              rm /etc/ssl/certs/java/cacerts
-              keytool -importkeystore -srckeystore /etc/ssl/certs/java/cacerts.orig -srcstoretype JKS -destkeystore /etc/ssl/certs/java/cacerts -deststoretype BCFKS -deststorepass changeit -srcstorepass changeit
+              cp -a /usr/local/openjdk-8/jre/lib/security/cacerts /usr/local/openjdk-8/jre/lib/security/cacerts.orig
+              rm /usr/local/openjdk-8/jre/lib/security/cacerts
+              keytool -importkeystore -srckeystore /usr/local/openjdk-8/jre/lib/security/cacerts.orig -srcstoretype JKS -destkeystore /usr/local/openjdk-8/jre/lib/security/cacerts -deststoretype BCFKS -deststorepass changeit -srcstorepass changeit
 
               export M2=~/circleci-sg/apache-maven-3.6.1/bin
               export M2_HOME=~/circleci-sg/apache-maven-3.6.1
