@@ -64,7 +64,7 @@ jobs:
     steps:
       - run:
           name: Versions
-          command: 'uname -a;java -version'
+          command: 'uname -a;java -version;find / -iname java.security || true; find / -iname cacerts || true'
       - checkout
       - restore_cache:
           keys:
