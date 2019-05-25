@@ -107,13 +107,6 @@
       <version>${commons.cli.version}</version>
     </dependency>
     
-        <!-- Bouncycastle -->
-    <dependency>
-      <groupId>org.bouncycastle</groupId>
-      <artifactId>bcpg-jdk15on</artifactId>
-      <version>${bc.version}</version>
-    </dependency> 
-    
 
     <!-- provided scoped deps -->
     <dependency>
@@ -471,6 +464,34 @@
           <classifier>${os.detected.classifier}</classifier>
           <scope>provided</scope>
         </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>with-bc</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <dependencies>
+        <!-- Bouncycastle -->
+        <dependency>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>bcpg-jdk15on</artifactId>
+          <version>${bc.version}</version>
+        </dependency> 
+      </dependencies>
+    </profile>
+    <profile>
+      <id>with-bcfips</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <dependencies>
+        <!-- Bouncycastle -->
+        <dependency>
+          <groupId>local</groupId>
+          <artifactId>bcfipsprov</artifactId>
+          <version>1.0.1</version>
+        </dependency> 
       </dependencies>
     </profile>
   </profiles>
