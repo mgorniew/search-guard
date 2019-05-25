@@ -491,8 +491,45 @@
           <groupId>local</groupId>
           <artifactId>bcfipsprov</artifactId>
           <version>1.0.1</version>
-        </dependency> 
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>bcpg-jdk15on</artifactId>
+          <version>${bc.version}</version>
+        </dependency>
       </dependencies>
+      <build>
+          <plugins>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-surefire-plugin</artifactId>
+      
+              <configuration>
+                <argLine>-Xmx3072m</argLine>
+                <rerunFailingTestsCount>3</rerunFailingTestsCount>
+                <forkCount>3</forkCount>
+                <reuseForks>true</reuseForks>
+                <!-- 
+                <parallel>methods</parallel>
+                <threadCount>1</threadCount>
+                 -->
+                <systemPropertyVariables>
+                    <forkno>fork_${surefire.forkNumber}</forkno>
+                </systemPropertyVariables>
+              
+                <includes>
+                    <include>**/*.java</include>
+                </includes>
+                
+                <classpathDependencyExcludes>
+                    <classpathDependencyExclude>org.bouncycastle:bcpg-jdk15on</classpathDependencyExclude>
+                </classpathDependencyExcludes>
+                
+              </configuration>
+      </plugin>
+          </plugins>
+        </build>
     </profile>
   </profiles>
 </project>
