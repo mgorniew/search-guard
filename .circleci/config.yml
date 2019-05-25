@@ -89,7 +89,7 @@ jobs:
               mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve -DincludeParents=true -s settings.xml || true
               mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve-plugins -DincludeParents=true -s settings.xml || true
               mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:go-offline -DincludeParents=true -s settings.xml || true
-              mvn -U install verify -s settings.xml -Pwith-static-openssl-linux-non-fedora,-with-dynamic-openssl,enterprise || true
+              mvn -U install verify -s settings.xml -Pwith-static-openssl-linux-non-fedora,-with-dynamic-openssl,-with-bc,with-bcfips || true
               
       - run:
           command: |
