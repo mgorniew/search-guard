@@ -86,7 +86,7 @@ jobs:
               mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve -DincludeParents=true -s settings.xml
       - run:
           command: |
-              wget https://downloads.bouncycastle.org/fips-java/bc-fips-1.0.1.jar -P /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/ext
+              wget https://downloads.bouncycastle.org/fips-java/bc-fips-1.0.1.jar -P /usr/local/openjdk-8/jre/lib/ext
               ls -la /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/ext || true
               ls -la /etc/ssl || true
               find / -iname java.security || true
