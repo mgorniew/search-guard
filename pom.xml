@@ -523,7 +523,7 @@
                 </includes>
                 
                 <classpathDependencyExcludes>
-                    <classpathDependencyExclude>org.bouncycastle:bcpg-jdk15on</classpathDependencyExclude>
+                    <classpathDependencyExclude>org.bouncycastle:*</classpathDependencyExclude>
                 </classpathDependencyExcludes>
                 
               </configuration>

@@ -101,8 +101,8 @@ jobs:
               cp -a /usr/local/openjdk-11/conf/security/java.security /usr/local/openjdk-11/conf/security/java.security.orig
               cp java.security.fips /usr/local/openjdk-11/conf/security/java.security
 
-              #rm /usr/local/openjdk-8/jre/lib/security/cacerts
-              #cp src/test/resources/fips/cacerts.BCFKS /usr/local/openjdk-8/jre/lib/security/cacerts
+              rm /usr/local/openjdk-11/lib/security/cacerts
+              cp src/test/resources/fips/cacerts.BCFKS /usr/local/openjdk-11/lib/security/cacerts
 
               #cp -a /usr/local/openjdk-8/jre/lib/security/cacerts /usr/local/openjdk-8/jre/lib/security/cacerts.orig
               #rm /usr/local/openjdk-8/jre/lib/security/cacerts
