@@ -14,7 +14,9 @@ import java.security.PrivilegedAction;
 import java.security.Security;
 import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
@@ -42,8 +44,11 @@ import io.netty.handler.ssl.OpenSsl;
 
 final class DefaultCryptoManager extends AbstractCryptoManager {
     
+    
+    private static final List<String> DEFAULT_SECURE_TLS_CHIPERS;
+    
     // @formatter:off
-    private static final List<String> DEFAULT_SECURE_TLS_CHIPERS  = ImmutableList.of(
+    private static final List<String> SECURE_TLS_CHIPERS  = ImmutableList.of(
         //TLS_<key exchange and authentication algorithms>_WITH_<bulk cipher and message authentication algorithms>
         
         //Example (including unsafe ones)
@@ -158,6 +163,11 @@ final class DefaultCryptoManager extends AbstractCryptoManager {
         );
         // @formatter:on
     
+    static {
+        List<String> jdkSupportedCiphers = new ArrayList<String>(CryptoManagerFactory.JDK_SUPPORTED_SSL_CIPHERS);
+        jdkSupportedCiphers.retainAll(SECURE_TLS_CHIPERS);
+        DEFAULT_SECURE_TLS_CHIPERS = Collections.unmodifiableList(jdkSupportedCiphers);
+    }
 
     public DefaultCryptoManager() {
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
