@@ -60,7 +60,7 @@ jobs:
     working_directory: ~/circleci-sg
     resource_class: xlarge
     docker:
-      - image: openjdk:8u212-stretch
+      - image: openjdk:11.0.3-stretch
     steps:
       - run:
           name: Versions
@@ -83,20 +83,26 @@ jobs:
               export M2_HOME=~/circleci-sg/apache-maven-3.6.1
               export MAVEN_HOME=~/circleci-sg/apache-maven-3.6.1
               export PATH=$M2:$PATH
+
+              wget https://downloads.bouncycastle.org/fips-java/bc-fips-1.0.1.jar
+              mvn install:install-file -Dfile=bc-fips-1.0.1.jar -DgroupId=local -DartifactId=bcfipsprov -Dversion=1.0.1 -Dpackaging=jar
               mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve -DincludeParents=true -s settings.xml || true
               mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve-plugins -DincludeParents=true -s settings.xml || true
               mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:go-offline -DincludeParents=true -s settings.xml || true
-              mvn -U install verify -Denforcer.skip=true -DskipTests -s settings.xml -Pwith-static-openssl-linux-non-fedora,-with-dynamic-openssl,enterprise || true
+              mvn -U install verify -DskipTests -s settings.xml -Pwith-static-openssl-linux-non-fedora,-with-dynamic-openssl,enterprise || true
               
       - run:
           command: |
               export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -yq rng-tools haveged && apt-get clean
-              wget https://downloads.bouncycastle.org/fips-java/bc-fips-1.0.1.jar -P /usr/local/openjdk-8/jre/lib/ext
-              cp -a /usr/local/openjdk-8/jre/lib/security/java.security /usr/local/openjdk-8/jre/lib/security/java.security.orig
-              cp java.security.fips /usr/local/openjdk-8/jre/lib/security/java.security
+              
+              #wget https://downloads.bouncycastle.org/fips-java/bc-fips-1.0.1.jar -P /usr/local/openjdk-8/jre/lib/ext
+              find / -iname java.security
+              find / -iname cacerts
+              #cp -a /usr/local/openjdk-8/jre/lib/security/java.security /usr/local/openjdk-8/jre/lib/security/java.security.orig
+              #cp java.security.fips /usr/local/openjdk-8/jre/lib/security/java.security
 
-              rm /usr/local/openjdk-8/jre/lib/security/cacerts
-              cp src/test/resources/fips/cacerts.BCFKS /usr/local/openjdk-8/jre/lib/security/cacerts
+              #rm /usr/local/openjdk-8/jre/lib/security/cacerts
+              #cp src/test/resources/fips/cacerts.BCFKS /usr/local/openjdk-8/jre/lib/security/cacerts
 
               #cp -a /usr/local/openjdk-8/jre/lib/security/cacerts /usr/local/openjdk-8/jre/lib/security/cacerts.orig
               #rm /usr/local/openjdk-8/jre/lib/security/cacerts
@@ -126,7 +132,7 @@ jobs:
               mvn -U -Pcoverage,with-static-openssl-linux-non-fedora,-with-dynamic-openssl verify -Dtest="$TESTFILES" -s settings.xml
             else
               #no coverage for non-master branches
-              mvn -U verify -Denforcer.skip=true -Dmaven.compiler.release=null -Dtest="$TESTFILES" -s settings.xml -Pwith-static-openssl-linux-non-fedora,-with-dynamic-openssl
+              mvn -U verify -Dtest="$TESTFILES" -s settings.xml -Pwith-static-openssl-linux-non-fedora,-with-dynamic-openssl,-with-bc,with-bcfips
             fi
       - store_test_results:
           path: target/surefire-reports
