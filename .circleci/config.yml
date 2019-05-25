@@ -89,15 +89,13 @@ jobs:
               mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve -DincludeParents=true -s settings.xml || true
               mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve-plugins -DincludeParents=true -s settings.xml || true
               mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:go-offline -DincludeParents=true -s settings.xml || true
-              mvn -U install verify -DskipTests -s settings.xml -Pwith-static-openssl-linux-non-fedora,-with-dynamic-openssl,enterprise || true
+              mvn -U install verify -s settings.xml -Pwith-static-openssl-linux-non-fedora,-with-dynamic-openssl,enterprise || true
               
       - run:
           command: |
               #export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -yq rng-tools haveged && apt-get clean
               
               #wget https://downloads.bouncycastle.org/fips-java/bc-fips-1.0.1.jar -P /usr/local/openjdk-8/jre/lib/ext
-              find / -iname java.security || true
-              find / -iname cacerts || true
               cp -a /usr/local/openjdk-11/conf/security/java.security /usr/local/openjdk-11/conf/security/java.security.orig
               cp java.security.fips /usr/local/openjdk-11/conf/security/java.security
 
@@ -132,7 +130,7 @@ jobs:
               mvn -U -Pcoverage,with-static-openssl-linux-non-fedora,-with-dynamic-openssl verify -Dtest="$TESTFILES" -s settings.xml
             else
               #no coverage for non-master branches
-              mvn -U verify -Dtest="$TESTFILES" -s settings.xml -Pwith-static-openssl-linux-non-fedora,-with-dynamic-openssl,-with-bc,with-bcfips
+              mvn -U verify -e -Dtest="$TESTFILES" -s settings.xml -Pwith-static-openssl-linux-non-fedora,-with-dynamic-openssl,-with-bc,with-bcfips
             fi
       - store_test_results:
           path: target/surefire-reports
