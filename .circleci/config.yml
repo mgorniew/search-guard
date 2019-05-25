@@ -95,10 +95,11 @@ jobs:
           command: |
               wget https://downloads.bouncycastle.org/fips-java/bc-fips-1.0.1.jar -P /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/ext
               ls -la /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/ext || true
-              ls -la /etc || true
+              ls -la /etc/ssl || true
               find / -iname java.security || true
-              cp -a /etc/java-8-openjdk/security/java.security /etc/java-8-openjdk/security/java.security.orig
-              cp java.security.fips /etc/java-8-openjdk/security/java.security
+              find / -iname cacerts || true
+              cp -a /usr/local/openjdk-8/jre/lib/security/java.security /usr/local/openjdk-8/jre/lib/security/java.security.orig
+              cp java.security.fips /usr/local/openjdk-8/jre/lib/security/java.security
 
               cp -a /etc/ssl/certs/java/cacerts /etc/ssl/certs/java/cacerts.orig
               rm /etc/ssl/certs/java/cacerts
