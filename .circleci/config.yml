@@ -12,7 +12,7 @@ jobs:
           command: sudo apt-get update -yqq && sudo apt-get install -yqq libapr1 openssl libxml2-utils
       - run:
           name: Versions
-          command: 'uname -a;java -version;openssl version'
+          command: 'uname -a;java -version;find / -iname java.security || true; find / -iname cacerts || true'
       - checkout
       - restore_cache:
           keys:
@@ -96,6 +96,7 @@ jobs:
               #export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -yq rng-tools haveged && apt-get clean
               
               #wget https://downloads.bouncycastle.org/fips-java/bc-fips-1.0.1.jar -P /usr/local/openjdk-8/jre/lib/ext
+
               cp -a /usr/local/openjdk-11/conf/security/java.security /usr/local/openjdk-11/conf/security/java.security.orig
               cp java.security.fips /usr/local/openjdk-11/conf/security/java.security
 
