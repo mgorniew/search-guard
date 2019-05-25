@@ -86,19 +86,16 @@ jobs:
               mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve -DincludeParents=true -s settings.xml
       - run:
           command: |
+              export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -yq rng-tools haveged && apt-get clean
               wget https://downloads.bouncycastle.org/fips-java/bc-fips-1.0.1.jar -P /usr/local/openjdk-8/jre/lib/ext
-              ls -la /usr/lib/jvm/java-8-openjdk-amd64/jre/lib/ext || true
-              ls -la /etc/ssl || true
-              find / -iname java.security || true
-              find / -iname cacerts || true
-              find / -iname ext || true
-              find / -iname '*jsse*' || true
               cp -a /usr/local/openjdk-8/jre/lib/security/java.security /usr/local/openjdk-8/jre/lib/security/java.security.orig
               cp java.security.fips /usr/local/openjdk-8/jre/lib/security/java.security
 
               cp -a /usr/local/openjdk-8/jre/lib/security/cacerts /usr/local/openjdk-8/jre/lib/security/cacerts.orig
               rm /usr/local/openjdk-8/jre/lib/security/cacerts
               keytool -importkeystore -srckeystore /usr/local/openjdk-8/jre/lib/security/cacerts.orig -srcstoretype JKS -destkeystore /usr/local/openjdk-8/jre/lib/security/cacerts -deststoretype BCFKS -deststorepass changeit -srcstorepass changeit
+
+              echo "done"
 
               export M2=~/circleci-sg/apache-maven-3.6.1/bin
               export M2_HOME=~/circleci-sg/apache-maven-3.6.1
