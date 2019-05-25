@@ -83,8 +83,11 @@ jobs:
               export M2_HOME=~/circleci-sg/apache-maven-3.6.1
               export MAVEN_HOME=~/circleci-sg/apache-maven-3.6.1
               export PATH=$M2:$PATH
-              mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve -DincludeParents=true -s settings.xml
-              mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve-plugins -DincludeParents=true -s settings.xml
+              mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve -DincludeParents=true -s settings.xml || true
+              mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve-plugins -DincludeParents=true -s settings.xml || true
+              mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:go-offline -DincludeParents=true -s settings.xml || true
+              mvn -U verify -Dtest="unknwon" -s settings.xml -Pwith-static-openssl-linux-non-fedora,-with-dynamic-openssl || true
+              
       - run:
           command: |
               export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -yq rng-tools haveged && apt-get clean
@@ -105,7 +108,7 @@ jobs:
               export M2_HOME=~/circleci-sg/apache-maven-3.6.1
               export MAVEN_HOME=~/circleci-sg/apache-maven-3.6.1
               export PATH=$M2:$PATH
-              ./smoketest.sh
+              #./smoketest.sh
       - run:
           command: |
             set -x
