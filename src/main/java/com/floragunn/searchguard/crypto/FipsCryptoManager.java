@@ -292,7 +292,7 @@ final class FipsCryptoManager extends AbstractCryptoManager {
             LOGGER.info(Security.getProvider("SunJSSE").getInfo());
             
             if(!Security.getProvider("SunJSSE").getInfo().contains("Sun JSSE provider (FIPS mode, crypto provider")) {
-                throw new RuntimeException("SunJSSE not in FIPS mode");
+                throw new RuntimeException("SunJSSE not in FIPS mode -> "+Security.getProvider("SunJSSE").getInfo());
             }
         }
     }
