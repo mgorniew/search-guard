@@ -84,9 +84,9 @@ jobs:
               wget http://us.mirrors.quenda.co/apache/maven/maven-3/3.6.1/binaries/apache-maven-3.6.1-bin.tar.gz -nv
               tar -xzf apache-maven-3.6.1-bin.tar.gz
 
-              export M2 /apache-maven-3.6.1/bin
-              export M2_HOME /apache-maven-3.6.1
-              export MAVEN_HOME /apache-maven-3.6.1
+              export M2 ~/circleci-sg/apache-maven-3.6.1/bin
+              export M2_HOME ~/circleci-sg/apache-maven-3.6.1
+              export MAVEN_HOME ~/circleci-sg/apache-maven-3.6.1
               export PATH $M2:$PATH
               mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve -DincludeParents=true -s settings.xml
       - run:
@@ -99,17 +99,17 @@ jobs:
               rm /etc/ssl/certs/java/cacerts
               keytool -importkeystore -srckeystore /etc/ssl/certs/java/cacerts.orig -srcstoretype JKS -destkeystore /etc/ssl/certs/java/cacerts -deststoretype BCFKS -deststorepass changeit -srcstorepass changeit
 
-              export M2 /apache-maven-3.6.1/bin
-              export M2_HOME /apache-maven-3.6.1
-              export MAVEN_HOME /apache-maven-3.6.1
+              export M2 ~/circleci-sg/apache-maven-3.6.1/bin
+              export M2_HOME ~/circleci-sg/apache-maven-3.6.1
+              export MAVEN_HOME ~/circleci-sg/apache-maven-3.6.1
               export PATH $M2:$PATH
               ./smoketest.sh
       - run:
           command: |
             set -x
-            export M2 /apache-maven-3.6.1/bin
-            export M2_HOME /apache-maven-3.6.1
-            export MAVEN_HOME /apache-maven-3.6.1
+            export M2 ~/circleci-sg/apache-maven-3.6.1/bin
+            export M2_HOME ~/circleci-sg/apache-maven-3.6.1
+            export MAVEN_HOME ~/circleci-sg/apache-maven-3.6.1
             export PATH $M2:$PATH
             cd src/test/java         
             TESTFILES="$(circleci tests glob **/*.java | circleci tests split --split-by=timings | tr -s '\n' ',')"
