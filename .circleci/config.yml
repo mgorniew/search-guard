@@ -126,7 +126,7 @@ jobs:
               mvn -U -Pcoverage,with-static-openssl-linux-non-fedora,-with-dynamic-openssl verify -Dtest="$TESTFILES" -s settings.xml
             else
               #no coverage for non-master branches
-              mvn -U verify -Dtest="$TESTFILES" -s settings.xml -Pwith-static-openssl-linux-non-fedora,-with-dynamic-openssl
+              mvn -U verify -Denforcer.skip=true -Dtest="$TESTFILES" -s settings.xml -Pwith-static-openssl-linux-non-fedora,-with-dynamic-openssl
             fi
       - store_test_results:
           path: target/surefire-reports
