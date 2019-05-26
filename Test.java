@@ -6,6 +6,7 @@ import java.security.MessageDigest;
 import java.security.Permission;
 import java.security.Policy;
 import java.security.ProtectionDomain;
+import java.security.Security;
 
 import javax.crypto.Cipher;
 import javax.net.ssl.HttpsURLConnection;
@@ -15,6 +16,7 @@ public class Test {
     public static void main(String[] args) {
         try {
             System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
+            final String defaultKeyStoreType = Security.getProperty("keystore.type");
 
             Policy.setPolicy(new Policy() {
 
@@ -32,6 +34,11 @@ public class Test {
             });
     
             System.setSecurityManager(new SecurityManager());
+            
+            System.out.println("keystore.type: " + defaultKeyStoreType);
+            
+            System.out.println("prov 0 name: " + Security.getProviders()[0].getName());
+            System.out.println("prov 0 info: " + Security.getProviders()[0].getInfo());
 
 
             int maxKeyLen = Cipher.getMaxAllowedKeyLength("AES");
@@ -42,22 +49,22 @@ public class Test {
             System.out.println("SHA-3 BCFIPS digest ok?: "+(d!= null && d.length == 32 ));
             
             
-            String httpsURL = "https://www.google.com/";
-            URL myUrl = new URL(httpsURL);
-            HttpsURLConnection conn = (HttpsURLConnection)myUrl.openConnection();
-            InputStream is = conn.getInputStream();
-            InputStreamReader isr = new InputStreamReader(is);
-            BufferedReader br = new BufferedReader(isr);
-
-            String inputLine;
-
-            while ((inputLine = br.readLine()) != null) {
-                break;
-            }
-
-            br.close();
-
-            System.out.println("BCFKS cacerts working!");
+//            String httpsURL = "https://www.google.com/";
+//            URL myUrl = new URL(httpsURL);
+//            HttpsURLConnection conn = (HttpsURLConnection)myUrl.openConnection();
+//            InputStream is = conn.getInputStream();
+//            InputStreamReader isr = new InputStreamReader(is);
+//            BufferedReader br = new BufferedReader(isr);
+//
+//            String inputLine;
+//
+//            while ((inputLine = br.readLine()) != null) {
+//                break;
+//            }
+//
+//            br.close();
+//
+//            System.out.println("BCFKS cacerts working!");
            
         } catch (Throwable e) {
             System.out.println(e.getMessage());

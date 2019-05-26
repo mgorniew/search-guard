@@ -104,10 +104,10 @@ jobs:
               cp src/test/resources/fips/cacerts.BCFKS /usr/local/openjdk-11/lib/security/cacerts
 
               javac Test.java
-              java Test || true
+              #java Test || true
               java -cp .:bc-fips-1.0.1.jar Test || true
-              java  -Djava.security.properties==/root/circleci-sg/java.security.fips Test || true
-              java  -cp .:bc-fips-1.0.1.jar -Djava.security.properties==/root/circleci-sg/java.security.fips Test || true
+              #java -Djava.security.properties==/root/circleci-sg/java.security.fips Test || true
+              java -cp .:bc-fips-1.0.1.jar -Djava.security.properties==/root/circleci-sg/java.security.fips Test || true
               #cp -a /usr/local/openjdk-8/jre/lib/security/cacerts /usr/local/openjdk-8/jre/lib/security/cacerts.orig
               #rm /usr/local/openjdk-8/jre/lib/security/cacerts
               #keytool -importkeystore -srckeystore /usr/local/openjdk-8/jre/lib/security/cacerts.orig -srcstoretype JKS -destkeystore /usr/local/openjdk-8/jre/lib/security/cacerts -deststoretype BCFKS -deststorepass changeit -srcstorepass changeit
