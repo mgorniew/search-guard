@@ -83,7 +83,6 @@ import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
 //For ES5 this class has only effect when SSL only plugin is installed
 public abstract class SearchGuardSSLPlugin extends Plugin implements ActionPlugin, NetworkPlugin {
 
-    public static boolean FIPS_ENABLED = true;
     protected final Logger log = LogManager.getLogger(this.getClass());
     protected static final String CLIENT_TYPE = "client.type";
     protected final boolean client;
@@ -93,14 +92,11 @@ public abstract class SearchGuardSSLPlugin extends Plugin implements ActionPlugi
     protected final SearchGuardKeyStore sgks;
     protected PrincipalExtractor principalExtractor;
     protected final Path configPath;
+    protected final boolean enforceCryptoManagerInitialization = !Boolean.getBoolean("sg.no_enforce_crypto_manager_init");
     private final static SslExceptionHandler NOOP_SSL_EXCEPTION_HANDLER = new SslExceptionHandler() {};
-    
-    static {
-        CryptoManagerFactory.initialize(FIPS_ENABLED);
-    }
 
     protected SearchGuardSSLPlugin(final Settings settings, final Path configPath, boolean disabled) {
-     
+        
         if(disabled) {
             this.settings = null;
             this.client = false;
@@ -119,6 +115,12 @@ public abstract class SearchGuardSSLPlugin extends Plugin implements ActionPlugi
             
             
             return;
+        }
+        
+        final Boolean fipsInitStatus = CryptoManagerFactory.ensureInitialized(settings.getAsBoolean(SSLConfigConstants.SEARCHGUARD_FIPS_MODE_ENABLED, false).booleanValue());
+        
+        if(enforceCryptoManagerInitialization && fipsInitStatus != null) {
+            throw new RuntimeException("Crypto manager already initialized");
         }
         
         this.configPath = configPath;
@@ -192,7 +194,7 @@ public abstract class SearchGuardSSLPlugin extends Plugin implements ActionPlugi
         
         if(ExternalSearchGuardKeyStore.hasExternalSslContext(settings)) {
             
-            if(FIPS_ENABLED) {
+            if(CryptoManagerFactory.isFipsEnabled()) {
                 throw new RuntimeException("External SSL context not allowed in FIPS mode");
             }
             
@@ -351,6 +353,9 @@ public abstract class SearchGuardSSLPlugin extends Plugin implements ActionPlugi
         settings.add(Setting.boolSetting(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_CRL_DISABLE_CRLDP, false, Property.NodeScope, Property.Filtered));
         settings.add(Setting.boolSetting(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_CRL_DISABLE_OCSP, false, Property.NodeScope, Property.Filtered));
         settings.add(Setting.longSetting(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_CRL_VALIDATION_DATE, -1, -1, Property.NodeScope, Property.Filtered));
+        
+        settings.add(Setting.boolSetting(SSLConfigConstants.SEARCHGUARD_FIPS_MODE_ENABLED, false, Property.NodeScope, Property.Filtered));
+
         return settings;
     }
 

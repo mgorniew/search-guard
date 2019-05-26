@@ -208,7 +208,7 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
     public SearchGuardPlugin(final Settings settings, final Path configPath) {
         super(settings, configPath, isDisabled(settings));
         
-        if(FIPS_ENABLED) {
+        if(CryptoManagerFactory.isFipsEnabled()) {
             log.info("FIPS mode enabled");
         } else {
             log.info("FIPS mode not enabled");

@@ -123,7 +123,7 @@ public class DefaultSearchGuardKeyStore implements SearchGuardKeyStore {
         final boolean useOpenSSLForTransportIfAvailable = settings
                 .getAsBoolean(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, true);
 
-        if(SearchGuardSSLPlugin.FIPS_ENABLED && (useOpenSSLForHttpIfAvailable || useOpenSSLForTransportIfAvailable)) {
+        if(CryptoManagerFactory.isFipsEnabled() && (useOpenSSLForHttpIfAvailable || useOpenSSLForTransportIfAvailable)) {
             throw new RuntimeException("OpenSSL bindings are not allowed when running in FIPS mode");
         }
         

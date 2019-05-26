@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.Permission;
 import java.security.Policy;
 import java.security.ProtectionDomain;
+import java.security.Security;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -76,6 +77,9 @@ public abstract class AbstractSGUnitTest {
     protected static boolean withRemoteCluster;
 
 	static {
+	    
+	    System.setProperty("sg.no_enforce_crypto_manager_init", "true");
+	    
 	    if(System.getSecurityManager() == null) {
     	    //we need a security in case we test with FIPS
     	    Policy.setPolicy(new Policy() {
@@ -96,6 +100,8 @@ public abstract class AbstractSGUnitTest {
             System.setSecurityManager(new SecurityManager());
             System.out.println("Security Manager installed");
 	    }
+	    
+	    CryptoManagerFactory.initialize(Security.getProvider("SunJSSE").getInfo().contains("Sun JSSE provider (FIPS mode, crypto provider"));
 
 	    System.out.println("UT FIPS: "+utFips()); //initialize cryptomanager
 	    
@@ -337,6 +343,6 @@ public abstract class AbstractSGUnitTest {
     }
     
     protected static boolean utFips() {
-        return SearchGuardPlugin.FIPS_ENABLED;
+        return CryptoManagerFactory.isFipsEnabled();
     }
 }

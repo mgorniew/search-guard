@@ -55,12 +55,13 @@ jobs:
             - ~/.m2
           key: maven-repo-v3-{{ .Branch }}-{{ checksum "pom.xml" }}
 
-  fipsbuild:
+  #unused
+  unused_unused:
     parallelism: 4
     working_directory: ~/circleci-sg
     resource_class: xlarge
     docker:
-      - image: openjdk:11.0.3-stretch
+      - image: openjdk-11
     steps:
       - run:
           name: Versions
@@ -148,16 +149,13 @@ jobs:
           paths:
             - ~/.m2
           key: maven-repo-v3-{{ .Branch }}-{{ checksum "pom.xml" }}
-
-  fipsbuild_oldvm:
+  fipsbuild_8u212:
     parallelism: 4
     working_directory: ~/circleci-sg
     resource_class: xlarge
     docker:
-      - image: floragunncom/fjvm:8u111-jdk
+      - image: floragunncom/fjvm:8u212-stretch
     steps:
-      #- run:
-      #    command: 'export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -yq rng-tools haveged && apt-get clean'
       - run:
           name: Versions
           command: 'uname -a;java -version; cat /proc/sys/kernel/random/entropy_avail || true'
@@ -175,15 +173,42 @@ jobs:
             cd src/test/java         
             TESTFILES="$(circleci tests glob **/*.java | circleci tests split --split-by=timings | tr -s '\n' ',')"
             echo "$TESTFILES"
-            #echo "${TESTFILES// /,}"
             cd ~/circleci-sg
-
-            if [ "${CIRCLE_BRANCH}" == "master" ]; then
-              mvn -U -Pcoverage,with-static-openssl-linux-non-fedora,-with-dynamic-openssl verify -Dtest="$TESTFILES" -s settings.xml
-            else
-              #no coverage for non-master branches
-              mvn -U verify -Dtest="$TESTFILES" -s settings.xml -Pwith-static-openssl-linux-non-fedora,-with-dynamic-openssl,with-bcfips
-            fi
+            mvn -U verify -Dtest="$TESTFILES" -s settings.xml -Pwith-static-openssl-linux-non-fedora,-with-dynamic-openssl,with-bcfips
+      - store_test_results:
+          path: target/surefire-reports
+      - store_artifacts:
+          path: /.circleci-task-data
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: maven-repo-v3-{{ .Branch }}-{{ checksum "pom.xml" }}
+  fipsbuild_8u111:
+    parallelism: 4
+    working_directory: ~/circleci-sg
+    resource_class: xlarge
+    docker:
+      - image: floragunncom/fjvm:8u111-jdk
+    steps:
+      - run:
+          name: Versions
+          command: 'uname -a;java -version; cat /proc/sys/kernel/random/entropy_avail || true'
+      - checkout
+      - restore_cache:
+          keys:
+            - maven-repo-v3-{{ .Branch }}-{{ checksum "pom.xml" }}
+            - maven-repo-v3-{{ .Branch }}-
+            - maven-repo-v3-
+      - run: mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve -DincludeParents=true -s settings.xml
+      #- run: ./smoketest.sh
+      - run:
+          command: |
+            set -x
+            cd src/test/java         
+            TESTFILES="$(circleci tests glob **/*.java | circleci tests split --split-by=timings | tr -s '\n' ',')"
+            echo "$TESTFILES"
+            cd ~/circleci-sg
+            mvn -U verify -Dtest="$TESTFILES" -s settings.xml -Pwith-static-openssl-linux-non-fedora,-with-dynamic-openssl,with-bcfips
       - store_test_results:
           path: target/surefire-reports
       - store_artifacts:
@@ -197,8 +222,8 @@ workflows:
   commit:
     jobs:
       - build
-      - fipsbuild
-      - fipsbuild_oldvm
+      - fipsbuild_8u212
+      - fipsbuild_8u111
 #  nightly:
 #    triggers:
 #      - schedule:

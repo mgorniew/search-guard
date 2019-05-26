@@ -79,6 +79,8 @@ public final class SSLConfigConstants {
     public static final String SEARCHGUARD_SSL_HTTP_CRL_VALIDATION_DATE = "searchguard.ssl.http.crl.validation_date";
 
     public static final String SEARCHGUARD_SSL_ALLOW_CLIENT_INITIATED_RENEGOTIATION = "searchguard.ssl.allow_client_initiated_renegotiation";
+    
+    public static final String SEARCHGUARD_FIPS_MODE_ENABLED = "searchguard.fips_mode_enabled";
 
     public static final String DEFAULT_STORE_PASSWORD = "changeit"; //#16
     

@@ -206,9 +206,8 @@ final class FipsCryptoManager extends AbstractCryptoManager {
 
             Set<Service> serviceList = provider.getServices();
             for (Service service : serviceList) {
-                System.out.println("    "+service.getType()+"="+service.getAlgorithm());
                 if (service.getType().equalsIgnoreCase("KeyStore")) {
-                    if (fipsProvider(provider) && !service.getAlgorithm().equalsIgnoreCase("PKCS12")) {
+                    if (fipsProvider(provider) /*&& !service.getAlgorithm().equalsIgnoreCase("PKCS12")*/) {
                         _fipsKeystores.put(service.getAlgorithm().toUpperCase(), provider.getName());
                     }
                 }
@@ -265,8 +264,8 @@ final class FipsCryptoManager extends AbstractCryptoManager {
  */
         
         //cacerts in fips (BCFKS) format
-        System.setProperty("javax.net.ssl.trustStore", "/Users/salyh/sgdev/search-guard/src/test/resources/fips/cacerts.BCFKS");
-        System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
+        //System.setProperty("javax.net.ssl.trustStore", "..../cacerts.BCFKS");
+        //System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
 
 
 
@@ -292,8 +291,7 @@ final class FipsCryptoManager extends AbstractCryptoManager {
             LOGGER.info(Security.getProvider("SunJSSE").getInfo());
             
             if(!Security.getProvider("SunJSSE").getInfo().contains("Sun JSSE provider (FIPS mode, crypto provider")) {
-                //throw new RuntimeException("SunJSSE not in FIPS mode -> "+Security.getProvider("SunJSSE").getInfo());
-                LOGGER.error("SunJSSE not in FIPS mode -> "+Security.getProvider("SunJSSE").getInfo());
+                throw new RuntimeException("SunJSSE not in FIPS mode -> "+Security.getProvider("SunJSSE").getInfo());
             }
         }
     }

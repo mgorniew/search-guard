@@ -78,6 +78,15 @@ public final class CryptoManagerFactory {
         checkInitialized();
         return FIPS_ENABLED.get();
     }
+    
+    public synchronized static Boolean ensureInitialized(final boolean fipsEnabled) {
+        if(isInitialized()) {
+            return isFipsEnabled()?Boolean.TRUE:Boolean.FALSE;
+        } else {
+            initialize(fipsEnabled);
+            return null;
+        }
+    }
  
     public synchronized static void initialize(final boolean fipsEnabled) {
         if(isInitialized()) {
