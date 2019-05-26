@@ -480,13 +480,13 @@
         <activeByDefault>false</activeByDefault>
       </activation>
       <dependencies>
-        <!-- Bouncycastle -->
+        <!-- Bouncycastle //its in jvm
         <dependency>
           <groupId>local</groupId>
           <artifactId>bcfipsprov</artifactId>
           <version>1.0.1</version>
           <scope>test</scope>
-        </dependency>
+        </dependency>-->
       </dependencies>
       <build>
           <plugins>
