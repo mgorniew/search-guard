@@ -166,7 +166,7 @@ jobs:
             - maven-repo-v4fips1-{{ .Branch }}-
             - maven-repo-v4fips1-
       - run: mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve -DincludeParents=true -s settings.xml
-      - run: ./smoketest.sh
+      #- run: ./smoketest.sh ##needs nc
       - run:
           command: |
             set -x
@@ -200,7 +200,7 @@ jobs:
             - maven-repo-v4fips2-{{ .Branch }}-
             - maven-repo-v4fips2-
       - run: mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve -DincludeParents=true -s settings.xml
-      - run: ./smoketest.sh
+      #- run: ./smoketest.sh
       - run:
           command: |
             set -x
