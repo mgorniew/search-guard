@@ -16,9 +16,9 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - maven-repo-v3-{{ .Branch }}-{{ checksum "pom.xml" }}
-            - maven-repo-v3-{{ .Branch }}-
-            - maven-repo-v3-
+            - maven-repo-v4-{{ .Branch }}-{{ checksum "pom.xml" }}
+            - maven-repo-v4-{{ .Branch }}-
+            - maven-repo-v4-
       - run: mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve -DincludeParents=true -s settings.xml
       - run: ./smoketest.sh
       - run:
@@ -53,7 +53,7 @@ jobs:
       - save_cache:
           paths:
             - ~/.m2
-          key: maven-repo-v3-{{ .Branch }}-{{ checksum "pom.xml" }}
+          key: maven-repo-v4-{{ .Branch }}-{{ checksum "pom.xml" }}
 
   #unused
   unused_unused:
@@ -162,9 +162,9 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - maven-repo-v3-{{ .Branch }}-{{ checksum "pom.xml" }}
-            - maven-repo-v3-{{ .Branch }}-
-            - maven-repo-v3-
+            - maven-repo-v4fips1-{{ .Branch }}-{{ checksum "pom.xml" }}
+            - maven-repo-v4fips1-{{ .Branch }}-
+            - maven-repo-v4fips1-
       - run: mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve -DincludeParents=true -s settings.xml
       #- run: ./smoketest.sh
       - run:
@@ -182,7 +182,7 @@ jobs:
       - save_cache:
           paths:
             - ~/.m2
-          key: maven-repo-v3-{{ .Branch }}-{{ checksum "pom.xml" }}
+          key: maven-repo-v4fips1-{{ .Branch }}-{{ checksum "pom.xml" }}
   fipsbuild_8u111:
     parallelism: 4
     working_directory: ~/circleci-sg
@@ -196,9 +196,9 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - maven-repo-v3-{{ .Branch }}-{{ checksum "pom.xml" }}
-            - maven-repo-v3-{{ .Branch }}-
-            - maven-repo-v3-
+            - maven-repo-v4fips2-{{ .Branch }}-{{ checksum "pom.xml" }}
+            - maven-repo-v4fips2-{{ .Branch }}-
+            - maven-repo-v4fips2-
       - run: mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve -DincludeParents=true -s settings.xml
       #- run: ./smoketest.sh
       - run:
@@ -216,7 +216,7 @@ jobs:
       - save_cache:
           paths:
             - ~/.m2
-          key: maven-repo-v3-{{ .Branch }}-{{ checksum "pom.xml" }}
+          key: maven-repo-v4fips2-{{ .Branch }}-{{ checksum "pom.xml" }}
 workflows:
   version: 2
   commit:
