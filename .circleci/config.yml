@@ -167,7 +167,7 @@ jobs:
             - maven-repo-v3-{{ .Branch }}-{{ checksum "pom.xml" }}
             - maven-repo-v3-{{ .Branch }}-
             - maven-repo-v3-
-      - run: mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve -DincludeParents=true -s settings.xml -e -X -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.debug=ssl -Djava.security.egd=file:/dev/./urandom
+      - run: mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve -DincludeParents=true -s settings.xml -e -X -Djavax.net.debug=ssl
       - run: ./smoketest.sh
       - run:
           command: |
@@ -182,7 +182,7 @@ jobs:
               mvn -U -Pcoverage,with-static-openssl-linux-non-fedora,-with-dynamic-openssl verify -Dtest="$TESTFILES" -s settings.xml
             else
               #no coverage for non-master branches
-              mvn -U verify -Dtest="$TESTFILES" -s settings.xml -Pwith-static-openssl-linux-non-fedora,-with-dynamic-openssl -Djavax.net.ssl.trustStorePassword=changeit
+              mvn -U verify -Dtest="$TESTFILES" -s settings.xml -Pwith-static-openssl-linux-non-fedora,-with-dynamic-openssl
             fi
       - store_test_results:
           path: target/surefire-reports
