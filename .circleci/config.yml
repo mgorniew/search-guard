@@ -156,8 +156,8 @@ jobs:
     docker:
       - image: floragunncom/fjvm:8u111-jdk
     steps:
-      - run:
-          command: 'export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -yq rng-tools haveged && apt-get clean'
+      #- run:
+      #    command: 'export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -yq rng-tools haveged && apt-get clean'
       - run:
           name: Versions
           command: 'uname -a;java -version; cat /proc/sys/kernel/random/entropy_avail || true'
