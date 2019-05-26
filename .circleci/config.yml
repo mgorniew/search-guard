@@ -166,7 +166,7 @@ jobs:
             - maven-repo-v4fips1-{{ .Branch }}-
             - maven-repo-v4fips1-
       - run: mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve -DincludeParents=true -s settings.xml
-      #- run: ./smoketest.sh
+      - run: ./smoketest.sh
       - run:
           command: |
             set -x
@@ -183,12 +183,12 @@ jobs:
           paths:
             - ~/.m2
           key: maven-repo-v4fips1-{{ .Branch }}-{{ checksum "pom.xml" }}
-  fipsbuild_8u111:
+  fipsbuild_8u171:
     parallelism: 4
     working_directory: ~/circleci-sg
     resource_class: xlarge
     docker:
-      - image: floragunncom/fjvm:8u111-jdk
+      - image: floragunncom/fjvm:8u171-stretch
     steps:
       - run:
           name: Versions
@@ -200,7 +200,7 @@ jobs:
             - maven-repo-v4fips2-{{ .Branch }}-
             - maven-repo-v4fips2-
       - run: mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve -DincludeParents=true -s settings.xml
-      #- run: ./smoketest.sh
+      - run: ./smoketest.sh
       - run:
           command: |
             set -x
@@ -223,7 +223,7 @@ workflows:
     jobs:
       - build
       - fipsbuild_8u212
-      - fipsbuild_8u111
+      - fipsbuild_8u171
 #  nightly:
 #    triggers:
 #      - schedule:
