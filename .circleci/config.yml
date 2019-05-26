@@ -65,6 +65,8 @@ jobs:
       - run:
           name: Versions
           command: 'uname -a;java -version;find / -iname java.security || true; find / -iname cacerts || true'
+      - run:
+          command: 'export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -yq rng-tools haveged && apt-get clean'
       - checkout
       - restore_cache:
           keys:
@@ -155,15 +157,17 @@ jobs:
       - image: floragunncom/fjvm:8u111-jdk
     steps:
       - run:
+          command: 'export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -yq rng-tools haveged && apt-get clean'
+      - run:
           name: Versions
-          command: 'uname -a;java -version'
+          command: 'uname -a;java -version; cat /proc/sys/kernel/random/entropy_avail || true'
       - checkout
       - restore_cache:
           keys:
             - maven-repo-v3-{{ .Branch }}-{{ checksum "pom.xml" }}
             - maven-repo-v3-{{ .Branch }}-
             - maven-repo-v3-
-      - run: mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve -DincludeParents=true -s settings.xml -e -X -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.debug=ssl
+      - run: mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:resolve -DincludeParents=true -s settings.xml -e -X -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.debug=ssl -Djava.security.egd=file:/dev/./urandom
       - run: ./smoketest.sh
       - run:
           command: |
