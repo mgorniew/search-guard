@@ -184,9 +184,10 @@ final class DefaultCryptoManager extends AbstractCryptoManager {
                     
                     Security.addProvider(new BouncyCastleProvider());
                 } else {
-                    RuntimeException e = new RuntimeException("BC security provider already added");
-                    e.printStackTrace();
-                    throw e;
+                    LOGGER.error("BC security provider already added (not a fatal error but this should not happen normally");
+                    //RuntimeException e = new RuntimeException("BC security provider already added");
+                    //e.printStackTrace();
+                    //throw e;
                 }
                 return null;
             }
