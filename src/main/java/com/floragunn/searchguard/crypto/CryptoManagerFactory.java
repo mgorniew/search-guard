@@ -1,6 +1,5 @@
 package com.floragunn.searchguard.crypto;
 
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -90,6 +89,7 @@ public final class CryptoManagerFactory {
  
     public synchronized static void initialize(final boolean fipsEnabled) {
         if(isInitialized()) {
+            LOGGER.error("CryptoManagerFactory already initialized");
             throw new RuntimeException("CryptoManagerFactory already initialized");
         }
         
@@ -98,6 +98,7 @@ public final class CryptoManagerFactory {
         if (sm != null) {
             sm.checkPermission(new SpecialPermission());
         } else if (fipsEnabled) {
+            LOGGER.error("No security manager installed");
             throw new RuntimeException("No security manager installed");
         }
         
@@ -112,7 +113,8 @@ public final class CryptoManagerFactory {
         try {
             SSLContext.getDefault();
         } catch (Exception e) {
-            throw new RuntimeException("Unable to create a default context");
+            LOGGER.error("Unable to create a default context",e);
+            throw new RuntimeException("Unable to create a default context",e);
         }
         
         INITIALIZED.set(true);
@@ -120,6 +122,7 @@ public final class CryptoManagerFactory {
     
     private static void checkInitialized() {
         if(!isInitialized()) {
+            LOGGER.error("CryptoManagerFactory not yet initialized");
             throw new RuntimeException("CryptoManagerFactory not yet initialized");
         }
     }

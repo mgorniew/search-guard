@@ -246,29 +246,6 @@ final class FipsCryptoManager extends AbstractCryptoManager {
         
         fipsKeyStoreType = evaluateDefaultKeyStoreType();
         Security.setProperty("keystore.type", fipsKeyStoreType);
-        
-        //https://stackoverflow.com/questions/54794570/using-pkixvalidator-with-bouncycastlefipsprovider-for-server-certificate-validat
-        //Security.setProperty("ssl.KeyManagerFactory.algorithm", "PKIX");
-        //Security.setProperty("ssl.TrustManagerFactory.algorithm", "PKIX");
-
-        //https://developer.jboss.org/message/978202#978202
-        
-        //System.setProperty("javax.net.ssl.trustStoreType", fipsKeyStoreType);
-        
-/*
- * 
- 
- /Library/Java/JavaVirtualMachines/jdk1.8.0_181.jdk/Contents/Home/bin/keytool  -importkeystore -srckeystore cacerts -destkeystore ~/cacerts.BCFKS -deststoretype BCFKS -destprovidername BCFIPS -v  -providerpath ../ext/bc-fips-1.0.1.jar -providerclass org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider -deststorepass changeit -srcstorepass changeit
- 
- * 
- */
-        
-        //cacerts in fips (BCFKS) format
-        //System.setProperty("javax.net.ssl.trustStore", "..../cacerts.BCFKS");
-        //System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
-
-
-
     }
     
     private boolean fipsProvider(Provider provider) {
