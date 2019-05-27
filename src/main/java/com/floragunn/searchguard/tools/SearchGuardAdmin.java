@@ -28,6 +28,9 @@ import java.io.Writer;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.security.Permission;
+import java.security.Policy;
+import java.security.ProtectionDomain;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
@@ -103,6 +106,7 @@ import com.floragunn.searchguard.action.licenseinfo.LicenseInfoResponse;
 import com.floragunn.searchguard.action.whoami.WhoAmIAction;
 import com.floragunn.searchguard.action.whoami.WhoAmIRequest;
 import com.floragunn.searchguard.action.whoami.WhoAmIResponse;
+import com.floragunn.searchguard.crypto.CryptoManagerFactory;
 import com.floragunn.searchguard.sgconf.Migration;
 import com.floragunn.searchguard.sgconf.impl.CType;
 import com.floragunn.searchguard.sgconf.impl.SgDynamicConfiguration;
@@ -241,6 +245,8 @@ public class SearchGuardAdmin {
 
         options.addOption(Option.builder("mo").longOpt("migrate-offline").hasArg().argName("folder").desc("Migrate and use folder to store migrated files").build());
 
+        options.addOption(Option.builder("fips").longOpt("enable-fips").desc("Operate in fips mode").build());
+
         
         //when adding new options also adjust validate(CommandLine line)
         
@@ -290,6 +296,7 @@ public class SearchGuardAdmin {
         final boolean resolveEnvVars;
         Integer validateConfig = null;
         String migrateOffline = null;
+        boolean fips;
         
         CommandLineParser parser = new DefaultParser();
         try {
@@ -388,6 +395,8 @@ public class SearchGuardAdmin {
             
             migrateOffline = line.getOptionValue("mo");
             
+            fips = line.hasOption("fips");
+            
         }
         catch( ParseException exp ) {
             System.out.println("ERR: Parsing failed.  Reason: " + exp.getMessage());
@@ -413,6 +422,27 @@ public class SearchGuardAdmin {
                              + "         sgadmin connects on the transport port which is normally 9300.");
         }
         
+        if(fips) {
+            if(System.getSecurityManager() == null) {
+                Policy.setPolicy(new Policy() {
+        
+                    @Override
+                    public boolean implies(ProtectionDomain domain, Permission permission) {
+                        if(permission.getClass().getName().equals("org.bouncycastle.crypto.CryptoServicesPermission")) {
+                            if(permission.getActions().equals("[unapprovedModeEnabled]")) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                    
+                });
+        
+                System.setSecurityManager(new SecurityManager());
+            }
+
+        }
+        
         System.out.print("Will connect to "+hostname+":"+port);
         Socket socket = new Socket();
         
@@ -436,11 +466,12 @@ public class SearchGuardAdmin {
         
         final Settings.Builder settingsBuilder = Settings
                 .builder()
+                .put(SSLConfigConstants.SEARCHGUARD_FIPS_MODE_ENABLED, fips)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENFORCE_HOSTNAME_VERIFICATION, !nhnv)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENFORCE_HOSTNAME_VERIFICATION_RESOLVE_HOST_NAME, !nrhn)
                 .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLED, true)
-                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, useOpenSSLIfAvailable)
-                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, useOpenSSLIfAvailable)
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLE_OPENSSL_IF_AVAILABLE, useOpenSSLIfAvailable && !fips)
+                .put(SSLConfigConstants.SEARCHGUARD_SSL_HTTP_ENABLE_OPENSSL_IF_AVAILABLE, useOpenSSLIfAvailable && !fips)
                 .putList(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLED_CIPHERS, enabledCiphers)
                 .putList(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_ENABLED_PROTOCOLS, enabledProtocols)
                 

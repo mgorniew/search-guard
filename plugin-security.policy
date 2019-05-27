@@ -56,6 +56,12 @@ grant {
   
   //Java 9+
   permission java.lang.RuntimePermission "accessClassInPackage.com.sun.jndi.ldap";
+  
+  //fips
+  permission java.security.SecurityPermission "getProperty.keystore.type";
+  permission java.security.SecurityPermission "setProperty.keystore.type";
+  permission org.bouncycastle.crypto.CryptoServicesPermission "exportKeys";
+  permission org.bouncycastle.crypto.CryptoServicesPermission "tlsAlgorithmsEnabled";
 };
 
 grant codeBase "${codebase.netty-common}" {

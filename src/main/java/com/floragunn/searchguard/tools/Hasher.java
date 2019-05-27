@@ -90,7 +90,6 @@ public class Hasher {
                         public boolean implies(ProtectionDomain domain, Permission permission) {
                             if(permission.getClass().getName().equals("org.bouncycastle.crypto.CryptoServicesPermission")) {
                                 if(permission.getActions().equals("[unapprovedModeEnabled]")) {
-                                    System.out.println(permission);
                                     return false;
                                 }
                             }

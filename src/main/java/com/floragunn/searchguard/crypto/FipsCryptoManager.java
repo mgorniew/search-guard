@@ -65,7 +65,7 @@ final class FipsCryptoManager extends AbstractCryptoManager {
                     LOGGER.error("FIPS mode only avaialable for Java 8 ("+JavaVersion.current()+")");
                     throw new RuntimeException("FIPS mode only avaialable for Java 8 ("+JavaVersion.current()+")");
                 }
-                checkForNoBCProvider();
+                //checkForNoBCProvider();
                 evaluateProviders();
                 checkSunJSSEProvider();
                 return null;

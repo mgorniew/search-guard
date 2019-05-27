@@ -107,7 +107,7 @@
       <version>${commons.cli.version}</version>
     </dependency>
     
-        <dependency>
+    <dependency>
           <groupId>org.bouncycastle</groupId>
           <artifactId>bcpg-jdk15on</artifactId>
           <version>${bc.version}</version>
@@ -480,13 +480,17 @@
         <activeByDefault>false</activeByDefault>
       </activation>
       <dependencies>
-        <!-- Bouncycastle //its in jvm
         <dependency>
           <groupId>local</groupId>
           <artifactId>bcfipsprov</artifactId>
           <version>1.0.1</version>
-          <scope>test</scope>
-        </dependency>-->
+        </dependency>
+            <dependency>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>bcpg-jdk15on</artifactId>
+          <version>${bc.version}</version>
+          <scope>provided</scope>
+    </dependency> 
       </dependencies>
       <build>
           <plugins>

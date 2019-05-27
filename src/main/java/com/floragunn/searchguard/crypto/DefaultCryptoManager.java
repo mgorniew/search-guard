@@ -173,14 +173,30 @@ final class DefaultCryptoManager extends AbstractCryptoManager {
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
             @Override
             public Object run() {
+                
+                try {
+                    Class.forName("org.bouncycastle.jce.provider.BouncyCastleProvider");
+                } catch (ClassNotFoundException e) {
+                    LOGGER.info("No 'org.bouncycastle.jce.provider.BouncyCastleProvider' found, will not load BC provider");
+                    return null;
+                }
+                
+                
+                try {
+                    Class.forName("org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider");
+                    LOGGER.info("Found BouncyCastleFipsProvider in classpath but we are not in FIPS mode");
+                } catch (ClassNotFoundException e) {
+                    //ignore
+                }
+                
                 if (Security.getProvider("BC") == null) {
                     
-                    try {
+                    /*try {
                         Class.forName("org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider");
                         throw new RuntimeException("Found BouncyCastleFipsProvider in classpath but we are not in FIPS mode");
                     } catch (ClassNotFoundException e) {
                         //ignore
-                    }
+                    }*/
                     
                     Security.addProvider(new BouncyCastleProvider());
                 } else {
