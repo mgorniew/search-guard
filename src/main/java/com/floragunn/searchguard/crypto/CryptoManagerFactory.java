@@ -102,14 +102,6 @@ public final class CryptoManagerFactory {
             throw new RuntimeException("No security manager installed");
         }
         
-        if(fipsEnabled) {
-            manager = new FipsCryptoManager();
-        } else {
-            manager = new DefaultCryptoManager();
-        }
-
-        FIPS_ENABLED.set(fipsEnabled);
-        
         try {
             SSLContext.getDefault();
         } catch (Exception e) {
@@ -117,6 +109,13 @@ public final class CryptoManagerFactory {
             throw new RuntimeException("Unable to create a default context",e);
         }
         
+        if(fipsEnabled) {
+            manager = new FipsCryptoManager();
+        } else {
+            manager = new DefaultCryptoManager();
+        }
+
+        FIPS_ENABLED.set(fipsEnabled);
         INITIALIZED.set(true);
     }
     

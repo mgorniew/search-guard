@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.codec.binary.Base64;
+import org.elasticsearch.bootstrap.JavaVersion;
 import org.elasticsearch.common.settings.Settings;
 
 import com.floragunn.searchguard.ssl.ExternalSearchGuardKeyStore;
@@ -60,6 +61,10 @@ final class FipsCryptoManager extends AbstractCryptoManager {
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
             @Override
             public Object run() {
+                if(!JavaVersion.current().equals(JavaVersion.parse("1.8"))) {
+                    LOGGER.error("FIPS mode only avaialable for Java 8 ("+JavaVersion.current()+")");
+                    throw new RuntimeException("FIPS mode only avaialable for Java 8 ("+JavaVersion.current()+")");
+                }
                 checkForNoBCProvider();
                 evaluateProviders();
                 checkSunJSSEProvider();

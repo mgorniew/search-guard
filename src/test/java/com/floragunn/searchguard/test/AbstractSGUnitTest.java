@@ -99,7 +99,9 @@ public abstract class AbstractSGUnitTest {
             });
     
             System.setSecurityManager(new SecurityManager());
-            System.out.println("Security Manager installed");
+            System.out.println("Security Manager installed (Unittests)");
+	    } else {
+	        System.out.println("Security Manager for Unittests already installed)");
 	    }
 	    
 	    CryptoManagerFactory.initialize(Security.getProvider("SunJSSE").getInfo().contains("Sun JSSE provider (FIPS mode, crypto provider"));
