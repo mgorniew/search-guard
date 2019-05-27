@@ -17,6 +17,7 @@
 
 package com.floragunn.searchguard.ssl.transport;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
@@ -29,14 +30,23 @@ import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.compress.Compressor;
+import org.elasticsearch.common.compress.CompressorFactory;
+import org.elasticsearch.common.compress.NotCompressedException;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.network.CloseableChannel;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.PageCacheRecycler;
+import org.elasticsearch.common.util.concurrent.ThreadContext;
+import org.elasticsearch.core.internal.io.IOUtils;
 import org.elasticsearch.indices.breaker.CircuitBreakerService;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TcpChannel;
+import org.elasticsearch.transport.TcpHeader;
+import org.elasticsearch.transport.TransportStatus;
 import org.elasticsearch.transport.netty4.Netty4Transport;
 
 import com.floragunn.searchguard.ssl.SearchGuardKeyStore;
@@ -270,4 +280,80 @@ public class SearchGuardSSLNettyTransport extends Netty4Transport {
             super.exceptionCaught(ctx, cause);
         }
     }
+
+    @Override
+    public void inboundMessage(TcpChannel channel, BytesReference message) {
+
+        try {
+            String ret;
+      if(message.length() > (100 * 1024) && (ret=format(channel, message, "READ")) != null) {
+          
+          System.out.println("################################################################ big "+ret);
+                
+            }
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
+        
+        super.inboundMessage(channel, message);
+    }
+    private static final int HEADER_SIZE = TcpHeader.MARKER_BYTES_SIZE + TcpHeader.MESSAGE_LENGTH_SIZE;
+    private String format(TcpChannel channel, BytesReference message, String event) throws IOException {
+        final StringBuilder sb = new StringBuilder();
+        sb.append(channel);
+        int messageLengthWithHeader = HEADER_SIZE + message.length();
+        // This is a ping
+        if (message.length() == 0) {
+            sb.append(" [ping]").append(' ').append(event).append(": ").append(messageLengthWithHeader).append('B');
+        } else {
+            boolean success = false;
+            StreamInput streamInput = message.streamInput();
+            try {
+                final long requestId = streamInput.readLong();
+                final byte status = streamInput.readByte();
+                final boolean isRequest = TransportStatus.isRequest(status);
+                final String type = isRequest ? "request" : "response";
+                final String version = Version.fromId(streamInput.readInt()).toString();
+                sb.append(" [length: ").append(messageLengthWithHeader);
+                sb.append(", request id: ").append(requestId);
+                sb.append(", type: ").append(type);
+                sb.append(", version: ").append(version);
+
+                if (isRequest) {
+                    if (TransportStatus.isCompress(status)) {
+                        Compressor compressor;
+                        try {
+                            final int bytesConsumed = TcpHeader.REQUEST_ID_SIZE + TcpHeader.STATUS_SIZE + TcpHeader.VERSION_ID_SIZE;
+                            compressor = CompressorFactory.compressor(message.slice(bytesConsumed, message.length() - bytesConsumed));
+                        } catch (NotCompressedException ex) {
+                            throw new IllegalStateException(ex);
+                        }
+                        streamInput = compressor.streamInput(streamInput);
+                    }
+
+                    try (ThreadContext context = new ThreadContext(Settings.EMPTY)) {
+                        context.readHeaders(streamInput);
+                    }
+                    // now we decode the features
+                    if (streamInput.getVersion().onOrAfter(Version.V_6_3_0)) {
+                        streamInput.readStringArray();
+                    }
+                    //sb.append(", action: ").append(streamInput.readString());
+                    return streamInput.readString();
+                } else {
+                    return null;
+                }
+                //sb.append(']');
+                //sb.append(' ').append(event).append(": ").append(messageLengthWithHeader).append('B');
+                //success = true;
+            } finally {
+                IOUtils.closeWhileHandlingException(streamInput);
+            }
+        }
+        return sb.toString();
+    }
+    
+    
 }
