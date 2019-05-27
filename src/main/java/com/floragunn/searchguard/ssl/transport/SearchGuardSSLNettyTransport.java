@@ -286,10 +286,16 @@ public class SearchGuardSSLNettyTransport extends Netty4Transport {
 
         try {
             String ret;
-      if(message.length() > (20 * 1024) && (ret=format(channel, message, "READ")) != null) {
+      if(message.length() > (10 * 1024) && (ret=format(channel, message, "READ")) != null) {
           
           System.out.println("################################################################ big "+ret);
-                
+          System.out.println("getInFlightRequestBreaker().getDurability() "+getInFlightRequestBreaker().getDurability());
+          System.out.println("getInFlightRequestBreaker().getLimit() "+getInFlightRequestBreaker().getLimit());
+          System.out.println("getInFlightRequestBreaker().getName() "+getInFlightRequestBreaker().getName());
+          System.out.println("getInFlightRequestBreaker().getOverhead() "+getInFlightRequestBreaker().getOverhead());
+          System.out.println("getInFlightRequestBreaker().getTrippedCount() "+getInFlightRequestBreaker().getTrippedCount());
+          System.out.println("getInFlightRequestBreaker().getUsed() "+getInFlightRequestBreaker().getUsed());
+          
             }
         } catch (IOException e) {
             // TODO Auto-generated catch block
