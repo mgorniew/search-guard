@@ -18,6 +18,9 @@
 package com.floragunn.searchguard.test;
 
 import java.io.File;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.RuntimeMXBean;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.Permission;
@@ -46,6 +49,8 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
+import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.monitor.jvm.JvmInfo;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.Netty4Plugin;
@@ -69,6 +74,7 @@ import com.floragunn.searchguard.test.helper.cluster.ClusterInfo;
 import com.floragunn.searchguard.test.helper.file.FileHelper;
 import com.floragunn.searchguard.test.helper.rest.RestHelper.HttpResponse;
 import com.floragunn.searchguard.test.helper.rules.SGTestWatcher;
+import com.google.common.base.Strings;
 
 import io.netty.handler.ssl.OpenSsl;
 
@@ -114,6 +120,10 @@ public abstract class AbstractSGUnitTest {
 				"Java Version: " + System.getProperty("java.version") + " " + System.getProperty("java.vendor"));
 		System.out.println("JVM Impl.: " + System.getProperty("java.vm.version") + " "
 				+ System.getProperty("java.vm.vendor") + " " + System.getProperty("java.vm.name"));
+		System.out.println("Free memory: " + new ByteSizeValue(Runtime.getRuntime().freeMemory()));
+		System.out.println("Max memory: " + new ByteSizeValue(Runtime.getRuntime().maxMemory()));
+		System.out.println("Total memory: " + new ByteSizeValue(Runtime.getRuntime().totalMemory()));
+		System.out.println(org.elasticsearch.common.Strings.toString(JvmInfo.jvmInfo(), true, true));
 		System.out.println("Open SSL loadable: " + OpenSsl.isAvailable());
 		System.out.println("Open SSL available: " + CryptoManagerFactory.getInstance().isOpenSslAvailable());
 		System.out.println("Open SSL version: " + OpenSsl.versionString());
