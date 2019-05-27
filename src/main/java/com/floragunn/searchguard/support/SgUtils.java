@@ -238,7 +238,6 @@ public final class SgUtils {
             final int major = Integer.parseInt(matcher.group(1));
             final int update = Integer.parseInt(matcher.group(2));
             // HotSpot versions for Java 8 have major version 25, the bad versions are all versions prior to update 40
-            System.out.println(major+" "+update);
             if (update < 181) {
                 return Boolean.FALSE;
             }

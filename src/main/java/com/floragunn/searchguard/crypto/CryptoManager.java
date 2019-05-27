@@ -10,7 +10,6 @@ import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.List;
 
-import javax.crypto.SecretKey;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
 

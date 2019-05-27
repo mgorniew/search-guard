@@ -63,6 +63,7 @@ import com.floragunn.searchguard.crypto.CryptoManagerFactory;
 import com.floragunn.searchguard.sgconf.impl.CType;
 import com.floragunn.searchguard.ssl.util.SSLConfigConstants;
 import com.floragunn.searchguard.support.ConfigConstants;
+import com.floragunn.searchguard.support.SgUtils;
 import com.floragunn.searchguard.support.WildcardMatcher;
 import com.floragunn.searchguard.test.helper.cluster.ClusterInfo;
 import com.floragunn.searchguard.test.helper.file.FileHelper;
@@ -114,6 +115,7 @@ public abstract class AbstractSGUnitTest {
 		System.out.println("Open SSL loadable: " + OpenSsl.isAvailable());
 		System.out.println("Open SSL available: " + CryptoManagerFactory.getInstance().isOpenSslAvailable());
 		System.out.println("Open SSL version: " + OpenSsl.versionString());
+		System.out.println("JNDI hostname validation enabled by default: "+SgUtils.isJndiHostnameValidationEnabledByDefault());
 		withRemoteCluster = Boolean.parseBoolean(System.getenv("TESTARG_unittests_with_remote_cluster"));
 		System.out.println("With remote cluster: " + withRemoteCluster);
 	}

@@ -240,7 +240,7 @@ final class DefaultCryptoManager extends AbstractCryptoManager {
         hash.update(in, 0, in.length);
         final byte[] out = new byte[hash.getDigestSize()];
         hash.doFinal(out, 0);
-        return Hex.encode(out);
+        return out;
     }
 
     @Override
