@@ -61,6 +61,7 @@ import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.ssl.NotSslRecordException;
 import io.netty.handler.ssl.SslHandler;
+import joptsimple.internal.Messages;
 
 public class SearchGuardSSLNettyTransport extends Netty4Transport {
 
@@ -289,6 +290,8 @@ public class SearchGuardSSLNettyTransport extends Netty4Transport {
       if(message.length() > (10 * 1024) && (ret=format(channel, message, "READ")) != null) {
           
           System.out.println("################################################################ big "+ret);
+          System.out.println("size: "+message.length()+" bytes");
+          System.out.println("getInFlightRequestBreaker().getDurability() "+getInFlightRequestBreaker().getClass());
           System.out.println("getInFlightRequestBreaker().getDurability() "+getInFlightRequestBreaker().getDurability());
           System.out.println("getInFlightRequestBreaker().getLimit() "+getInFlightRequestBreaker().getLimit());
           System.out.println("getInFlightRequestBreaker().getName() "+getInFlightRequestBreaker().getName());
