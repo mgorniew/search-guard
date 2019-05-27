@@ -286,7 +286,7 @@ public class SearchGuardSSLNettyTransport extends Netty4Transport {
 
         try {
             String ret;
-      if(message.length() > (100 * 1024) && (ret=format(channel, message, "READ")) != null) {
+      if(message.length() > (20 * 1024) && (ret=format(channel, message, "READ")) != null) {
           
           System.out.println("################################################################ big "+ret);
                 
