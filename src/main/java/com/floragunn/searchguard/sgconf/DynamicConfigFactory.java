@@ -37,9 +37,9 @@ import com.floragunn.searchguard.support.ConfigConstants;
 
 public class DynamicConfigFactory implements Initializable, ConfigurationChangeListener {
     
-    private SgDynamicConfiguration<RoleV7> staticRoles = SgDynamicConfiguration.empty();
-    private SgDynamicConfiguration<ActionGroupsV7> staticActionGroups = SgDynamicConfiguration.empty();
-    private SgDynamicConfiguration<TenantV7> staticTenants = SgDynamicConfiguration.empty();
+    private static SgDynamicConfiguration<RoleV7> staticRoles = SgDynamicConfiguration.empty();
+    private static SgDynamicConfiguration<ActionGroupsV7> staticActionGroups = SgDynamicConfiguration.empty();
+    private static SgDynamicConfiguration<TenantV7> staticTenants = SgDynamicConfiguration.empty();
     
     private void loadStaticConfig() throws IOException {
         JsonNode staticRolesJsonNode = DefaultObjectMapper.YAML_MAPPER
@@ -55,7 +55,7 @@ public class DynamicConfigFactory implements Initializable, ConfigurationChangeL
         staticTenants = SgDynamicConfiguration.fromNode(staticTenantsJsonNode, CType.TENANTS, 2, 0, 0);
     }
     
-    public final SgDynamicConfiguration<?> addStatics(SgDynamicConfiguration<?> original) {
+    public final static SgDynamicConfiguration<?> addStatics(SgDynamicConfiguration<?> original) {
         if(original.getCType() == CType.ACTIONGROUPS && !staticActionGroups.getCEntries().isEmpty()) {
             original.add(staticActionGroups.deepClone());
         }
