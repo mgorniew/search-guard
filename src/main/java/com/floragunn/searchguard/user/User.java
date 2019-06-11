@@ -45,6 +45,9 @@ public class User implements Serializable, Writeable, CustomAttributesAware {
     
     private static final long serialVersionUID = -5500938501822658596L;
     private final String name;
+    /**
+     * roles == backend_roles
+     */
     private final Set<String> roles = new HashSet<String>();
     private String requestedTenant;
     private Map<String, String> attributes = new HashMap<>();
@@ -101,25 +104,25 @@ public class User implements Serializable, Writeable, CustomAttributesAware {
 
     /**
      * 
-     * @return A unmodifiable set of the roles this user is a member of
+     * @return A unmodifiable set of the backend roles this user is a member of
      */
     public final Set<String> getRoles() {
         return Collections.unmodifiableSet(roles);
     }
 
     /**
-     * Associate this user with a role
+     * Associate this user with a backend role
      * 
-     * @param role The role
+     * @param role The backend role
      */
     public final void addRole(final String role) {
         this.roles.add(role);
     }
 
     /**
-     * Associate this user with a set of roles
+     * Associate this user with a set of backend roles
      * 
-     * @param roles The roles
+     * @param roles The backend roles
      */
     public final void addRoles(final Collection<String> roles) {
         if(roles != null) {
@@ -128,10 +131,10 @@ public class User implements Serializable, Writeable, CustomAttributesAware {
     }
 
     /**
-     * Check if this user is a member of a role
+     * Check if this user is a member of a backend role
      * 
-     * @param role The role
-     * @return true if this user is a member of the role, false otherwise
+     * @param role The backend role
+     * @return true if this user is a member of the backend role, false otherwise
      */
     public final boolean isUserInRole(final String role) {
         return this.roles.contains(role);
@@ -166,12 +169,12 @@ public class User implements Serializable, Writeable, CustomAttributesAware {
     }
 
     public final String toStringWithAttributes() {
-        return "User [name=" + name + ", roles=" + roles + ", requestedTenant=" + requestedTenant + ", attributes=" + attributes + "]";
+        return "User [name=" + name + ", backend_roles=" + roles + ", requestedTenant=" + requestedTenant + ", attributes=" + attributes + "]";
     }
 
     @Override
     public final String toString() {
-        return "User [name=" + name + ", roles=" + roles + ", requestedTenant=" + requestedTenant + "]";
+        return "User [name=" + name + ", backend_roles=" + roles + ", requestedTenant=" + requestedTenant + "]";
     }
 
     @Override
@@ -205,9 +208,9 @@ public class User implements Serializable, Writeable, CustomAttributesAware {
     }
 
     /**
-     * Copy all roles from another user
+     * Copy all backend roles from another user
      * 
-     * @param user The user from which the roles should be copied over
+     * @param user The user from which the backend roles should be copied over
      */
     public final void copyRolesFrom(final User user) {
         if(user != null) {
