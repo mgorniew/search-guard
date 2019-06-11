@@ -104,6 +104,15 @@ public class InternalAuthenticationBackend implements AuthenticationBackend, Aut
                         credentials.addAttribute("attr.internal."+attributeName.getKey(), attributeName.getValue());
                     }
                 }
+                
+                final User user = new User(credentials.getUsername(), roles, credentials);
+                
+                final List<String> searchGuardRoles = internalUsersModel.getSearchGuardRoles(credentials.getUsername());
+                
+                if(searchGuardRoles != null) {
+                    user.addSearchGuardRoles(searchGuardRoles);
+                }
+                
                 return new User(credentials.getUsername(), roles, credentials);
             } else {
                 throw new ElasticsearchSecurityException("password does not match");

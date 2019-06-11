@@ -3,6 +3,7 @@ package com.floragunn.searchguard.sgconf;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -267,6 +268,11 @@ public class DynamicConfigFactory implements Initializable, ConfigurationChangeL
             return tmp==null?null:tmp.getHash();
         }
         
+        public List<String> getSearchGuardRoles(String user) {
+            InternalUserV7 tmp = configuration.getCEntry(user);
+            return tmp==null?Collections.emptyList():tmp.getSearch_guard_roles();
+        }
+        
     }
     
     private static class InternalUsersModelV6 extends InternalUsersModel {
@@ -308,6 +314,9 @@ public class DynamicConfigFactory implements Initializable, ConfigurationChangeL
             return tmp==null?null:tmp.getHash();
         }
         
+        public List<String> getSearchGuardRoles(String user) {
+            return Collections.emptyList();
+        }
     }
    
 }
