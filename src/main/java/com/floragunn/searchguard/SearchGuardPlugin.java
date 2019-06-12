@@ -186,6 +186,10 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
     private volatile SearchGuardFilter sgf;
     private volatile ComplianceConfig complianceConfig;
     private volatile IndexResolverReplacer irr;
+    // XXX
+    private ScriptService scriptService;
+    // XXX
+    private NamedXContentRegistry xContentRegistry;
 
     @Override
     public void close() throws IOException {
@@ -438,7 +442,8 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
                 handlers.addAll(ReflectionHelper.instantiateMngtRestApiHandler(settings, configPath, restController, localClient, adminDns, cr, cs,
                         Objects.requireNonNull(principalExtractor), evaluator, threadPool, Objects.requireNonNull(auditLog)));
                 handlers.addAll(ReflectionHelper.instantiateRestApiHandler("com.floragunn.lastalert.api.LastAlertApiActions", settings, configPath,
-                        restController, localClient, adminDns, cr, cs, principalExtractor, evaluator, threadPool, auditLog));
+                        restController, localClient, adminDns, cr, cs, scriptService, xContentRegistry, principalExtractor, evaluator, threadPool,
+                        auditLog));
             }
         }
 
@@ -720,6 +725,8 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
         this.threadPool = threadPool;
         this.cs = clusterService;
         this.localClient = localClient;
+        this.scriptService = scriptService;
+        this.xContentRegistry = xContentRegistry;
 
         final List<Object> components = new ArrayList<Object>();
 
