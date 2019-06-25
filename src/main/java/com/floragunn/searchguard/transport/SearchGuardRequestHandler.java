@@ -109,7 +109,7 @@ public class SearchGuardRequestHandler<T extends TransportRequest> extends Searc
                throw new RuntimeException("Can not determine channel type (null)");
            }
 
-           if(!transportChannel.getChannelType().equals("direct") && !transportChannel.getChannelType().equals("netty")) {
+           if(!transportChannel.getChannelType().equals("direct") && !transportChannel.getChannelType().equals("transport")) {
                throw new RuntimeException("Unknown channel type "+transportChannel.getChannelType());
            }
 

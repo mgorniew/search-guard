@@ -64,7 +64,7 @@ public class SearchGuardSSLNettyHttpServerTransport extends Netty4HttpServerTran
     }
 
     @Override
-    protected void onException(HttpChannel channel, Exception cause0) {
+    public void onException(HttpChannel channel, Exception cause0) {
         if(this.lifecycle.started()) {
             
             Throwable cause = cause0;
