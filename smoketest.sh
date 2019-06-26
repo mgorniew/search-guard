@@ -33,6 +33,9 @@ rm -f netty-tcnative-$NETTY_NATIVE_VERSION-$NETTY_NATIVE_CLASSIFIER.jar
 
 chmod +x elasticsearch-$ES_VERSION/plugins/search-guard-7/tools/install_demo_configuration.sh
 ./elasticsearch-$ES_VERSION/plugins/search-guard-7/tools/install_demo_configuration.sh -y -i -c
+
+echo "xpack.ml.enabled: false" >> ./elasticsearch-$ES_VERSION/config/elasticsearch.yml
+
 elasticsearch-$ES_VERSION/bin/elasticsearch -p es-smoketest-pid &
 
 while ! nc -z 127.0.0.1 9200; do
