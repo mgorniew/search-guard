@@ -182,7 +182,20 @@
       <artifactId>lang-mustache-client</artifactId>
       <version>${elasticsearch.version}</version>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>com.github.spullara.mustache.java</groupId>
+          <artifactId>compiler</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
+    
+      <dependency>
+    <groupId>com.github.spullara.mustache.java</groupId>
+    <artifactId>compiler</artifactId>
+    <version>0.9.6</version>
+    <scope>test</scope>
+  </dependency>
 
     <dependency>
       <groupId>org.elasticsearch.plugin</groupId>
@@ -355,7 +368,19 @@
             <groupId>org.elasticsearch.plugin</groupId>	
               <artifactId>lang-mustache-client</artifactId>	
               <version>${elasticsearch.version}</version>	
+              <exclusions>
+              <exclusion>
+                <groupId>com.github.spullara.mustache.java</groupId>
+                <artifactId>compiler</artifactId>
+              </exclusion>
+              </exclusions>
             </dependency>	
+            
+            <dependency>
+              <groupId>com.github.spullara.mustache.java</groupId>
+              <artifactId>compiler</artifactId>
+              <version>0.9.6</version>
+            </dependency>
       	
             <dependency>	
               <groupId>org.elasticsearch.plugin</groupId>	
