@@ -182,6 +182,7 @@ SGS_LOGSTASH:
   - "SGS_CLUSTER_MANAGE_ILM"
   - "cluster:admin/ingest/pipeline/put"
   - "cluster:admin/ingest/pipeline/get"
+  - "cluster:admin/xpack/monitoring*"
   index_permissions:
   - index_patterns:
     - "logstash-*"
