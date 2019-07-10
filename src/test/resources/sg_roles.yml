@@ -543,3 +543,23 @@ sg_remote_ccs:
     '*':
       '*':
         - indices:admin/shards/search_shards
+        
+sg_role_foo_index:
+  cluster:
+    - '*'
+  indices:
+    'foo-index':
+      '*':
+        - indices:data/read/*
+        - indices:admin/*
+        - indices:monitor/*
+        
+sg_role_foo_all:
+  cluster:
+    - '*'
+  indices:
+    'foo-*':
+      '*':
+        - indices:data/read/*
+        - indices:admin/*
+        - indices:monitor/*
