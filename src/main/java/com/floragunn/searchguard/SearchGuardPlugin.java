@@ -49,6 +49,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.SpecialPermission;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.search.SearchScrollAction;
@@ -658,21 +659,23 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
 
         return interceptors;
     }
+    
+    
 
     @Override
-    public Map<String, Supplier<Transport>> getTransports(Settings settings, ThreadPool threadPool, BigArrays bigArrays,
-            PageCacheRecycler pageCacheRecycler, CircuitBreakerService circuitBreakerService, NamedWriteableRegistry namedWriteableRegistry,
-            NetworkService networkService) {
+    public Map<String, Supplier<Transport>> getTransports(Settings settings, ThreadPool threadPool,
+            PageCacheRecycler pageCacheRecycler, CircuitBreakerService circuitBreakerService,
+            NamedWriteableRegistry namedWriteableRegistry, NetworkService networkService) {
         Map<String, Supplier<Transport>> transports = new HashMap<String, Supplier<Transport>>();
-
-        if (sslOnly) {
-            return super.getTransports(settings, threadPool, bigArrays, pageCacheRecycler, circuitBreakerService, namedWriteableRegistry,
-                    networkService);
+        
+        if(sslOnly) {
+            return super.getTransports(settings, threadPool, pageCacheRecycler, circuitBreakerService, namedWriteableRegistry, networkService);
         }
 
         if (transportSSLEnabled) {
-            transports.put("com.floragunn.searchguard.ssl.http.netty.SearchGuardSSLNettyTransport", () -> new SearchGuardSSLNettyTransport(settings,
-                    threadPool, networkService, bigArrays, namedWriteableRegistry, circuitBreakerService, sgks, evaluateSslExceptionHandler()));
+            transports.put("com.floragunn.searchguard.ssl.http.netty.SearchGuardSSLNettyTransport",
+                    () -> new SearchGuardSSLNettyTransport(settings, Version.CURRENT, threadPool, networkService, pageCacheRecycler, namedWriteableRegistry,
+                            circuitBreakerService, sgks, evaluateSslExceptionHandler()));
         }
         return transports;
     }
