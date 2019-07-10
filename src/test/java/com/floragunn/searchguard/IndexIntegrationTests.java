@@ -582,11 +582,38 @@ public class IndexIntegrationTests extends SingleClusterTest {
 
         try (TransportClient tc = getInternalTransportClient()) {
             //create indices and mapping upfront
-            tc.index(new IndexRequest("foo").type("_doc").setRefreshPolicy(RefreshPolicy.IMMEDIATE).source("{\"field2\":\"init\"}", XContentType.JSON)).actionGet();
+            tc.index(new IndexRequest("foo-abc").type("_doc").setRefreshPolicy(RefreshPolicy.IMMEDIATE).source("{\"field2\":\"init\"}", XContentType.JSON)).actionGet();
         }
 
-        HttpResponse resc = rh.executeGetRequest("/**,-foo/_search", encodeBasicHeader("nagilum", "nagilum"));
+        HttpResponse resc = rh.executeGetRequest("/**/_search", encodeBasicHeader("foo_all", "nagilum"));
         Assert.assertEquals(HttpStatus.SC_FORBIDDEN, resc.getStatusCode());
+        
+        resc = rh.executeGetRequest("/*/_search", encodeBasicHeader("foo_all", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, resc.getStatusCode());
+        
+        resc = rh.executeGetRequest("/_search", encodeBasicHeader("foo_all", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, resc.getStatusCode());
+        
+        resc = rh.executeGetRequest("/**,-foo*/_search", encodeBasicHeader("foo_all", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, resc.getStatusCode());
+        
+        resc = rh.executeGetRequest("/*,-foo*/_search", encodeBasicHeader("foo_all", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, resc.getStatusCode());
+        
+        resc = rh.executeGetRequest("/**,-searchg*/_search", encodeBasicHeader("foo_all", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, resc.getStatusCode());
+        
+        resc = rh.executeGetRequest("/*,-searchg*/_search", encodeBasicHeader("foo_all", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, resc.getStatusCode());
+        
+        resc = rh.executeGetRequest("/*,-searchg*,-foo*/_search", encodeBasicHeader("foo_all", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, resc.getStatusCode());
+        
+        resc = rh.executeGetRequest("/_all,-searchg*/_search", encodeBasicHeader("foo_all", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, resc.getStatusCode());
+        
+        resc = rh.executeGetRequest("/_all,-searchg*/_search", encodeBasicHeader("nagilum", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, resc.getStatusCode());
         
     }
 }
