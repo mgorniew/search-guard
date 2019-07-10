@@ -1011,3 +1011,24 @@ xyz_impsgr:
     - "*"
     allowed_actions:
     - "ALL"
+sg_role_foo_index:
+  cluster_permissions:
+    - '*'
+  index_permissions:
+  - index_patterns:
+    - foo-index
+    allowed_actions:
+    - indices:data/read/*
+    - indices:admin/*
+    - indices:monitor/*
+        
+sg_role_foo_all:
+  cluster_permissions:
+    - '*'
+  index_permissions:
+  - index_patterns:
+    - 'foo-*'
+    allowed_actions:
+    - indices:data/read/*
+    - indices:admin/*
+    - indices:monitor/*
