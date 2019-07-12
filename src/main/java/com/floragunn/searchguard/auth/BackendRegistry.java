@@ -954,8 +954,10 @@ public class BackendRegistry implements ConfigurationChangeListener {
                 }
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Impersonate rest user from '{}' to '{}'", originalUser.getName(), impersonatedUserHeader);
+                    log.debug("Impersonate rest user from '{}' to '{}'", originalUser.toStringWithAttributes(), impersonatedUser.toStringWithAttributes());
                 }
+                
+                impersonatedUser.setRequestedTenant(originalUser.getRequestedTenant());
                 return impersonatedUser;
             }
 
