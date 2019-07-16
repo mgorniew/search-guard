@@ -828,19 +828,19 @@ public class IntegrationTests extends SingleClusterTest {
         final RestHelper rh = nonSslRestHelper();
 
         HttpResponse res = rh.executePutRequest("searchguard/_mapping/sg?pretty", "{\"properties\": {\"name\":{\"type\":\"text\"}}}",
-                encodeBasicHeader("worf", "worf"));
+                encodeBasicHeader("nagilum", "nagilum"));
         Assert.assertEquals(HttpStatus.SC_FORBIDDEN, res.getStatusCode());
         res = rh.executePutRequest("*earc*gua*/_mapping/sg?pretty", "{\"properties\": {\"name\":{\"type\":\"text\"}}}",
-                encodeBasicHeader("worf", "worf"));
+                encodeBasicHeader("nagilum", "nagilum"));
         Assert.assertEquals(HttpStatus.SC_FORBIDDEN, res.getStatusCode());
         res = rh.executePutRequest("_mapping/sg?pretty", "{\"properties\": {\"name\":{\"type\":\"text\"}}}",
-                encodeBasicHeader("worf", "worf"));
+                encodeBasicHeader("nagilum", "nagilum"));
         Assert.assertEquals(HttpStatus.SC_FORBIDDEN, res.getStatusCode());
         res = rh.executePutRequest("*/_mapping/sg?pretty", "{\"properties\": {\"name\":{\"type\":\"text\"}}}",
-                encodeBasicHeader("worf", "worf"));
+                encodeBasicHeader("nagilum", "nagilum"));
         Assert.assertEquals(HttpStatus.SC_FORBIDDEN, res.getStatusCode());
         res = rh.executePutRequest("_all/_mapping/sg?pretty", "{\"properties\": {\"name\":{\"type\":\"text\"}}}",
-                encodeBasicHeader("worf", "worf"));
+                encodeBasicHeader("nagilum", "nagilum"));
         Assert.assertEquals(HttpStatus.SC_FORBIDDEN, res.getStatusCode());
         res = rh.executePostRequest("searchguard/_close", "",
                 encodeBasicHeader("nagilum", "nagilum"));
@@ -851,10 +851,10 @@ public class IntegrationTests extends SingleClusterTest {
                 encodeBasicHeader("nagilum", "nagilum"));
         Assert.assertEquals(HttpStatus.SC_FORBIDDEN, res.getStatusCode());
         res = rh.executePutRequest("searchguard/_settings", "{\"index\" : {\"number_of_replicas\" : 2}}",
-                encodeBasicHeader("worf", "worf"));
+                encodeBasicHeader("nagilum", "nagilum"));
         Assert.assertEquals(HttpStatus.SC_FORBIDDEN, res.getStatusCode());
         res = rh.executePutRequest("searchgu*/_settings", "{\"index\" : {\"number_of_replicas\" : 2}}",
-                encodeBasicHeader("worf", "worf"));
+                encodeBasicHeader("nagilum", "nagilum"));
         Assert.assertEquals(HttpStatus.SC_FORBIDDEN, res.getStatusCode());
 //        res = rh.executePostRequest("searchguard/_freeze", "",
 //                encodeBasicHeader("nagilum", "nagilum"));
