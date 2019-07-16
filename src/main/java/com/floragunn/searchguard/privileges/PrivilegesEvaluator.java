@@ -153,7 +153,7 @@ public class PrivilegesEvaluator implements ConfigurationChangeListener {
         configurationRepository.subscribeOnChange("rolesmapping", this);
         this.irr = irr;
         snapshotRestoreEvaluator = new SnapshotRestoreEvaluator(settings, auditLog);
-        sgIndexAccessEvaluator = new SearchGuardIndexAccessEvaluator(settings, auditLog);
+        sgIndexAccessEvaluator = new SearchGuardIndexAccessEvaluator(settings, auditLog, irr);
         dlsFlsEvaluator = new DlsFlsEvaluator(settings, threadPool);
         termsAggregationEvaluator = new TermsAggregationEvaluator();
         tenantHolder = new TenantHolder();
