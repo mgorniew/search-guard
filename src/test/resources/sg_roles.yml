@@ -1003,3 +1003,11 @@ sg_env_test:
     - '${env.INDEXNAME3}'
     allowed_actions:
     - "*"
+xyz_impsgr:
+  cluster_permissions:
+  - "*"
+  index_permissions:
+  - index_patterns:
+    - "*"
+    allowed_actions:
+    - "ALL"

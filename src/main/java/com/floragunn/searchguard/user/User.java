@@ -49,6 +49,7 @@ public class User implements Serializable, Writeable, CustomAttributesAware {
      * roles == backend_roles
      */
     private final Set<String> roles = new HashSet<String>();
+    private final Set<String> searchGuardRoles = new HashSet<String>();
     private String requestedTenant;
     private Map<String, String> attributes = new HashMap<>();
     private boolean isInjected = false;
@@ -59,6 +60,7 @@ public class User implements Serializable, Writeable, CustomAttributesAware {
         roles.addAll(in.readList(StreamInput::readString));
         requestedTenant = in.readString();
         attributes = in.readMap(StreamInput::readString, StreamInput::readString);
+        searchGuardRoles.addAll(in.readList(StreamInput::readString));
     }
     
     /**
@@ -224,6 +226,7 @@ public class User implements Serializable, Writeable, CustomAttributesAware {
         out.writeStringCollection(new ArrayList<String>(roles));
         out.writeString(requestedTenant);
         out.writeMap(attributes, StreamOutput::writeString, StreamOutput::writeString);
+        out.writeStringCollection(searchGuardRoles==null?Collections.emptyList():new ArrayList<String>(searchGuardRoles));
     }
 
     /**
@@ -236,5 +239,15 @@ public class User implements Serializable, Writeable, CustomAttributesAware {
             attributes = new HashMap<>();
         }
         return attributes;
+    }
+    
+    public final void addSearchGuardRoles(final Collection<String> sgRoles) {
+        if(sgRoles != null && this.searchGuardRoles != null) {
+            this.searchGuardRoles.addAll(sgRoles);
+        }
+    }
+    
+    public final Set<String> getSearchGuardRoles() {
+        return this.searchGuardRoles==null?Collections.emptySet():Collections.unmodifiableSet(this.searchGuardRoles);
     }
 }
