@@ -64,6 +64,11 @@ public class InternalAuthenticationBackend implements AuthenticationBackend, Aut
                 }
             }
 
+            final List<String> searchGuardRoles = internalUsersModel.getSearchGuardRoles(user.getName());
+            if(searchGuardRoles != null) {
+                user.addSearchGuardRoles(searchGuardRoles);
+            }
+            
             user.addAttributes(attributeMap);
             return true;
         }
@@ -108,12 +113,11 @@ public class InternalAuthenticationBackend implements AuthenticationBackend, Aut
                 final User user = new User(credentials.getUsername(), roles, credentials);
                 
                 final List<String> searchGuardRoles = internalUsersModel.getSearchGuardRoles(credentials.getUsername());
-                
                 if(searchGuardRoles != null) {
                     user.addSearchGuardRoles(searchGuardRoles);
                 }
                 
-                return new User(credentials.getUsername(), roles, credentials);
+                return user;
             } else {
                 throw new ElasticsearchSecurityException("password does not match");
             }
