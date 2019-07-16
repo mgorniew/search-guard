@@ -180,8 +180,8 @@ SGS_LOGSTASH:
   - "SGS_CLUSTER_COMPOSITE_OPS"
   - "SGS_CLUSTER_MANAGE_INDEX_TEMPLATES"
   - "SGS_CLUSTER_MANAGE_ILM"
-  - "cluster:admin/ingest/pipeline/put"
-  - "cluster:admin/ingest/pipeline/get"
+  - "SGS_CLUSTER_MANAGE_PIPELINES"
+  - "cluster:admin/xpack/monitoring*"
   index_permissions:
   - index_patterns:
     - "logstash-*"
@@ -190,6 +190,10 @@ SGS_LOGSTASH:
     - "SGS_CRUD"
     - "SGS_CREATE_INDEX"
     - "SGS_MANAGE"
+  - index_patterns:
+    - "*"
+    allowed_actions:
+    - "indices:admin/aliases/get"
   
 SGS_READALL_AND_MONITOR:
   reserved: true
