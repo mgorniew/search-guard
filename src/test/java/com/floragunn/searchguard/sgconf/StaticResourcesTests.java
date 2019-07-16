@@ -15,19 +15,26 @@
  * 
  */
 
-package com.floragunn.searchguard;
+package com.floragunn.searchguard.sgconf;
 
 import org.apache.http.HttpStatus;
 import org.elasticsearch.common.settings.Settings;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
+import com.floragunn.searchguard.sgconf.DynamicConfigFactory;
 import com.floragunn.searchguard.support.ConfigConstants;
 import com.floragunn.searchguard.test.SingleClusterTest;
 import com.floragunn.searchguard.test.helper.rest.RestHelper;
 import com.floragunn.searchguard.test.helper.rest.RestHelper.HttpResponse;
 
 public class StaticResourcesTests extends SingleClusterTest {
+    
+    @Before
+    public void reset() {
+        DynamicConfigFactory.resetStatics();
+    }
     
     @Test
     public void testStaticResources() throws Exception {

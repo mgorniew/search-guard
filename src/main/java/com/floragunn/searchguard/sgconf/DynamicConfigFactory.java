@@ -42,6 +42,13 @@ public class DynamicConfigFactory implements Initializable, ConfigurationChangeL
     private static SgDynamicConfiguration<ActionGroupsV7> staticActionGroups = SgDynamicConfiguration.empty();
     private static SgDynamicConfiguration<TenantV7> staticTenants = SgDynamicConfiguration.empty();
     
+    //only for unittesting
+    static void resetStatics() {
+        staticRoles = SgDynamicConfiguration.empty();
+        staticActionGroups = SgDynamicConfiguration.empty();
+        staticTenants = SgDynamicConfiguration.empty();
+    }
+    
     private void loadStaticConfig() throws IOException {
         JsonNode staticRolesJsonNode = DefaultObjectMapper.YAML_MAPPER
                 .readTree(DynamicConfigFactory.class.getResourceAsStream("/static_config/static_roles.yml"));
