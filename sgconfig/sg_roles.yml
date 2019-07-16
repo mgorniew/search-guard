@@ -152,19 +152,25 @@ sg_logstash:
   cluster:
     - CLUSTER_MONITOR
     - CLUSTER_COMPOSITE_OPS
-    - indices:admin/template/get
-    - indices:admin/template/put
-    - cluster:admin/ingest/pipeline/put
-    - cluster:admin/ingest/pipeline/get
+    - CLUSTER_MANAGE_INDEX_TEMPLATES
+    - CLUSTER_MANAGE_ILM
+    - CLUSTER_MANAGE_PIPELINES
+    - cluster:admin/xpack/monitoring/bulk
   indices:
     'logstash-*':
       '*':
         - CRUD
         - CREATE_INDEX
+        - MANAGE
     '*beat*':
       '*':
         - CRUD
         - CREATE_INDEX
+        - MANAGE
+    '*':
+      '*':
+        - "indices:admin/aliases/get"
+      
 
 # Allows adding and modifying repositories and creating and restoring snapshots
 sg_manage_snapshots:
