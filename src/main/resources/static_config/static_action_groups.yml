@@ -232,3 +232,11 @@ SGS_CLUSTER_MANAGE_INDEX_TEMPLATES:
   - "indices:admin/template/*"
   type: "cluster"
   description: "Manage index templates"
+SGS_CLUSTER_MANAGE_PIPELINES:
+  reserved: true
+  hidden: false
+  static: true
+  allowed_actions:
+  - "cluster:admin/ingest/pipeline/*"
+  type: "cluster"
+  description: "Manage pipelines"
