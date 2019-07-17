@@ -228,6 +228,7 @@ public class ConfigConstants {
     public static final String SEARCHGUARD_RESTAPI_PASSWORD_VALIDATION_REGEX = "searchguard.restapi.password_validation_regex";
     public static final String SEARCHGUARD_RESTAPI_PASSWORD_VALIDATION_ERROR_MESSAGE = "searchguard.restapi.password_validation_error_message";
 
+    public static final String SEARCHGUARD_FILTER_SGINDEX_FROM_ALL_REQUESTS = "searchguard.filter_sgindex_from_all_requests";
 
     // Illegal Opcodes from here on
     public static final String SEARCHGUARD_UNSUPPORTED_RESTAPI_ACCEPT_INVALID_LICENSE = "searchguard.unsupported.restapi.accept_invalid_license";
