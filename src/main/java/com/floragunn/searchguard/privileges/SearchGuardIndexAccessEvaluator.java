@@ -18,7 +18,9 @@
 package com.floragunn.searchguard.privileges;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,6 +31,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.tasks.Task;
 
 import com.floragunn.searchguard.auditlog.AuditLog;
+import com.floragunn.searchguard.resolver.IndexResolverReplacer;
 import com.floragunn.searchguard.resolver.IndexResolverReplacer.Resolved;
 import com.floragunn.searchguard.support.ConfigConstants;
 import com.floragunn.searchguard.support.WildcardMatcher;
@@ -40,10 +43,14 @@ public class SearchGuardIndexAccessEvaluator {
     private final String searchguardIndex;
     private final AuditLog auditLog;
     private final String[] sgDeniedActionPatterns;
+    private final IndexResolverReplacer irr;
+    private final boolean filterSgIndex;
     
-    public SearchGuardIndexAccessEvaluator(final Settings settings, AuditLog auditLog) {
+    public SearchGuardIndexAccessEvaluator(final Settings settings, AuditLog auditLog, IndexResolverReplacer irr) {
         this.searchguardIndex = settings.get(ConfigConstants.SEARCHGUARD_CONFIG_INDEX_NAME, ConfigConstants.SG_DEFAULT_CONFIG_INDEX);
         this.auditLog = auditLog;
+        this.irr = irr;
+        this.filterSgIndex = settings.getAsBoolean(ConfigConstants.SEARCHGUARD_FILTER_SGINDEX_FROM_ALL_REQUESTS, false);
         
         final boolean restoreSgIndexEnabled = settings.getAsBoolean(ConfigConstants.SEARCHGUARD_UNSUPPORTED_RESTORE_SGINDEX_ENABLED, false);
         
@@ -70,22 +77,49 @@ public class SearchGuardIndexAccessEvaluator {
                 
         if (requestedResolved.getAllIndices().contains(searchguardIndex)
                 && WildcardMatcher.matchAny(sgDeniedActionPatterns, action)) {
-            auditLog.logSgIndexAttempt(request, action, task);
-            log.warn(action + " for '{}' index is not allowed for a regular user", searchguardIndex);
-            presponse.allowed = false;
-            return presponse.markComplete();
+            
+            
+            if(filterSgIndex) {
+                Set<String> allWithoutSg = new HashSet<>(requestedResolved.getAllIndices());
+                allWithoutSg.remove(searchguardIndex);
+                if(allWithoutSg.isEmpty()) {
+                    if(log.isDebugEnabled()) {
+                        log.debug("Filtered '{}' but resulting list is empty", searchguardIndex);
+                    }
+                    presponse.allowed = false;
+                    return presponse.markComplete();
+                }
+                irr.replace(request, false, allWithoutSg.toArray(new String[0]));
+                if(log.isDebugEnabled()) {
+                    log.debug("Filtered '{}', resulting list is {}", searchguardIndex, allWithoutSg);
+                }
+                return presponse;
+            } else {
+                auditLog.logSgIndexAttempt(request, action, task);
+                log.warn(action + " for '{}' index is not allowed for a regular user", searchguardIndex);
+                presponse.allowed = false;
+                return presponse.markComplete();
+            }
+
         }
 
-        //TODO: newpeval: check if isAll() is all (contains("_all" or "*"))
         if (requestedResolved.isLocalAll()
                 && WildcardMatcher.matchAny(sgDeniedActionPatterns, action)) {
-            auditLog.logSgIndexAttempt(request, action, task);
-            log.warn(action + " for '_all' indices is not allowed for a regular user");
-            presponse.allowed = false;
-            return presponse.markComplete();
+            
+            if(filterSgIndex) {
+                irr.replace(request, false, "*","-"+searchguardIndex);
+                if(log.isDebugEnabled()) {
+                    log.debug("Filtered '{}'from {}, resulting list with *,-{} is {}", searchguardIndex, requestedResolved, searchguardIndex, irr.resolveRequest(request));
+                }
+                return presponse;
+            } else {
+              auditLog.logSgIndexAttempt(request, action, task);
+              log.warn(action + " for '_all' indices is not allowed for a regular user");
+              presponse.allowed = false;
+              return presponse.markComplete();
+            }
         }
 
-      //TODO: newpeval: check if isAll() is all (contains("_all" or "*"))
         if(requestedResolved.getAllIndices().contains(searchguardIndex) || requestedResolved.isLocalAll()) {
 
             if(request instanceof SearchRequest) {
