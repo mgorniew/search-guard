@@ -172,3 +172,11 @@ sg_env_test:
 sg_remote_ccs:
   users:
     - crusherw
+    
+sg_role_foo_index:
+  users:
+    - foo_index
+    
+sg_role_foo_all:
+  users:
+    - foo_all

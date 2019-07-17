@@ -188,3 +188,10 @@ env.replace@example.comp.com:
   hash: $2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m
   #password is: nagilum
   
+foo_index:
+  hash: $2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m
+  #password is: nagilum
+  
+foo_all:
+  hash: $2a$12$n5nubfWATfQjSYHiWtUyeOxMIxFInUHOAx8VMmGmxFNPGpaBmeB.m
+  #password is: nagilum
