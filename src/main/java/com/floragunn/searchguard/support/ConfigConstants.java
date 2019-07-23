@@ -213,6 +213,7 @@ public class ConfigConstants {
     public static final String SEARCHGUARD_RESTAPI_PASSWORD_VALIDATION_REGEX = "searchguard.restapi.password_validation_regex";
     public static final String SEARCHGUARD_RESTAPI_PASSWORD_VALIDATION_ERROR_MESSAGE = "searchguard.restapi.password_validation_error_message";
 
+    public static final String SEARCHGUARD_FILTER_SGINDEX_FROM_ALL_REQUESTS = "searchguard.filter_sgindex_from_all_requests";
 
     // Illegal Opcodes from here on
     public static final String SEARCHGUARD_UNSUPPORTED_RESTAPI_ACCEPT_INVALID_LICENSE = "searchguard.unsupported.restapi.accept_invalid_license";
@@ -223,4 +224,6 @@ public class ConfigConstants {
     public static final String SEARCHGUARD_UNSUPPORTED_INJECT_ADMIN_USER_ENABLED = "searchguard.unsupported.inject_user.admin.enabled";
     public static final String SEARCHGUARD_UNSUPPORTED_ALLOW_NOW_IN_DLS = "searchguard.unsupported.allow_now_in_dls";
     public static final String SEARCHGUARD_UNSUPPORTED_RESTAPI_ALLOW_SGCONFIG_MODIFICATION = "searchguard.unsupported.restapi.allow_sgconfig_modification";
+
+    public static final String SEARCHGUARD_UNSUPPORTED_LOAD_STATIC_RESOURCES = "searchguard.unsupported.load_static_resources";
 }
