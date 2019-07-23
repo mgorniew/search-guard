@@ -130,12 +130,8 @@ public final class IndexResolverReplacer implements DCFListener {
     private static final boolean isLocalAll(final String... requestedPatterns) {
 
         final List<String> patterns = requestedPatterns==null?null:Arrays.asList(requestedPatterns);
-
+        
         if(IndexNameExpressionResolver.isAllIndices(patterns)) {
-            return true;
-        }
-
-        if(patterns.contains("*")) {
             return true;
         }
 

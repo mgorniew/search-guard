@@ -1205,6 +1205,12 @@ public class SearchGuardAdmin {
     }
     
     private static int upload(TransportClient tc, String index, String cd, boolean legacy, NodesInfoResponse nodesInfo, boolean resolveEnvVars) {
+        
+        if(validateConfig(cd, null, null, legacy?6:7) != 0) {
+            System.out.println("ERR: cannot upload configuration because of invalid files, see errors above");
+            return -1;
+        }
+        
         boolean success = uploadFile(tc, cd+"sg_config.yml", index, "config", legacy, resolveEnvVars);
         success = uploadFile(tc, cd+"sg_roles.yml", index, "roles", legacy, resolveEnvVars) && success;
         success = uploadFile(tc, cd+"sg_roles_mapping.yml", index, "rolesmapping", legacy, resolveEnvVars) && success;
