@@ -24,6 +24,7 @@ import java.util.TimeZone;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest.AliasActions;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.transport.TransportClient;
@@ -542,5 +543,77 @@ public class IndexIntegrationTests extends SingleClusterTest {
         HttpResponse resc = rh.executePostRequest("_msearch", msearchBody, encodeBasicHeader("worf", "worf"));
         Assert.assertEquals(HttpStatus.SC_OK, resc.getStatusCode());
         Assert.assertTrue(resc.getBody(), resc.getBody().contains("\"total\":{\"value\":1"));
+    }
+    
+    @Test
+    //https://forum.search-guard.com/t/querying-missing-index-causes-security-exception/1531/11?u=hsaly
+    public void testIndexResolveIndicesAlias() throws Exception {
+
+        setup(Settings.EMPTY, new DynamicSgConfig(), Settings.EMPTY, true);
+        final RestHelper rh = nonSslRestHelper();
+
+        try (TransportClient tc = getInternalTransportClient()) {
+            //create indices and mapping upfront
+            tc.index(new IndexRequest("foo-index").type("_doc").setRefreshPolicy(RefreshPolicy.IMMEDIATE).source("{\"field2\":\"init\"}", XContentType.JSON)).actionGet();
+            tc.admin().indices().aliases(new IndicesAliasesRequest().addAliasAction(AliasActions.add().indices("foo-index").alias("foo-alias"))).actionGet();
+            tc.admin().indices().delete(new DeleteIndexRequest("foo-index")).actionGet();
+        }
+        
+        HttpResponse resc = rh.executeGetRequest("/_cat/aliases", encodeBasicHeader("nagilum", "nagilum"));
+        Assert.assertFalse(resc.getBody().contains("foo"));
+
+        resc = rh.executeGetRequest("/foo-alias/_search", encodeBasicHeader("foo_index", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, resc.getStatusCode());
+        
+        resc = rh.executeGetRequest("/foo-index/_search", encodeBasicHeader("foo_index", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_NOT_FOUND, resc.getStatusCode());
+        
+        resc = rh.executeGetRequest("/foo-alias/_search", encodeBasicHeader("foo_all", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_NOT_FOUND, resc.getStatusCode());
+        
+    }
+    
+    @Test
+    //https://forum.search-guard.com/t/querying-missing-index-causes-security-exception/1531/11?u=hsaly
+    public void testIndexResolveMinus() throws Exception {
+
+        setup(Settings.EMPTY, new DynamicSgConfig(), Settings.EMPTY, true);
+        final RestHelper rh = nonSslRestHelper();
+
+        try (TransportClient tc = getInternalTransportClient()) {
+            //create indices and mapping upfront
+            tc.index(new IndexRequest("foo-abc").type("_doc").setRefreshPolicy(RefreshPolicy.IMMEDIATE).source("{\"field2\":\"init\"}", XContentType.JSON)).actionGet();
+        }
+
+        HttpResponse resc = rh.executeGetRequest("/**/_search", encodeBasicHeader("foo_all", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, resc.getStatusCode());
+        
+        resc = rh.executeGetRequest("/*/_search", encodeBasicHeader("foo_all", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, resc.getStatusCode());
+        
+        resc = rh.executeGetRequest("/_search", encodeBasicHeader("foo_all", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, resc.getStatusCode());
+        
+        resc = rh.executeGetRequest("/**,-foo*/_search", encodeBasicHeader("foo_all", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, resc.getStatusCode());
+        
+        resc = rh.executeGetRequest("/*,-foo*/_search", encodeBasicHeader("foo_all", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, resc.getStatusCode());
+        
+        resc = rh.executeGetRequest("/**,-searchg*/_search", encodeBasicHeader("foo_all", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, resc.getStatusCode());
+        
+        resc = rh.executeGetRequest("/*,-searchg*/_search", encodeBasicHeader("foo_all", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, resc.getStatusCode());
+        
+        resc = rh.executeGetRequest("/*,-searchg*,-foo*/_search", encodeBasicHeader("foo_all", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_OK, resc.getStatusCode());
+        
+        resc = rh.executeGetRequest("/_all,-searchg*/_search", encodeBasicHeader("foo_all", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, resc.getStatusCode());
+        
+        resc = rh.executeGetRequest("/_all,-searchg*/_search", encodeBasicHeader("nagilum", "nagilum"));
+        Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, resc.getStatusCode());
+        
     }
 }
