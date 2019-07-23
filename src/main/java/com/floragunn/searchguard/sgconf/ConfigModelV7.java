@@ -1126,7 +1126,7 @@ public class ConfigModelV7 extends ConfigModel {
                 return Collections.emptySet();
             }
 
-            final Set<String> sgRoles = new TreeSet<String>();
+            final Set<String> sgRoles = new TreeSet<String>(user.getSearchGuardRoles());
 
             if (rolesMappingResolution == ConfigConstants.RolesMappingResolution.BOTH
                     || rolesMappingResolution == ConfigConstants.RolesMappingResolution.BACKENDROLES_ONLY) {
