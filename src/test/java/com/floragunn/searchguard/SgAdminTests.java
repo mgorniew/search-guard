@@ -60,9 +60,8 @@ public class SgAdminTests extends SingleClusterTest {
         Assert.assertEquals(0, returnCode);
         
         RestHelper rh = nonSslRestHelper();
-        HttpResponse res;
         
-        Assert.assertEquals(HttpStatus.SC_OK, (res = rh.executeGetRequest("_searchguard/health?pretty")).getStatusCode());
+        Assert.assertEquals(HttpStatus.SC_OK, (rh.executeGetRequest("_searchguard/health?pretty")).getStatusCode());
     }
     
     @Test
@@ -89,13 +88,8 @@ public class SgAdminTests extends SingleClusterTest {
         Assert.assertNotEquals(0, returnCode);
         
         RestHelper rh = nonSslRestHelper();
-        HttpResponse res;
         
-        Assert.assertEquals(HttpStatus.SC_SERVICE_UNAVAILABLE, (res = rh.executeGetRequest("_searchguard/health?pretty")).getStatusCode());
-        //System.out.println(res.getBody());
-        //assertContains(res, "*UP*");
-        //assertContains(res, "*strict*");
-        //assertNotContains(res, "*DOWN*");
+        Assert.assertEquals(HttpStatus.SC_SERVICE_UNAVAILABLE, (rh.executeGetRequest("_searchguard/health?pretty")).getStatusCode());
     }
     
     @Test
