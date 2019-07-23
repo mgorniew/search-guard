@@ -472,6 +472,7 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
         // TODO disable scheduling? Other way of hooking in?
 
         actions.addAll(SchedulerActions.getActions());
+        actions.addAll(ReflectionHelper.getActions("com.floragunn.lastalert.LastAlert"));
 
         return actions;
     }
