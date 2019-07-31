@@ -785,8 +785,10 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
         dcf.registerDCFListener(evaluator);
 
         cr.setDynamicConfigFactory(dcf);
+        
+        InternalAuthTokenProvider internalAuthTokenProvider = new InternalAuthTokenProvider(dcf);
 
-        sgf = new SearchGuardFilter(evaluator, adminDns, dlsFlsValve, auditLog, threadPool, cs, complianceConfig, compatConfig);
+        sgf = new SearchGuardFilter(evaluator, adminDns, dlsFlsValve, auditLog, threadPool, cs, complianceConfig, compatConfig, internalAuthTokenProvider);
 
         final String principalExtractorClass = settings.get(SSLConfigConstants.SEARCHGUARD_SSL_TRANSPORT_PRINCIPAL_EXTRACTOR_CLASS, null);
 
@@ -807,7 +809,7 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
         components.add(evaluator);
         components.add(sgi);
         components.add(dcf);
-        components.add(new InternalAuthTokenProvider(dcf));
+        components.add(internalAuthTokenProvider);
 
         components.addAll(ReflectionHelper.createAlertingComponents(settings, configPath, localClient, clusterService, threadPool,
                 resourceWatcherService, scriptService, xContentRegistry, environment, nodeEnvironment, namedWriteableRegistry));
