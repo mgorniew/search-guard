@@ -74,8 +74,7 @@ TransportNodesAction<ConfigUpdateRequest, ConfigUpdateResponse, TransportConfigU
         public NodeConfigUpdateRequest() {
         }
 
-        public NodeConfigUpdateRequest(final String nodeId, final ConfigUpdateRequest request) {
-            super(nodeId);
+        public NodeConfigUpdateRequest(final ConfigUpdateRequest request) {
             this.request = request;
         }
 
@@ -93,10 +92,6 @@ TransportNodesAction<ConfigUpdateRequest, ConfigUpdateResponse, TransportConfigU
         }
     }
 
-    protected NodeConfigUpdateRequest newNodeRequest(final String nodeId, final ConfigUpdateRequest request) {
-        return new NodeConfigUpdateRequest(nodeId, request);
-    }
-
     @Override
     protected ConfigUpdateNodeResponse newNodeResponse() {
         return new ConfigUpdateNodeResponse(clusterService.localNode(), new String[0], null);
@@ -109,6 +104,8 @@ TransportNodesAction<ConfigUpdateRequest, ConfigUpdateResponse, TransportConfigU
         return new ConfigUpdateResponse(this.clusterService.getClusterName(), responses, failures);
 
     }
+    
+    
 	
     @Override
     protected ConfigUpdateNodeResponse nodeOperation(final NodeConfigUpdateRequest request) {
@@ -142,5 +139,10 @@ TransportNodesAction<ConfigUpdateRequest, ConfigUpdateResponse, TransportConfigU
 
         
         return new ConfigUpdateNodeResponse(clusterService.localNode(), request.request.getConfigTypes(), null); 
+    }
+
+    @Override
+    protected NodeConfigUpdateRequest newNodeRequest(ConfigUpdateRequest request) {
+        return new NodeConfigUpdateRequest(request);
     }
 }

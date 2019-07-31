@@ -17,9 +17,9 @@
 
 package com.floragunn.searchguard.action.whoami;
 
-import org.elasticsearch.action.Action;
+import org.elasticsearch.action.StreamableResponseActionType;
 
-public class WhoAmIAction extends Action<WhoAmIResponse> {
+public class WhoAmIAction extends StreamableResponseActionType<WhoAmIResponse> {
 
     public static final WhoAmIAction INSTANCE = new WhoAmIAction();
     public static final String NAME = "cluster:admin/searchguard/whoami";

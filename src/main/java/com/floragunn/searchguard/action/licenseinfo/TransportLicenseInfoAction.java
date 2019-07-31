@@ -24,7 +24,6 @@ import org.elasticsearch.action.FailedNodeException;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.nodes.BaseNodeRequest;
 import org.elasticsearch.action.support.nodes.TransportNodesAction;
-import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -62,8 +61,7 @@ TransportNodesAction<LicenseInfoRequest, LicenseInfoResponse, TransportLicenseIn
         public NodeLicenseRequest() {
         }
 
-        public NodeLicenseRequest(final String nodeId, final LicenseInfoRequest request) {
-            super(nodeId);
+        public NodeLicenseRequest(final LicenseInfoRequest request) {
             this.request = request;
         }
 
@@ -81,15 +79,10 @@ TransportNodesAction<LicenseInfoRequest, LicenseInfoResponse, TransportLicenseIn
         }
     }
 
-    protected NodeLicenseRequest newNodeRequest(final String nodeId, final LicenseInfoRequest request) {
-        return new NodeLicenseRequest(nodeId, request);
-    }
-
     @Override
     protected LicenseInfoNodeResponse newNodeResponse() {
         return new LicenseInfoNodeResponse(clusterService.localNode(), null, null);
     }
-    
     
     @Override
     protected LicenseInfoResponse newResponse(LicenseInfoRequest request, List<LicenseInfoNodeResponse> responses,
@@ -102,5 +95,10 @@ TransportNodesAction<LicenseInfoRequest, LicenseInfoResponse, TransportLicenseIn
     protected LicenseInfoNodeResponse nodeOperation(final NodeLicenseRequest request) {
         final SearchGuardLicense license = configurationRepository.getLicense();
         return new LicenseInfoNodeResponse(clusterService.localNode(), license, ReflectionHelper.getModulesLoaded()); 
+    }
+
+    @Override
+    protected NodeLicenseRequest newNodeRequest(LicenseInfoRequest request) {
+        return new NodeLicenseRequest(request);
     }
 }

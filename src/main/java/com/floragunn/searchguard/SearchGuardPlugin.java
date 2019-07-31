@@ -43,6 +43,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.search.QueryCachingPolicy;
 import org.apache.lucene.search.Weight;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -59,6 +60,7 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.component.Lifecycle.State;
+import org.elasticsearch.common.CheckedFunction;
 import org.elasticsearch.common.component.LifecycleComponent;
 import org.elasticsearch.common.component.LifecycleListener;
 import org.elasticsearch.common.inject.Inject;
@@ -83,7 +85,6 @@ import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexModule;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.cache.query.QueryCache;
-import org.elasticsearch.index.shard.IndexSearcherWrapper;
 import org.elasticsearch.index.shard.SearchOperationListener;
 import org.elasticsearch.indices.breaker.CircuitBreakerService;
 import org.elasticsearch.plugins.ClusterPlugin;
@@ -463,10 +464,10 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
         return actions;
     }
 
-    private IndexSearcherWrapper loadFlsDlsIndexSearcherWrapper(final IndexService indexService, final ComplianceIndexingOperationListener ciol,
+    private CheckedFunction<DirectoryReader, DirectoryReader, IOException> loadFlsDlsIndexSearcherWrapper(final IndexService indexService, final ComplianceIndexingOperationListener ciol,
             final ComplianceConfig complianceConfig) {
         try {
-            IndexSearcherWrapper flsdlsWrapper = (IndexSearcherWrapper) dlsFlsConstructor.newInstance(indexService, settings,
+            CheckedFunction<DirectoryReader, DirectoryReader, IOException> flsdlsWrapper = (CheckedFunction<DirectoryReader, DirectoryReader, IOException>) dlsFlsConstructor.newInstance(indexService, settings,
                     Objects.requireNonNull(adminDns), Objects.requireNonNull(cs), Objects.requireNonNull(auditLog), Objects.requireNonNull(ciol),
                     Objects.requireNonNull(complianceConfig));
             if (log.isDebugEnabled()) {
@@ -498,7 +499,7 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
                     ciol = new ComplianceIndexingOperationListener();
                 }
 
-                indexModule.setSearcherWrapper(indexService -> loadFlsDlsIndexSearcherWrapper(indexService, ciol, complianceConfig));
+                indexModule.setReaderWrapper(indexService -> loadFlsDlsIndexSearcherWrapper(indexService, ciol, complianceConfig));
                 indexModule.forceQueryCacheProvider((indexSettings, nodeCache) -> new QueryCache() {
 
                     @Override
@@ -541,7 +542,7 @@ public final class SearchGuardPlugin extends SearchGuardSSLPlugin implements Clu
 
                 assert complianceConfig == null : "compliance config must be null here";
 
-                indexModule.setSearcherWrapper(
+                indexModule.setReaderWrapper(
                         indexService -> new SearchGuardIndexSearcherWrapper(indexService, settings, Objects.requireNonNull(adminDns)));
             }
 

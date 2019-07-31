@@ -22,19 +22,17 @@ import java.io.IOException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.search.IndexSearcher;
+import org.elasticsearch.common.CheckedFunction;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexService;
-import org.elasticsearch.index.engine.EngineException;
-import org.elasticsearch.index.shard.IndexSearcherWrapper;
 
 import com.floragunn.searchguard.support.ConfigConstants;
 import com.floragunn.searchguard.support.HeaderHelper;
 import com.floragunn.searchguard.user.User;
 
-public class SearchGuardIndexSearcherWrapper extends IndexSearcherWrapper {
+public class SearchGuardIndexSearcherWrapper implements CheckedFunction<DirectoryReader, DirectoryReader, IOException> {
 
     protected final Logger log = LogManager.getLogger(this.getClass());
     protected final ThreadContext threadContext;
@@ -43,31 +41,20 @@ public class SearchGuardIndexSearcherWrapper extends IndexSearcherWrapper {
     private final AdminDNs adminDns;
 
     //constructor is called per index, so avoid costly operations here
-	public SearchGuardIndexSearcherWrapper(final IndexService indexService, final Settings settings, final AdminDNs adminDNs) {
-	    index = indexService.index();
-	    threadContext = indexService.getThreadPool().getThreadContext();
+    public SearchGuardIndexSearcherWrapper(final IndexService indexService, final Settings settings, final AdminDNs adminDNs) {
+        index = indexService.index();
+        threadContext = indexService.getThreadPool().getThreadContext();
         this.searchguardIndex = settings.get(ConfigConstants.SEARCHGUARD_CONFIG_INDEX_NAME, ConfigConstants.SG_DEFAULT_CONFIG_INDEX);
         this.adminDns = adminDNs;
-	}
+    }
 
     @Override
-    public final DirectoryReader wrap(final DirectoryReader reader) throws IOException {
-
+    public final DirectoryReader apply(DirectoryReader reader) throws IOException {
         if (isSearchGuardIndexRequest() && !isAdminAuthenticatedOrInternalRequest()) {
             return new EmptyFilterLeafReader.EmptyDirectoryReader(reader);
         }
 
-
         return dlsFlsWrap(reader, isAdminAuthenticatedOrInternalRequest());
-    }
-
-    @Override
-    public final IndexSearcher wrap(final IndexSearcher searcher) throws EngineException {
-        return dlsFlsWrap(searcher, isAdminAuthenticatedOrInternalRequest());
-    }
-
-    protected IndexSearcher dlsFlsWrap(final IndexSearcher searcher, boolean isAdmin) throws EngineException {
-        return searcher;
     }
 
     protected DirectoryReader dlsFlsWrap(final DirectoryReader reader, boolean isAdmin) throws IOException {
@@ -92,4 +79,5 @@ public class SearchGuardIndexSearcherWrapper extends IndexSearcherWrapper {
     protected final boolean isSearchGuardIndexRequest() {
         return index.getName().equals(searchguardIndex);
     }
+
 }

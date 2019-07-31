@@ -17,9 +17,9 @@
 
 package com.floragunn.searchguard.action.licenseinfo;
 
-import org.elasticsearch.action.Action;
+import org.elasticsearch.action.StreamableResponseActionType;
 
-public class LicenseInfoAction extends Action<LicenseInfoResponse> {
+public class LicenseInfoAction extends StreamableResponseActionType<LicenseInfoResponse> {
 
     public static final LicenseInfoAction INSTANCE = new LicenseInfoAction();
     public static final String NAME = "cluster:admin/searchguard/license/info";
