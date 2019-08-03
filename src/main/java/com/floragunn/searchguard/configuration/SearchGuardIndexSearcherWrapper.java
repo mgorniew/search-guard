@@ -30,6 +30,7 @@ import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.engine.EngineException;
 import org.elasticsearch.index.shard.IndexSearcherWrapper;
 
+import com.floragunn.searchguard.SearchGuardPlugin;
 import com.floragunn.searchguard.support.ConfigConstants;
 import com.floragunn.searchguard.support.HeaderHelper;
 import com.floragunn.searchguard.user.User;
@@ -39,14 +40,12 @@ public class SearchGuardIndexSearcherWrapper extends IndexSearcherWrapper {
     protected final Logger log = LogManager.getLogger(this.getClass());
     protected final ThreadContext threadContext;
     protected final Index index;
-    protected final String searchguardIndex;
     private final AdminDNs adminDns;
 
     //constructor is called per index, so avoid costly operations here
 	public SearchGuardIndexSearcherWrapper(final IndexService indexService, final Settings settings, final AdminDNs adminDNs) {
 	    index = indexService.index();
 	    threadContext = indexService.getThreadPool().getThreadContext();
-        this.searchguardIndex = settings.get(ConfigConstants.SEARCHGUARD_CONFIG_INDEX_NAME, ConfigConstants.SG_DEFAULT_CONFIG_INDEX);
         this.adminDns = adminDNs;
 	}
 
@@ -90,6 +89,6 @@ public class SearchGuardIndexSearcherWrapper extends IndexSearcherWrapper {
     }
 
     protected final boolean isSearchGuardIndexRequest() {
-        return index.getName().equals(searchguardIndex);
+        return SearchGuardPlugin.getProtectedIndices().isProtected(index.getName());
     }
 }
