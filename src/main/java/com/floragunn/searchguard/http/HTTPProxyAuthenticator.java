@@ -52,6 +52,7 @@ public class HTTPProxyAuthenticator implements HTTPAuthenticator {
         final String userHeader = settings.get("user_header");
         final String rolesHeader = settings.get("roles_header");
         final String rolesSeparator = settings.get("roles_separator", ",");
+        final Settings attributesHeaders = settings.getAsSettings("attributes_headers");
         
         if(log.isDebugEnabled()) {
             log.debug("headers {}", request.getHeaders());
@@ -66,7 +67,19 @@ public class HTTPProxyAuthenticator implements HTTPAuthenticator {
             if (!Strings.isNullOrEmpty(rolesHeader) && !Strings.isNullOrEmpty((String) request.header(rolesHeader))) {
                 backendRoles = ((String) request.header(rolesHeader)).split(rolesSeparator);
             }
-            return new AuthCredentials((String) request.header(userHeader), backendRoles).markComplete();
+            AuthCredentials authCredentials = new AuthCredentials((String) request.header(userHeader), backendRoles);
+            for (String attributeName : attributesHeaders.names()) {
+                String headerName = attributesHeaders.get(attributeName);
+                if (Strings.isNullOrEmpty(headerName)) {
+                    continue;
+                }
+                String attributeValue = request.header(headerName);
+                log.debug("attributeHeader {}, name {}, value {}", headerName, attributeName, attributeValue);
+                if (!Strings.isNullOrEmpty(attributeValue)) {
+                    authCredentials.addAttribute(attributeName, attributeValue);
+                }
+            }
+            return authCredentials.markComplete();
         } else {
             if(log.isTraceEnabled()) {
                 log.trace("No '{}' header, send 401", userHeader);

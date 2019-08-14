@@ -434,6 +434,33 @@ public class HttpIntegrationTests extends SingleClusterTest {
     }
 
     @Test
+    public void testHTTPProxyAttributes() throws Exception {
+        setup(Settings.EMPTY, new DynamicSgConfig().setSgConfig("sg_config_proxy_attributes.yml"), Settings.EMPTY, true);
+        RestHelper rh = nonSslRestHelper();
+
+        HttpResponse res = rh.executeGetRequest("/_searchguard/authinfo",
+                new BasicHeader("x-forwarded-for", "localhost,192.168.0.1,10.0.0.2"),
+                new BasicHeader("x-proxy-user", "scotty"),
+                new BasicHeader("x-proxy-roles", "starfleet,engineer"),
+                new BasicHeader("x-proxy-attr1", "attributeValue1"),
+                new BasicHeader("x-proxy-attr2", "attributeValue2"));
+        Assert.assertTrue("Expected 'first' and 'second' attribute to be set for user'", res.getBody().contains("\"custom_attribute_names\":[\"first\",\"second\"]"));
+
+        res = rh.executeGetRequest("/_searchguard/authinfo",
+                new BasicHeader("x-forwarded-for", "localhost,192.168.0.1,10.0.0.2"),
+                new BasicHeader("x-proxy-user", "scotty"),
+                new BasicHeader("x-proxy-roles", "starfleet,engineer"),
+                new BasicHeader("x-proxy-attr2", "attributeValue2"));
+        Assert.assertTrue("Expected only 'second' attribute to be set for user'", res.getBody().contains("\"custom_attribute_names\":[\"second\"]"));
+
+        res = rh.executeGetRequest("/_searchguard/authinfo",
+                new BasicHeader("x-forwarded-for", "localhost,192.168.0.1,10.0.0.2"),
+                new BasicHeader("x-proxy-user", "scotty"),
+                new BasicHeader("x-proxy-roles", "starfleet,engineer"));
+        Assert.assertTrue("Expected no attributes to be set for user", res.getBody().contains("\"custom_attribute_names\":[]"));
+    }
+
+    @Test
         public void testHTTPBasic2() throws Exception {
             
             setup(Settings.EMPTY, new DynamicSgConfig(), Settings.EMPTY);
